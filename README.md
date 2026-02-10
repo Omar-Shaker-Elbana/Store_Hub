@@ -134,6 +134,7 @@ Online_Store/
 
 ## 🔮 Future Enhancements
 - AI-powered chatbot for smart product recommendations
+- Encanced products recommendations
 - Advanced analytics dashboard for merchants
 - Fully mobile-responsive UI
 - Integration with external payment gateways
