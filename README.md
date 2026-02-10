@@ -144,18 +144,10 @@ Online_Store/
 ## 📞 Contact
 
 ### 👥 Team Members
-- **Omar Shaker** – Python / Django / Backend  
-- **Ahmed Roshdy** – Frontend (HTML, CSS, JavaScript)  
-- **Mark Fahim** – PHP / HTML / CSS / JavaScript / Full-Stack
-- **Ziad Khaled** – SQL / Backend
-
-🔗 **GitHub:** [Omar-Shaker-Elbana](https://github.com/Omar-Shaker-Elbana) 
-
-🔗 **GitHub:** [AhmedMohammedRo](https://github.com/AhmedMohammedRo) 
-
-🔗 **GitHub:** [mark1234720](https://github.com/mark1234720) 
-
-🔗 **GitHub:** [ZiadKhaled-wb](https://github.com/ZiadKhaled-wb) 
+- **Omar Shaker** – Python / Django / Backend   🔗 **GitHub:** [Omar-Shaker-Elbana](https://github.com/Omar-Shaker-Elbana) 
+- **Ahmed Roshdy** – Frontend (HTML, CSS, JavaScript)   🔗 **GitHub:** [AhmedMohammedRo](https://github.com/AhmedMohammedRo) 
+- **Mark Fahim** – PHP / HTML / CSS / JavaScript / Full-Stack   🔗 **GitHub:** [mark1234720](https://github.com/mark1234720) 
+- **Ziad Khaled** – SQL / Backend   🔗 **GitHub:** [ZiadKhaled-wb](https://github.com/ZiadKhaled-wb) 
 
 ---
 
