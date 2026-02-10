@@ -80,3 +80,62 @@ python manage.py runserver
 Open your browser:
 
 http://127.0.0.1:8000/
+
+🔹 Project Structure
+Online_Store/
+├── Online_Store/          # Django project settings
+├── apps/                  # Custom Django apps (products, orders, users, etc.)
+├── manage.py
+├── requirements.txt
+├── static/                # CSS, JS, images
+├── templates/             # HTML templates
+└── venv/                  # Virtual environment (ignored by git)
+
+🔹 How to Contribute
+
+Fork the repository
+
+Create your feature branch:
+
+git checkout -b feature/your-feature-name
+
+
+Commit your changes:
+
+git add .
+git commit -m "feat: your description"
+
+
+Push to your branch:
+
+git push origin feature/your-feature-name
+
+
+Open a Pull Request → get it reviewed and merged
+
+Tip: Keep main branch stable; always work on feature branches.
+
+🔹 Future Enhancements
+
+AI-powered chatbot for recommendations
+
+Advanced analytics dashboard for merchants
+
+Mobile-responsive design
+
+Integration with external payment APIs
+
+🔹 Contact
+
+Team Members:
+
+Omar Shaker (Python/Django/Backend)
+
+Teammate 1 (Frontend/HTML/CSS/JS)
+
+Teammate 2 (PHP/Database/Other)
+
+GitHub: Omar-Shaker-Elbana
+
+
+---
