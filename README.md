@@ -150,11 +150,8 @@ Online_Store/
 - **Ziad Khaled** – SQL / Backend
 
 🔗 **GitHub:** [Omar-Shaker-Elbana](https://github.com/Omar-Shaker-Elbana)
-
 🔗 **GitHub:** [AhmedMohammedRo](https://github.com/AhmedMohammedRo)
-
 🔗 **GitHub:** [mark1234720](https://github.com/mark1234720)
-
 🔗 **GitHub:** [ZiadKhaled-wb](https://github.com/ZiadKhaled-wb)
 
 ---
