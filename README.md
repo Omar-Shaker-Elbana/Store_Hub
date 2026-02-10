@@ -50,3 +50,33 @@ Built with **Python, Django, PHP, HTML, CSS, JavaScript, and PostgreSQL**, this 
 1. Clone the repository:  
 ```bash
 git clone https://github.com/Omar-Shaker-Elbana/Online_Store.git
+
+Create a virtual environment:
+
+python -m venv venv
+
+
+Activate the environment:
+
+venv\Scripts\activate   # Windows
+source venv/bin/activate  # Mac/Linux
+
+
+Install dependencies:
+
+python -m pip install -r requirements.txt
+
+
+Apply migrations:
+
+python manage.py migrate
+
+
+Run the development server:
+
+python manage.py runserver
+
+
+Open your browser:
+
+http://127.0.0.1:8000/
