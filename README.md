@@ -144,11 +144,12 @@ Online_Store/
 
 ### 👥 Team Members
 - **Omar Shaker** – Python / Django / Backend  
-- **Teammate 1** – Frontend (HTML, CSS, JavaScript)  
-- **Teammate 2** – PHP / Database / Other  
+- **Ahmed Roshdy** – Frontend (HTML, CSS, JavaScript)  
+- **Mark Fahim** – PHP / Database / Other  
 
 🔗 **GitHub:** [Omar-Shaker-Elbana](https://github.com/Omar-Shaker-Elbana)
-
+🔗 **GitHub:** [AhmedMohammedRo](https://github.com/AhmedMohammedRo)
+🔗 **GitHub:** [mark1234720](https://github.com/mark1234720)
 ---
 
 ⭐ If you like this project, consider giving it a star!
