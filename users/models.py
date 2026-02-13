@@ -1,10 +1,10 @@
 from django.db import models
-from django.utils import timezone
 from django.conf import settings
-from datetime import date
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
+# from django.utils import timezone
+# from datetime import date
 # from django.contrib.auth.hashers import make_password, check_password
 
 # Create your models here.
