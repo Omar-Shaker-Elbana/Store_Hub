@@ -16,10 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('landing_page.urls')),
+    # path('accounts/', include('allauth.urls')),  # allauth handles login, logout, signup
     path('users/', include('users.urls')),
     path('products/', include('products.urls')),
     path('notifications/', include('notifications.urls')),
@@ -27,3 +30,6 @@ urlpatterns = [
     path('shopper/', include('shopper_interface.urls')),
     path('merchant/', include('merchant_interface.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
