@@ -7,5 +7,15 @@
     <h2>Profile Info</h2>
     {{ profile_form.as_p }}
     
-    <button type="submit">Register</button>
+    <button type="submit" name = "register_btn">Register</button>
+</form>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ login_form.username.label_tag }}
+    {{ login_form.username }}
+    {{ login_form.password.label_tag }}
+    {{ login_form.password }}
+
+    <button type="submit" name="login_btn">Login</button>
 </form>
