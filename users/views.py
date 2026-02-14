@@ -1,19 +1,24 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from users.models import Profile
-from .forms import UserForm, ProfileForm, EmailAuthenticationForm
+from .forms import UserForm, ProfileForm
+from django.contrib.auth.forms import AuthenticationForm
+
 
 def register_view(request):
     if request.method == "POST":
+        
+        user_form = UserForm(request.POST)
+        profile_form = ProfileForm(request.POST, request.FILES)
+        login_form = AuthenticationForm(request, data=request.POST)  # Initialize login form for validation
+        
         if 'register_btn' in request.POST:
            
-            user_form = UserForm(request.POST)
-            profile_form = ProfileForm(request.POST, request.FILES)
-            
             if user_form.is_valid() and profile_form.is_valid():
                 # Save user first
                 new_user = user_form.save(commit=False)
-                new_user.set_password(user_form.cleaned_data['password'])  # hash password
+                new_user.username = user_form.cleaned_data['email']  # Set username to email
+                # new_user.set_password(user_form.cleaned_data['password'])  # hash password
                 new_user.save()
                 
                 # Save profile
@@ -29,7 +34,7 @@ def register_view(request):
                 return redirect("/")
             
         elif 'login_btn' in request.POST:
-            login_form = EmailAuthenticationForm(request, data=request.POST)
+            login_form = AuthenticationForm(request, data=request.POST)
             if login_form.is_valid():
                 user = login_form.get_user()
                 login(request, user)
@@ -38,7 +43,7 @@ def register_view(request):
     else:
         user_form = UserForm()
         profile_form = ProfileForm()
-        login_form = EmailAuthenticationForm()
+        login_form = AuthenticationForm()
     
     context = {
         'user_form': user_form,
@@ -47,3 +52,15 @@ def register_view(request):
     }
 
     return render(request, "users/register.html", context)
+
+def profile_view(request):
+    if not request.user.is_authenticated:
+        return redirect("/users/register/")
+    
+    profile = Profile.objects.get(user=request.user)
+    
+    context = {
+        'profile': profile
+    }
+    
+    return render(request, "users/profile.html", context)
