@@ -52,6 +52,6 @@ class UserSettings(models.Model):
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    notifications = models.BooleanField(default=False)
+    # notifications = models.BooleanField(default=False)
     theme = models.CharField(max_length=10, choices=THEME_CHOICES, default='dark')
     language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default='en')

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+</head>
+<body>
+
+    <h1>My Profile</h1>
+
+    <!-- Django Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: red;">
+                {{ message }}
+            </p>
+        {% endfor %}
+    {% endif %}
+
+    <hr>
+
+    <!-- Profile Info Display -->
+    <h2>Current Information</h2>
+    <p><strong>Username:</strong> {{ request.user.username }}</p>
+    <p><strong>Email:</strong> {{ request.user.email }}</p>
+    <p><strong>Birthday:</strong> {{ profile.birthday }}</p>
+    <p><strong>Gender:</strong> {{ profile.get_gender_display }}</p>
+    <p><strong>Country:</strong> {{ profile.country }}</p>
+
+    {% if profile.picture %}
+        <p><strong>Profile Picture:</strong></p>
+        <img src="{{ profile.picture.url }}" width="150">
+    {% endif %}
+
+    <hr>
+
+    <!-- Update Forms -->
+    <h2>Update Account</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <h3>User Info</h3>
+        {{ update_user.as_p }}
+
+        <h3>Profile Info</h3>
+        {{ update_profile.as_p }}
+
+        <h3>Settings</h3>
+        {{ update_settings.as_p }}
+
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <hr>
+
+    <!-- Change Password Button -->
+    <h2>Security</h2>
+
+    <a href="{% url 'change-password' %}">
+        <button type="button">Change Password</button>
+    </a>
+
+</body>
+</html>

@@ -158,3 +158,5 @@ MEDIA_ROOT = path.join(BASE_DIR, 'media')
 #     'users.backends.EmailBackend',
 #     'django.contrib.auth.backends.ModelBackend',
 # ]
+
+LOGIN_URL = '/users/register/' 
