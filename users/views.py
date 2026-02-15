@@ -5,6 +5,7 @@ from .forms import UserForm, ProfileForm, UpdateProfileForm, UpdateUserForm, Upd
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth import logout
 
 def register_view(request):
     if request.method == "POST":
