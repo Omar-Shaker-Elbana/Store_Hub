@@ -70,19 +70,24 @@ def profile_view(request):
     profile = Profile.objects.get(user=request.user)
     
     if request.method == "POST":
-        update_settings = UpdateSettingsForm(request.POST, instance=request.user.usersettings)
-        update_profile = UpdateProfileForm(request.POST, request.FILES, instance=profile)
-        update_user = UpdateUserForm(request.POST, instance=request.user)
-        
-        if update_settings.is_valid() and update_profile.is_valid() and update_user.is_valid():
-            update_settings.save()
-            update_profile.save()
-            update_user.save()
+        if 'logout_btn' in request.POST:
+            logout(request)
+            messages.success(request, "Logout successful.")
             return redirect("/")
         else:
-            messages.error(request, "Update failed. Please check the form.")
-            # return redirect("profile")
-    
+            update_settings = UpdateSettingsForm(request.POST, instance=request.user.usersettings)
+            update_profile = UpdateProfileForm(request.POST, request.FILES, instance=profile)
+            update_user = UpdateUserForm(request.POST, instance=request.user)
+            
+            if update_settings.is_valid() and update_profile.is_valid() and update_user.is_valid():
+                update_settings.save()
+                update_profile.save()
+                update_user.save()
+                return redirect("/")
+            else:
+                messages.error(request, "Update failed. Please check the form.")
+                # return redirect("profile")
+
     else:
         update_settings = UpdateSettingsForm(instance=request.user.usersettings)
         update_profile = UpdateProfileForm(instance=profile)
