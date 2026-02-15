@@ -1,0 +1,155 @@
+.profile-container
+{
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+}
+.profile-container h1
+{
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+.profile-container p
+{
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+.profile-container img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    margin-bottom: 20px;
+}
+.profile-container button, .change-password-form button
+{
+    background-color: #ffaf1b;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.profile-container button:hover, .change-password-form button:hover
+{
+    background-color: #ff8c00;
+}
+.profile-container input[type="file"]
+{
+    margin-bottom: 20px;
+}
+.profile-container form
+{
+    margin-bottom: 20px;
+}
+.profile-container .messages
+{
+    margin-bottom: 20px;
+}
+.profile-container .messages .message
+{
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.profile-container .messages .message.success
+{
+    background-color: #d4edda;
+    color: #155724;
+}
+.profile-container .messages .message.error
+{
+    background-color: #f8d7da;
+    color: #721c24;
+}
+.profile-container .messages .message.info
+{
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+.profile-container .messages .message.warning
+{
+    background-color: #fff3cd;
+    color: #856404;
+}
+.profile-container a
+{
+    text-decoration: none;
+}
+.profile-container a button
+{
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.profile-container a button:hover
+{
+    background-color: #0056b3;
+}
+.profile-container input [type="text"],
+.profile-container input [type="email"],
+.change-password-form input[type="password"]
+{
+    width: 300px;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.profile-container input[type="text"],
+.profile-container input[type="email"],
+.profile-container input[type="password"],
+.change-password-form input[type="password"]
+{
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+.profile-container input[type="text"]:focus,
+.profile-container input[type="email"]:focus,
+.profile-container input[type="password"]:focus,
+.change-password-form input[type="password"]:focus
+{
+    outline: none;
+    border-color: #ffaf1b;
+    box-shadow: 0 0 5px rgba(255, 175, 27, 0.3);
+}
+.profile-container button, .change-password-form button
+{
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.profile-container button:hover , .change-password-form button:hover
+{
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.profile-container
+{
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 600px;
+}
+.profile-container label, .change-password-form label
+{
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+.change-password-form
+{
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 400px;
+    margin: auto;
+}
