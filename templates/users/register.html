@@ -1,22 +1,111 @@
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    
-    <h2>User Info</h2>
-    {{ user_form.as_p }}
-    
-    <h2>Profile Info</h2>
-    {{ profile_form.as_p }}
-    
-    <button type="submit" name = "register_btn">Register</button>
-</form>
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>StoreHub — Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<form method="POST">
-    {% csrf_token %}
-    <!-- {{ login_form.username.label_tag }} -->
-    {{"Email" }}
-    {{ login_form.username }}
-    {{ login_form.password.label_tag }}
-    {{ login_form.password }}
+  <link rel="stylesheet" href="{% static 'users/style/style.css' %}">
+  <link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
+  <link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+</head>
 
-    <button type="submit" name="login_btn">Login</button>
-</form>
+<body>
+  <nav>
+    <a href="{%url 'home' %}" class="brand">
+      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
+    </a>
+
+    <div class="nav-links">
+      <a href="#merchants">For Merchants</a>
+      <a href="#customers">For Customers</a>
+      <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
+    </div>
+  </nav>
+
+  <div class="login-container">
+
+    <!-- REGISTER -->
+    <form method="POST" enctype="multipart/form-data" class="login-form" id="registerForm">
+      {% csrf_token %}
+
+      <div class="form-header">
+        <h2>Create Account</h2>
+        <p>Register to get started</p>
+      </div>
+
+      <h3 style="margin: 0 0 10px;">Account Info</h3>
+
+      {% for field in user_form %}
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<small style="color:#dc2626;">{{ field.errors|striptags }}</small>{% endif %}
+        </div>
+      {% endfor %}
+
+      <h3 style="margin: 20px 0 10px;">Profile Info</h3>
+
+      {% for field in profile_form %}
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<small style="color:#dc2626;">{{ field.errors|striptags }}</small>{% endif %}
+        </div>
+      {% endfor %}
+
+      <button type="submit" name="register_btn" class="submit-btn">Register</button>
+
+      <div class="form-footer">
+        Already have an account?
+        <button type="button" class="link-btn" id="showLogin">Login</button>
+      </div>
+    </form>
+
+    <!-- LOGIN -->
+    <form method="POST" class="login-form hidden" id="loginForm">
+      {% csrf_token %}
+
+      <div class="form-header">
+        <h2>Welcome Back</h2>
+        <p>Sign in to your account</p>
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        {{ login_form.username }}
+        {% if login_form.username.errors %}<small style="color:#dc2626;">{{ login_form.username.errors|striptags }}</small>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        {{ login_form.password }}
+        {% if login_form.password.errors %}<small style="color:#dc2626;">{{ login_form.password.errors|striptags }}</small>{% endif %}
+      </div>
+
+      <button type="submit" name="login_btn" class="submit-btn">Login</button>
+
+      <div class="form-footer">
+        Don’t have an account?
+        <button type="button" class="link-btn" id="showRegister">Register</button>
+      </div>
+    </form>
+
+  </div>
+
+  <script>
+    const registerForm = document.getElementById("registerForm");
+    const loginForm = document.getElementById("loginForm");
+
+    document.getElementById("showLogin").addEventListener("click", () => {
+      registerForm.classList.add("hidden");
+      loginForm.classList.remove("hidden");
+    });
+
+    document.getElementById("showRegister").addEventListener("click", () => {
+      loginForm.classList.add("hidden");
+      registerForm.classList.remove("hidden");
+    });
+  </script>
+</body>
+</html>

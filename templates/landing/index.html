@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>StoreHub — Your gate to future</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
+    <link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+  </head>
+
+  <body>
+    <nav>
+      <a href="#" class="brand">
+        <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
+      </a>
+
+      <div class="nav-links">
+        <a href="#merchants">For Merchants</a>
+        <a href="#customers">For Customers</a>
+        <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
+      </div>
+    </nav>
+
+    <section class="section1" id="section1">
+      <div class="s1left">
+        <h2>One Platform for <br><span>Selling & Shopping</span></h2>
+        <p>Build your online store or discover trusted merchants</p>
+        <a href="#selling" style="background:#2563EB;margin-right:8px;">Start Selling</a>
+        <a href="#shopping">Start Shopping</a>
+      </div>
+      
+      <div class="s1right">
+        <img src="{% static 'landing/imgs/hero.png' %}" alt="hero image">
+      </div>
+    </section>
+    <section class="how-it-works">
+  
+
+  <div class="hiw-columns" id="hiw">
+    <div class="merchant" id="merchants">
+      <h3>For Merchants</h3>
+      <div class="merchant-steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h4>Create Account</h4>
+          <p>Sign up and set up your merchant account in minutes</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h4>Add Products</h4>
+          <p>Upload your products with photos and detailed descriptions</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h4>Start Selling</h4>
+          <p>Begin selling to thousands of customers online</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="customer" id="customers">
+      <h3>For Customers</h3>
+      <div class="customer-steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h4>Browse Stores</h4>
+          <p>Explore a wide variety of stores and products</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h4>Add to Cart</h4>
+          <p>Select your favorite items and add to your cart</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h4>Receive Order</h4>
+          <p>Track and receive your order at your doorstep</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-section newsletter">
+          <h3>Join Our Newsletter</h3>
+          <p>Get the latest updates and exclusive offers delivered to your inbox</p>
+          <form class="newsletter-form">
+            <input type="email" placeholder="Enter your email" required>
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+
+        <div class="footer-section quick-links">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#merchants">For Merchants</a></li>
+            <li><a href="#customers">For Customers</a></li>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Terms & Conditions</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section company">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Press</a></li>
+            <li><a href="#">Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section social">
+          <h4>Follow Us</h4>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook">f</a>
+            <a href="#" aria-label="Twitter">𝕏</a>
+            <a href="#" aria-label="LinkedIn">in</a>
+            <a href="#" aria-label="Instagram">📷</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 StoreHub. All rights reserved.</p>
+      </div>
+    </footer>
+
+  </body>
+</html>
