@@ -1,0 +1,91 @@
+{%load static%}
+<!DOCTYPE html>
+<html>
+<head>
+     <title>StoreHub — Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="{% static 'users/style/style.css' %}">
+  <link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
+  <link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+</head>
+<body>
+    <nav>
+    <a href="{%url 'home' %}" class="brand">
+      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
+    </a>
+
+    <div class="nav-links">
+      <a href="#merchants">For Merchants</a>
+      <a href="#customers">For Customers</a>
+     {%if not request.user.is_authenticated %}
+      <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
+      {% else %}
+      <a href="{% url 'profile' %}" class="get-started" style="padding:8px 20px;">My Profile</a>
+      {% endif %}
+    </div>
+  </nav>
+  <div class="profile-container">
+    <h1>My Profile</h1>
+
+    <!-- Django Messages -->
+        {% if messages %}
+        {% for message in messages %}
+            <p style="color: red;">
+                {{ message }}
+            </p>
+        {% endfor %}
+    {% endif %}
+
+    <hr>
+       
+
+    <!-- Profile Info Display -->
+    <h2>Current Information</h2>
+    <p><strong>Username:</strong> {{ request.user.username }}</p>
+    <p><strong>Email:</strong> {{ request.user.email }}</p>
+    <p><strong>Birthday:</strong> {{ profile.birthday }}</p>
+    <p><strong>Gender:</strong> {{ profile.get_gender_display }}</p>
+    <p><strong>Country:</strong> {{ profile.country }}</p>
+
+    {% if profile.picture %}
+        <p><strong>Profile Picture:</strong></p>
+        <img src="{{ profile.picture.url }}" width="150">
+    {% endif %}
+
+    <hr>
+
+    <!-- Update Forms -->
+    <h2>Update Account</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <h3>User Info</h3>
+        {{ update_user.as_p }}
+
+        <h3>Profile Info</h3>
+        {{ update_profile.as_p }}
+
+        <h3>Settings</h3>
+        {{ update_settings.as_p }}
+
+        <button type="submit">Save Changes</button>
+        <br>
+        <button type="submit" name="logout_btn" value="1" style="margin-top:10px;background-color:red;">
+            Log Out
+        </button>
+
+    </form>
+
+    <hr>
+
+    <!-- Change Password Button -->
+    <h2>Security</h2>
+
+    <a href="{% url 'change-password' %}">
+        <button type="button">Change Password</button>
+    </a>
+</div>
+</body>
+</html>

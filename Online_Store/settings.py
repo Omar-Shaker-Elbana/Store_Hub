@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from os import path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    #apps
     'landing_page',
     'users',
     'products',
@@ -44,11 +47,19 @@ INSTALLED_APPS = [
     'orders',
     'shopper_interface',
     'merchant_interface',
+
+    #allauth
+    # 'allauth',
+    # 'allauth.account',
+    # 'allauth.socialaccount',
+    # 'allauth.socialaccount.providers.google',  # For Google login
+    # 'allauth.socialaccount.providers.facebook',  # For Facebook login
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -117,6 +128,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.ModelBackend',  # default
+#     'allauth.account.auth_backends.AuthenticationBackend',  # allauth
+# ]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -133,4 +149,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+MEDIA_URL = '/media/'
+MEDIA_ROOT = path.join(BASE_DIR, 'media')
+
+# AUTHENTICATION_BACKENDS = [
+#     'users.backends.EmailBackend',
+#     'django.contrib.auth.backends.ModelBackend',
+# ]
+
+LOGIN_URL = '/users/register/' 
