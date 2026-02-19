@@ -113,3 +113,8 @@ def change_password(request):
         form = PasswordChangeForm(request.user)
 
     return render(request, 'users/change_password.html', {'form': form})
+@login_required
+def logout_view(request):
+    logout(request)
+    messages.success(request, "You have been logged out.")
+    return redirect("/")

@@ -10,21 +10,7 @@
   </head>
 
   <body>
-    <nav>
-      <a href="#" class="brand">
-        <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
-      </a>
-
-      <div class="nav-links">
-        <a href="#merchants">For Merchants</a>
-        <a href="#customers">For Customers</a>
-        {% if user.is_authenticated %}
-          <a href="{% url 'profile' %}" class="get-started" style="padding:8px 20px;">Profile</a>
-        {% else %}
-          <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
-        {% endif %}
-      </div>
-    </nav>
+    {% include 'users/nav.html' %}
 
     <section class="section1" id="section1">
       <div class="s1left">

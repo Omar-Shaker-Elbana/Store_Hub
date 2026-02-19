@@ -407,6 +407,30 @@ nav{
     color: #222;
 }
 
+/* Dark mode overrides for landing merchant/customer sections */
+body.dark .how-it-works { background: transparent; }
+body.dark .hiw-columns { gap: var(--gap); }
+body.dark .merchant, body.dark .customer {
+    background: #0b1220;
+    color: #e5e7eb;
+    border: 1px solid #233044;
+    box-shadow: 0 4px 12px rgba(2,6,23,0.6);
+}
+body.dark .merchant h3 { color: #f59e0b; }
+body.dark .customer h3 { color: #60a5fa; }
+body.dark .merchant p, body.dark .customer p, body.dark .step p, body.dark .step h4 {
+    color: #cbd5e1;
+}
+body.dark .step {
+    background: #071025;
+    border: 1px solid #1f2937;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+}
+body.dark .step-number {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+
+
 .newsletter-form input::placeholder {
     color: #9ca3af;
 }

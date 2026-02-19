@@ -39,6 +39,7 @@ class UpdateUserForm(forms.ModelForm):
 
 
 class UpdateSettingsForm(forms.ModelForm):
+    theme = forms.ChoiceField(choices=UserSettings.THEME_CHOICES, widget=forms.RadioSelect)
     class Meta:
         model = UserSettings
         fields = ['theme', 'language']

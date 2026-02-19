@@ -11,18 +11,7 @@
 </head>
 
 <body>
-  <nav>
-    <a href="{%url 'home' %}" class="brand">
-      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
-    </a>
-
-    <div class="nav-links">
-      <a href="#merchants">For Merchants</a>
-      <a href="#customers">For Customers</a>
-      <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
-    </div>
-  </nav>
-
+  {% include 'users/nav.html' %}
   <div class="login-container">
 
     <!-- REGISTER -->

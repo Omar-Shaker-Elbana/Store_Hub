@@ -9,22 +9,8 @@
   <link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
   <link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
 </head>
-<body>
-    <nav>
-    <a href="{%url 'home' %}" class="brand">
-      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
-    </a>
-
-    <div class="nav-links">
-      <a href="#merchants">For Merchants</a>
-      <a href="#customers">For Customers</a>
-     {%if not request.user.is_authenticated %}
-      <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
-      {% else %}
-      <a href="{% url 'profile' %}" class="get-started" style="padding:8px 20px;">My Profile</a>
-      {% endif %}
-    </div>
-  </nav>
+<body class="{% if request.user.is_authenticated and request.user.usersettings.theme == 'dark' %}dark{% endif %}">
+     {% include 'users/nav.html' %}
   <div class="profile-container">
     <h1>My Profile</h1>
 
@@ -68,11 +54,27 @@
         {{ update_profile.as_p }}
 
         <h3>Settings</h3>
-        {{ update_settings.as_p }}
+        <div>
+            <label class="section-label">Theme</label>
+            <div class="theme-toggle">
+                <label for="theme-light" class="{% if request.user.is_authenticated and request.user.usersettings.theme == 'light' %}active{% endif %}">
+                    <input type="radio" name="theme" id="theme-light" value="light" {% if request.user.is_authenticated and request.user.usersettings.theme == 'light' %}checked{% endif %}>
+                    Light
+                </label>
+                <label for="theme-dark" class="{% if request.user.is_authenticated and request.user.usersettings.theme == 'dark' %}active{% endif %}">
+                    <input type="radio" name="theme" id="theme-dark" value="dark" {% if request.user.is_authenticated and request.user.usersettings.theme == 'dark' %}checked{% endif %}>
+                    Dark
+                </label>
+                <!-- visual switch removed (labels act as toggle) -->
+            </div>
+
+            <label class="section-label" style="margin-top:12px;">Language</label>
+            {{ update_settings.language }}
+        </div>
 
         <button type="submit">Save Changes</button>
         <br>
-        <a href="#">
+        <a href="{% url 'logout' %}">
             <button type="button" style="margin-top:10px;background-color:red;">Log out</button>
         </a>
     </form>
@@ -86,5 +88,23 @@
         <button type="button">Change Password</button>
     </a>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const labels = document.querySelectorAll('.theme-toggle label');
+    function updateActive(){
+        labels.forEach(l=>{
+            const input = l.querySelector('input[type="radio"]');
+            if(input && input.checked) l.classList.add('active'); else l.classList.remove('active');
+        });
+    }
+    labels.forEach(l=>{
+        const input = l.querySelector('input[type="radio"]');
+        if(input) input.addEventListener('change', updateActive);
+    });
+    updateActive();
+});
+</script>
+
 </body>
 </html>

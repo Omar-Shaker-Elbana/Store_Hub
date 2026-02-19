@@ -153,3 +153,93 @@
     max-width: 400px;
     margin: auto;
 }
+
+/* Theme toggle styles */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0 20px;
+}
+.theme-toggle input[type="radio"] {
+    display: none;
+}
+.theme-toggle label {
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.06);
+    color: #333;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.theme-toggle label.active {
+    background: #ffaf1b;
+    color: white;
+}
+
+/* Optional small switch look */
+/* removed .theme-switch; labels serve as the toggle UI */
+
+/* Dark mode overrides (profile) */
+body.dark {
+    background: #0b1220;
+    color: #e5e7eb;
+}
+body.dark .profile-container {
+    background: linear-gradient(135deg, #0f1724 0%, #111827 100%);
+    color: #e5e7eb;
+}
+body.dark .profile-container p,
+body.dark .profile-container h1,
+body.dark .profile-container h2,
+body.dark .profile-container h3,
+body.dark .profile-container label {
+    color: #e5e7eb;
+}
+body.dark .profile-container button, body.dark .change-password-form button {
+    background-color: #2563EB;
+}
+body.dark .profile-container a button {
+    background-color: #1f6feb;
+}
+body.dark .profile-container input[type="text"],
+body.dark .profile-container input[type="email"],
+body.dark .profile-container input[type="password"] {
+    background: #0b1220;
+    color: #e5e7eb;
+    border: 1px solid #233044;
+}
+body.dark .theme-toggle label {
+    background: rgba(255,255,255,0.04);
+    color: #cbd5e1;
+}
+body.dark .theme-toggle label.active {
+    background: #ffaf1b;
+    color: #0b1220;
+}
+
+/* Broad form dark-mode fallbacks for pages like 'forgot password' */
+body.dark .login-container,
+body.dark .login-form,
+body.dark .change-password-form,
+body.dark form {
+    background: transparent !important;
+    color: #e5e7eb !important;
+}
+body.dark .login-form, body.dark .change-password-form {
+    border-radius: 10px;
+    padding: 18px !important;
+}
+body.dark .form-group, body.dark .form-header, body.dark .form-footer {
+    color: #e5e7eb !important;
+}
+body.dark input, body.dark textarea, body.dark select {
+    background: #071025 !important;
+    color: #e5e7eb !important;
+    border: 1px solid #233044 !important;
+}
+body.dark .submit-btn, body.dark .link-btn {
+    background: #2563EB !important;
+    color: #fff !important;
+}

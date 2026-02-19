@@ -1,0 +1,36 @@
+{% load static %}
+<nav>
+      <a href="{% url 'home' %}" class="brand">
+        <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
+      </a>
+
+      <div class="nav-links">
+        <a href="#merchants">For Merchants</a>
+        <a href="#customers">For Customers</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}"  style="padding:8px 20px;">
+            <img src="{{ user.profile.picture.url }}" alt="Profile" width="40" style="border-radius:50%;width:40px;height:40px;">
+          </a>
+        {% else %}
+          <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
+        {% endif %}
+      </div>
+    </nav>
+    <script>
+      // Apply user theme site-wide when nav is included
+      (function(){
+        try{
+          const isDark = {% if user.is_authenticated and user.usersettings.theme == 'dark' %}true{% else %}false{% endif %};
+          if(isDark){ document.documentElement.classList.add('dark'); document.body.classList.add('dark'); }
+          else { document.documentElement.classList.remove('dark'); document.body.classList.remove('dark'); }
+        }catch(e){ /* ignore when no user or usersettings */ }
+      })();
+    </script>
+    <style>
+      /* Inline dark-mode fallback styles to ensure site-wide application */
+      body.dark { background:#0b1220 !important; color:#e5e7eb !important; }
+      body.dark nav { background: rgba(0,0,0,0.2) !important; }
+      body.dark a { color: #93c5fd !important; }
+      body.dark .login-container, body.dark .profile-container, body.dark .section1, body.dark .footer { background: transparent !important; }
+      body.dark .login-form, body.dark .login-container .form-header { color: #e5e7eb !important; }
+    </style>
