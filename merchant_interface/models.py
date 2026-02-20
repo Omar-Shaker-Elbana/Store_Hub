@@ -6,12 +6,20 @@ from django.conf import settings
 
 User = settings.AUTH_USER_MODEL
 
+class Niche(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
 class Store(models.Model):
-    name = models.CharField(max_length=50, null=True, blank=True)
-    niche = models.CharField(max_length=100, null=True, blank=True)
-    inaguration_date = models.DateField(auto_now_add=True, blank=True, null=True)
-    picture = models.ImageField(upload_to='store_pics/', null=True, blank=True)
-    nationality = models.CharField(max_length=100, null=True, blank=True)
+    name = models.CharField(max_length=50, 
+                            null=True, blank=True)
+    niche = models.ForeignKey(Niche, on_delete=models.PROTECT, 
+                              db_index=True)
+    inauguration_date = models.DateField(auto_now_add=True, 
+                                        blank=True, null=True)
+    picture = models.ImageField(upload_to='store_pics/', 
+                                null=True, blank=True)
+    nationality = models.CharField(max_length=100, 
+                                   null=True, blank=True)
     
 class Membership(models.Model):
     ROLE_CHOICES = [
@@ -26,8 +34,19 @@ class Membership(models.Model):
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    role = models.CharField(max_length=7, choices=ROLE_CHOICES, default='helper')
+    role = models.CharField(max_length=7, 
+                            choices=ROLE_CHOICES, default='helper')
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
     join_date = models.DateField(null=True, blank=True)
-    wage_type = models.CharField(max_length=10, choices=WAGE_CHOICES, default='helper')
-    wage = models.DecimalField(null = True, blank = True, decimal_places=2, max_digits=10)
+    wage_type = models.CharField(max_length=10, 
+                                 choices=WAGE_CHOICES, default='helper')
+    wage = models.DecimalField(null = True, blank = True, 
+                               decimal_places=2, max_digits=10)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'store'],
+                name='unique_membership_per_store'
+            )
+        ]
