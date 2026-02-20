@@ -10,7 +10,7 @@ class ProductForm(forms.ModelForm):
             'category',
             'manufacturing_price',
             'selling_price',
-            'stock'
+            'current_stock'
         ]
 
 class SpecForm(forms.ModelForm):

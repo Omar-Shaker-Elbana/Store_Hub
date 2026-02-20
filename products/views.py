@@ -1,11 +1,13 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from .models import Product, Spec
 from .forms import ProductForm, SpecForm
 from django.contrib import messages
 from merchant_interface.models import Membership, Store
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
+@login_required
 def Create_Product(request, current_store):
     if not Membership.objects.filter(store=current_store, user=request.user).exists():
         messages.error(request, "You don't have permission to access this page!")
@@ -34,6 +36,7 @@ def Create_Product(request, current_store):
 
     return render(request, 'products/create_product.html', context)
 
+@login_required
 def Create_Spec(request, product_id):
     product = Product.objects.get(id=product_id)
     if not product:
@@ -74,6 +77,7 @@ def Create_Spec(request, product_id):
 
     return render(request, 'products/create_spec.html', context)
 
+@login_required
 def Update_Product(request, product_id):
     old_product = Product.objects.filter(id=product_id).first()
     if not old_product:
@@ -117,6 +121,7 @@ def Update_Product(request, product_id):
 
     return render(request, 'products/update_product.html', context)
 
+@login_required
 def Update_Spec(request, product_id, spec_name):
     old_product = Product.objects.filter(id=product_id).first()
     if not old_product:
@@ -164,3 +169,23 @@ def Update_Spec(request, product_id, spec_name):
     }
 
     return render(request, 'products/update_spec.html', context)
+
+def View_Product(request, product_id):
+    product = Product.objects.filter(id=product_id).first()
+    if not product:
+        messages.error(request, "Product not found!")
+        return redirect('/')
+
+    specs = Spec.objects.filter(product=product)
+
+    context = {
+        'product' : product,
+        'specs' : specs,
+    }
+
+    # if request.method == "POST":
+    #     if "add_to_wishlist_btn" in request.POST:
+
+
+    return render(request, 'products/view_product.html', context)
+
