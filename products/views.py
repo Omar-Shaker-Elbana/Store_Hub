@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-from .models import Product, Spec
-from .forms import ProductForm, SpecForm
+from .models import Product, Spec, SuggestedCategory, Category
+from .forms import ProductForm, SpecForm, Suggest_Category_Form
 from django.contrib import messages
-from merchant_interface.models import Membership, Store
+from merchant_interface.models import Membership
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
@@ -189,3 +189,18 @@ def View_Product(request, product_id):
 
     return render(request, 'products/view_product.html', context)
 
+@login_required
+def Suggest_Category(request):
+    if request.method == "POST":
+        category_name = request.POST.get('category_name')
+        if category_name:
+            if not Category.objects.filter(name=category_name).exists():
+                new_category = Category(name=category_name)
+                new_category.save()
+                messages.success(request, "Category suggested successfuly!")
+            else:
+                messages.error(request, "Category already exists!")
+        else:
+            messages.error(request, "Please enter a category name!")
+
+    return redirect('/')
