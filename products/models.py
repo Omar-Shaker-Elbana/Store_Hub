@@ -82,3 +82,9 @@ class Spec(models.Model):
                 name='unique_spec_name_per_product'
             )
         ]
+
+class SuggestedCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    suggester = models.ForeignKey(User, on_delete=models.CASCADE)
+    suggestion_date = models.DateField(auto_now_add=True,
+                                      null=True, blank=True)

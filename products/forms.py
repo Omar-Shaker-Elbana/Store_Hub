@@ -10,7 +10,11 @@ class ProductForm(forms.ModelForm):
             'category',
             'manufacturing_price',
             'selling_price',
-            'current_stock'
+            'current_stock',
+            'offer',
+            'image1',
+            'image2',
+            'image3',
         ]
 
 class SpecForm(forms.ModelForm):
@@ -22,3 +26,6 @@ class Review_Form(forms.ModelForm):
     class Meta:
         model = Review
         fields = ['stars', 'comment']
+
+class Suggest_Category_Form(forms.Form):
+    category_name = forms.CharField(max_length=100)
