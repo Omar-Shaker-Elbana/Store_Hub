@@ -3,7 +3,6 @@ from django.shortcuts import render, redirect
 from .models import Store, Membership, Niche
 from .forms import StoreForm, MembershipInvitationForm, SuggestNicheForm, MembershipForm
 from django.contrib.auth.decorators import login_required
-import regex
 
 # Create your views here.
 
@@ -75,8 +74,8 @@ def add_members(request, store_id):
             else:
                 messages.error(request, 'Error sending invitation. Please try again.')
 
-        elif regex.match(r'^edit_membership_\d+$', request.POST.get('action', '')):
-            membership_id = int(request.POST['action'].split('_')[-1])
+        else:
+            membership_id = request.POST.get('membership_id')
             membership = Membership.objects.filter(id=membership_id, store=store).first()
             if membership:
                 membership_form = MembershipForm(request.POST, instance=membership)
@@ -132,3 +131,42 @@ def edit_store(request, store_id):
 
     return render(request, 'merchant_interface/edit_store.html', context)
 
+@login_required
+def all_my_stores(request):
+    memberships = Membership.objects.filter(user=request.user)
+    if not memberships:
+        messages.error(request, 'You are not a member of any stores.')
+        return redirect('create_store')
+
+    stores = [membership.store for membership in memberships]
+
+    context = {
+        'stores': stores
+    }
+
+    return render(request, 'merchant_interface/all_my_stores.html', context)
+
+@login_required
+def my_store(request, store_id):
+    store = Store.objects.filter(id=store_id).first()
+    if not store:
+        messages.error(request, 'Store not found.')
+        return redirect('create_store')
+
+    user_membership = Membership.objects.filter(user=request.user, store=store).first()
+    if not user_membership:
+        messages.error(request, 'You do not have permission to view this store.')
+        return redirect('create_store')
+    
+     # Placeholder for analytics data retrieval and processing
+
+    context = {
+        'store': store,
+        'membership': user_membership
+    }
+
+    return render(request, 'merchant_interface/my_store.html', context)
+
+def my_analytics(request, store_id):
+    # Placeholder for analytics data retrieval and processing
+    return render(request, 'merchant_interface/my_analytics.html',)

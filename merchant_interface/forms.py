@@ -25,3 +25,4 @@ class SuggestNicheForm(forms.ModelForm):
     class Meta:
         model = SuggestedNiche
         fields = ['name']
+
