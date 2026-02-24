@@ -2,13 +2,24 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from .models import Store, Membership, Niche
 from .forms import StoreForm, MembershipInvitationForm, SuggestNicheForm, MembershipForm
+from products.models import Product
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
 def show_store(request, store_id):
-    store = Store.objects.get(id=store_id)
-    return render(request, 'merchant_interface/stores.html', {'store': store})
+    store = Store.objects.filter(id=store_id).first()
+    if not store:
+        messages.error(request, 'Store not found.')
+        return redirect('create_store')
+    
+    store_products = Product.objects.filter(store=store)
+    context = {
+        'store': store,
+        'store_products': store_products
+    }
+
+    return render(request, 'merchant_interface/show_store.html', context)
 
 @login_required
 def create_store(request):
@@ -170,4 +181,3 @@ def my_store(request, store_id):
 def my_analytics(request, store_id):
     # Placeholder for analytics data retrieval and processing
     return render(request, 'merchant_interface/my_analytics.html',)
-
