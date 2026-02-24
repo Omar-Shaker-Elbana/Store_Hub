@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Create Product</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1000px;
+    backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 0 50px rgba(0,255,255,0.15);
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    margin-bottom: 40px;
+    color: #00ffff;
+    letter-spacing: 2px;
+}
+
+.form-grid {
+    display: grid;
+    gap: 20px;
+}
+
+label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    transition: 0.3s;
+}
+
+textarea {
+    resize: none;
+    min-height: 100px;
+}
+
+input:focus, textarea:focus, select:focus {
+    background: rgba(0,255,255,0.1);
+    box-shadow: 0 0 10px #00ffff;
+}
+
+.image-preview {
+    margin-top: 10px;
+    display: flex;
+    gap: 15px;
+}
+
+.image-preview img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid rgba(0,255,255,0.4);
+    display: none;
+}
+
+.btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 20px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #00ffff, #00b3ff);
+    color: black;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px #00ffff;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.success {
+    background: rgba(0,255,0,0.2);
+    color: #00ff88;
+}
+
+.error {
+    background: rgba(255,0,0,0.2);
+    color: #ff4d4d;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media(max-width: 768px) {
+    .container {
+        padding: 25px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>CREATE PRODUCT</h1>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="form-grid">
+        {% csrf_token %}
+
+        {{ product_form.name.label_tag }}
+        {{ product_form.name }}
+
+        {{ product_form.description.label_tag }}
+        {{ product_form.description }}
+
+        {{ product_form.category.label_tag }}
+        {{ product_form.category }}
+
+        {{ product_form.manufacturing_price.label_tag }}
+        {{ product_form.manufacturing_price }}
+
+        {{ product_form.selling_price.label_tag }}
+        {{ product_form.selling_price }}
+
+        {{ product_form.current_stock.label_tag }}
+        {{ product_form.current_stock }}
+
+        {{ product_form.offer.label_tag }}
+        {{ product_form.offer }}
+
+        <label>Images</label>
+        {{ product_form.image1 }}
+        {{ product_form.image2 }}
+        {{ product_form.image3 }}
+
+        <div class="image-preview">
+            <img id="preview1">
+            <img id="preview2">
+            <img id="preview3">
+        </div>
+
+        <button type="submit" name="Create_Product_btn" class="btn">
+            Create Product
+        </button>
+    </form>
+</div>
+
+<script>
+// Image preview
+function previewImage(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+
+    input.addEventListener('change', function () {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function () {
+                preview.src = reader.result;
+                preview.style.display = "block";
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    previewImage("id_image1", "preview1");
+    previewImage("id_image2", "preview2");
+    previewImage("id_image3", "preview3");
+});
+
+// Auto-hide messages
+setTimeout(() => {
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => {
+        msg.style.transition = "opacity 0.5s";
+        msg.style.opacity = "0";
+        setTimeout(() => msg.remove(), 500);
+    });
+}, 3000);
+</script>
+
+</body>
+</html>

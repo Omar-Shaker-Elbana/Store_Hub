@@ -1,0 +1,150 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Suggest Category</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    color: white;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 0 50px rgba(0,255,255,0.15);
+    animation: fadeIn 0.8s ease-in-out;
+    text-align: center;
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif;
+    margin-bottom: 30px;
+    color: #00ffff;
+    letter-spacing: 2px;
+}
+
+p.subtitle {
+    opacity: 0.7;
+    margin-bottom: 30px;
+    font-size: 14px;
+}
+
+input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 15px;
+    transition: 0.3s;
+}
+
+input:focus {
+    background: rgba(0,255,255,0.1);
+    box-shadow: 0 0 12px #00ffff;
+}
+
+.btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 20px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #00ffff, #00b3ff);
+    color: black;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px #00ffff;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.success {
+    background: rgba(0,255,0,0.2);
+    color: #00ff88;
+}
+
+.error {
+    background: rgba(255,0,0,0.2);
+    color: #ff4d4d;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SUGGEST CATEGORY</h1>
+    <p class="subtitle">Have an idea for a new category? Let’s build it together.</p>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="category_name" placeholder="Enter category name..." maxlength="100">
+        <button type="submit" class="btn">Submit Suggestion</button>
+    </form>
+</div>
+
+<script>
+// Auto-hide messages
+setTimeout(() => {
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => {
+        msg.style.transition = "opacity 0.5s";
+        msg.style.opacity = "0";
+        setTimeout(() => msg.remove(), 500);
+    });
+}, 3000);
+</script>
+
+</body>
+</html>

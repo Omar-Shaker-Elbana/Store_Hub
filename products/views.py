@@ -2,13 +2,18 @@ from django.shortcuts import render, redirect
 from .models import Product, Spec, SuggestedCategory, Category
 from .forms import ProductForm, SpecForm, Suggest_Category_Form
 from django.contrib import messages
-from merchant_interface.models import Membership
+from merchant_interface.models import Membership, Store
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
 @login_required
-def Create_Product(request, current_store):
+def Create_Product(request, current_store_id):
+    current_store = Store.objects.filter(id=current_store_id).first()
+    if not current_store:
+        messages.error(request, "Store not found!")
+        return redirect('/')
+
     if not Membership.objects.filter(store=current_store, user=request.user).exists():
         messages.error(request, "You don't have permission to access this page!")
         return redirect('/')
@@ -21,7 +26,7 @@ def Create_Product(request, current_store):
                 new_product = product_form.save(commit=False)
                 new_product.store = current_store
                 new_product.save()
-                messages.success("Product added successfuly, now lets add some specifications to it!")
+                messages.success(request, "Product added successfuly, now lets add some specifications to it!")
                 return redirect(f'/products/create_spec/{new_product.id}/')
 
             else:
@@ -58,7 +63,7 @@ def Create_Spec(request, product_id):
                 new_spec = spec_form.save(commit=False)
                 new_spec.product_id = product_id
                 new_spec.save()
-                messages.success("Specification added successfuly!")
+                messages.success(request,"Specification added successfuly!")
                 return redirect(f'/products/create_spec/{product_id}/')
 
             else:
@@ -203,4 +208,6 @@ def Suggest_Category(request):
         else:
             messages.error(request, "Please enter a category name!")
 
-    return redirect('/')
+        return redirect('/')
+
+    return render(request, 'products/suggest_category.html')
