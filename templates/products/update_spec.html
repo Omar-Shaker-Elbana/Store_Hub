@@ -1,0 +1,246 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Update Specification</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1000px;
+    backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 0 50px rgba(0,255,255,0.15);
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    margin-bottom: 40px;
+    color: #00ffff;
+    letter-spacing: 2px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+}
+
+.form-section {
+    display: grid;
+    gap: 20px;
+}
+
+label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+input {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    transition: 0.3s;
+}
+
+input:focus {
+    background: rgba(0,255,255,0.1);
+    box-shadow: 0 0 10px #00ffff;
+}
+
+.btn-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: 0.3s;
+}
+
+.save-btn {
+    background: linear-gradient(90deg, #00ffff, #00b3ff);
+    color: black;
+}
+
+.save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px #00ffff;
+}
+
+.create-btn {
+    background: linear-gradient(90deg, #00ffcc, #00ffaa);
+    color: black;
+}
+
+.create-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px #00ffcc;
+}
+
+.delete-btn {
+    background: linear-gradient(90deg, #ff4d4d, #ff0000);
+    color: white;
+}
+
+.delete-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px red;
+}
+
+.side-panel {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 15px;
+}
+
+.spec-item {
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.success {
+    background: rgba(0,255,0,0.2);
+    color: #00ff88;
+}
+
+.error {
+    background: rgba(255,0,0,0.2);
+    color: #ff4d4d;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media(max-width: 900px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>UPDATE SPECIFICATION</h1>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="grid">
+
+        <!-- LEFT SIDE FORM -->
+        <form method="POST" class="form-section">
+            {% csrf_token %}
+
+            {{ update_spec_form.name.label_tag }}
+            {{ update_spec_form.name }}
+
+            {{ update_spec_form.value.label_tag }}
+            {{ update_spec_form.value }}
+
+            <div class="btn-group">
+                <button type="submit" name="Save_btn" class="btn save-btn">
+                    Save
+                </button>
+
+                <button type="submit" name="Save_and_Create_Another_Spec_btn" class="btn create-btn">
+                    Save & Create Another
+                </button>
+
+                <button type="submit" name="delete_spec_btn" class="btn delete-btn"
+                        onclick="return confirm('Are you sure you want to delete this specification?')">
+                    Delete
+                </button>
+            </div>
+        </form>
+
+        <!-- RIGHT SIDE PANEL -->
+        <div class="side-panel">
+            <h3 style="margin-bottom:15px;">All Specifications</h3>
+
+            {% for s in specs %}
+                <div class="spec-item">
+                    <span>{{ s.name }}</span>
+                    <span>{{ s.value }}</span>
+                </div>
+            {% empty %}
+                <p style="opacity:0.6;">No specifications found.</p>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Auto-hide messages
+setTimeout(() => {
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => {
+        msg.style.transition = "opacity 0.5s";
+        msg.style.opacity = "0";
+        setTimeout(() => msg.remove(), 500);
+    });
+}, 3000);
+</script>
+
+</body>
+</html>

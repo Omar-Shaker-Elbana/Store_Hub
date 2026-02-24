@@ -1,0 +1,251 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Create Store</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1100px;
+    backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 0 60px rgba(0,255,255,0.15);
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    margin-bottom: 40px;
+    color: #00ffff;
+    letter-spacing: 2px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+}
+
+.section {
+    display: grid;
+    gap: 20px;
+}
+
+.section-title {
+    font-size: 18px;
+    color: #00ffff;
+    margin-bottom: 10px;
+}
+
+label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    transition: 0.3s;
+}
+
+input:focus, select:focus {
+    background: rgba(0,255,255,0.1);
+    box-shadow: 0 0 10px #00ffff;
+}
+
+.image-preview {
+    margin-top: 10px;
+}
+
+.image-preview img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 15px;
+    border: 2px solid rgba(0,255,255,0.4);
+    display: none;
+}
+
+.btn {
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: 0.3s;
+}
+
+.primary-btn {
+    background: linear-gradient(90deg, #00ffff, #00b3ff);
+    color: black;
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px #00ffff;
+}
+
+.secondary-btn {
+    background: linear-gradient(90deg, #00ffcc, #00ffaa);
+    color: black;
+}
+
+.secondary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px #00ffcc;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.success {
+    background: rgba(0,255,0,0.2);
+    color: #00ff88;
+}
+
+.error {
+    background: rgba(255,0,0,0.2);
+    color: #ff4d4d;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media(max-width: 900px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>CREATE YOUR STORE</h1>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="grid">
+
+        <!-- LEFT: Create Store -->
+        <form method="POST" enctype="multipart/form-data" class="section">
+            {% csrf_token %}
+            <div class="section-title">Store Information</div>
+
+            {{ create_store_form.name.label_tag }}
+            {{ create_store_form.name }}
+
+            {{ create_store_form.niche.label_tag }}
+            {{ create_store_form.niche }}
+
+            {{ create_store_form.nationality.label_tag }}
+            {{ create_store_form.nationality }}
+
+            {{ create_store_form.picture.label_tag }}
+            {{ create_store_form.picture }}
+
+            <div class="image-preview">
+                <img id="storePreview">
+            </div>
+
+            <button type="submit" name="create_store_btn" class="btn primary-btn">
+                Create Store
+            </button>
+        </form>
+
+        <!-- RIGHT: Suggest Niche -->
+        <form method="POST" class="section">
+            {% csrf_token %}
+            <div class="section-title">Suggest New Niche</div>
+
+            {{ suggest_niche_form.name.label_tag }}
+            {{ suggest_niche_form.name }}
+
+            <button type="submit" name="suggest_niche_btn" class="btn secondary-btn">
+                Suggest Niche
+            </button>
+        </form>
+
+    </div>
+</div>
+
+<script>
+// Image preview
+document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("id_picture");
+    const preview = document.getElementById("storePreview");
+
+    if (input) {
+        input.addEventListener("change", function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    preview.src = reader.result;
+                    preview.style.display = "block";
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+
+// Auto-hide messages
+setTimeout(() => {
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => {
+        msg.style.transition = "opacity 0.5s";
+        msg.style.opacity = "0";
+        setTimeout(() => msg.remove(), 500);
+    });
+}, 3000);
+</script>
+
+</body>
+</html>
