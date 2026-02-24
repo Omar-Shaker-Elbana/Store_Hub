@@ -1,0 +1,203 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Specifications</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            color: #00ffff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            margin-top: 5px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+            transition: 0.3s ease;
+        }
+
+        input:focus {
+            background: rgba(0,255,255,0.1);
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #00ffff, #00b3ff);
+            color: black;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        .spec-list {
+            margin-top: 40px;
+        }
+
+        .spec-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.3s;
+        }
+
+        .spec-item:hover {
+            transform: scale(1.02);
+            background: rgba(0,255,255,0.1);
+        }
+
+        .spec-name {
+            font-weight: 500;
+            color: #00ffff;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .success {
+            background: rgba(0,255,0,0.2);
+            color: #00ff88;
+        }
+
+        .error {
+            background: rgba(255,0,0,0.2);
+            color: #ff4d4d;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>ADD SPECIFICATION</h1>
+
+    <!-- Django Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Form -->
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label>Specification Name</label>
+            {{ spec_form.name }}
+        </div>
+
+        <div class="form-group">
+            <label>Specification Value</label>
+            {{ spec_form.value }}
+        </div>
+
+        <button type="submit" name="Save_and_Create_Another_Spec_btn" class="btn">
+            Save & Add Another
+        </button>
+    </form>
+
+    <!-- Existing Specs -->
+    <div class="spec-list">
+        <h2 style="margin-bottom:15px;">Existing Specifications</h2>
+
+        {% for spec in specs %}
+            <div class="spec-item">
+                <span class="spec-name">{{ spec.name }}</span>
+                <span>{{ spec.value }}</span>
+            </div>
+        {% empty %}
+            <p style="opacity:0.6;">No specifications added yet.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // Auto-hide messages after 3 seconds
+    setTimeout(() => {
+        const messages = document.querySelectorAll('.message');
+        messages.forEach(msg => {
+            msg.style.transition = "opacity 0.5s";
+            msg.style.opacity = "0";
+            setTimeout(() => msg.remove(), 500);
+        });
+    }, 3000);
+</script>
+
+</body>
+</html>

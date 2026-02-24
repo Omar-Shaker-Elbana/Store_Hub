@@ -170,3 +170,4 @@ def my_store(request, store_id):
 def my_analytics(request, store_id):
     # Placeholder for analytics data retrieval and processing
     return render(request, 'merchant_interface/my_analytics.html',)
+
