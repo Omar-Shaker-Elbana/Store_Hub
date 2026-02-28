@@ -67,7 +67,7 @@ def register_view(request):
 @login_required
 def profile_view(request):
     
-    profile = Profile.objects.get(user=request.user)
+    profile = Profile.objects.filter(user=request.user).first()
     
     if request.method == "POST":
         if 'logout_btn' in request.POST:
@@ -100,7 +100,7 @@ def profile_view(request):
         'update_user': update_user
     }
     
-    return render(request, "users/profile.html", context)
+    return render(request, "users/new_profile.html", context)
 
 @login_required
 def change_password(request):

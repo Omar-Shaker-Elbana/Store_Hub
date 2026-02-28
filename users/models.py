@@ -3,9 +3,7 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
-# from django.utils import timezone
-# from datetime import date
-# from django.contrib.auth.hashers import make_password, check_password
+from orders.models import Cart
 
 # Create your models here.
 
@@ -16,6 +14,7 @@ def create_user_related(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
         UserSettings.objects.create(user=instance)
+        Cart.objects.create(user=instance)
 
 class Profile(models.Model):
     GENDER_CHOICES = (
@@ -31,7 +30,6 @@ class Profile(models.Model):
     address1 = models.CharField(max_length=255, null=True, blank=True)
     address2 = models.CharField(max_length=255, null=True, blank=True)
     address3 = models.CharField(max_length=255, null=True, blank=True)
-    # is_merchant = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.user)
@@ -52,6 +50,12 @@ class UserSettings(models.Model):
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # notifications = models.BooleanField(default=False)
     theme = models.CharField(max_length=10, choices=THEME_CHOICES, default='dark')
     language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default='en')
+
+class Card(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    card_num = models.IntegerField(null=True, blank=True)
+    card_name = models.CharField(max_length=50, null=True, blank= True)
+    expiration_date = models.DateField(null=True, blank=True)
+    OTP = models.IntegerField(null=True, blank=True)
