@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StoreHub — My Profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="{% static 'users/style/style.css' %}">
+<link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    background: #0f172a;
+    color: #f1f5f9;
+}
+
+.profile-wrapper {
+    max-width: 900px;
+    margin: 60px auto;
+    padding: 20px;
+}
+
+.page-title {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 40px;
+}
+
+.card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-weight: 500;
+    border-left: 4px solid #6366f1;
+    padding-left: 12px;
+}
+
+form h3 {
+    margin-top: 25px;
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+form p {
+    margin-bottom: 18px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #f1f5f9;
+    transition: 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border: 1px solid #6366f1;
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 25px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99,102,241,0.4);
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+.btn-secondary {
+    background: #334155;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #475569;
+}
+
+.messages p {
+    background: rgba(220,38,38,0.2);
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+    <a href="{%url 'home' %}" class="brand">
+      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
+    </a>
+
+    <div class="nav-links">
+      <a href="#merchants">For Merchants</a>
+      <a href="#customers">For Customers</a>
+      {% if not request.user.is_authenticated %}
+      <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
+      {% else %}
+      <a href="{% url 'profile' %}" class="get-started" style="padding:8px 20px;">My Profile</a>
+      {% endif %}
+    </div>
+</nav>
+
+<div class="profile-wrapper">
+
+    <div class="page-title">Account Settings ⚙️</div>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card">
+        <h2>Edit Your Information</h2>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <h3>User Info</h3>
+            {{ update_user.as_p }}
+
+            <h3>Profile Info</h3>
+            {{ update_profile.as_p }}
+
+            <h3>Preferences</h3>
+            {{ update_settings.as_p }}
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    Save Changes
+                </button>
+
+                <button type="submit" name="logout_btn" value="1" class="btn btn-danger">
+                    Log Out
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Security</h2>
+        <a href="{% url 'change-password' %}">
+            <button type="button" class="btn btn-secondary">
+                Change Password
+            </button>
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>
