@@ -1,15 +1,22 @@
-:root{
-  --bg:#ffffff;
-  --text:#222;
-  --muted:#6b7280;
-  --accent:#F59E0B;
-  --accent-strong:rgba(11,114,255,0.12);
-  --radius:10px;
-  --gap:20px;
-  --pad:18px;
-  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  scroll-behavior: smooth;
+:root {
+  /* الألوان الجديدة المستوحاة من الديزاين */
+  --bg: #f8fafc;           /* خلفية فاتحة ومريحة للعين */
+  --text: #1e293b;         /* لون نص أغمق واحترافي */
+  --muted: #64748b;
+  --accent: #1a49aa;       /* الأزرق الأساسي اللي في الصورة */
+  --accent-orange: #ff9922; /* البرتقالي للأزرار والتحذيرات */
+  --accent-strong: rgba(26, 73, 170, 0.15);
+  --white: #ffffff;
+  
+  /* تحديث الـ radius والخط */
+  --radius: 12px;          /* خلي الزوايا أنعم شوية */
+  --gap: 24px;
+  --pad: 20px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
+
+
+
 
 *{box-sizing:border-box}
 body{
@@ -74,14 +81,14 @@ body{
     }
 }
 nav{
-    
+  background: var(--white);
   display:flex;
+  box-shadow: none;
   align-items:center;
   justify-content:space-between;
   gap:var(--gap);
-  padding:12px 24px;
-  background:var(--bg);
-  box-shadow: 0 1px 6px rgba(16,24,40,0.04);
+  padding: 15px 40px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 /* Logo */
@@ -105,14 +112,13 @@ nav{
 .nav-links a:hover{color:var(--accent);transform:translateY(-1px)}
 
 
-.get-started{
-  border: 3px solid var(--accent);  
-  color:#fff;
-  
-    
-  box-shadow: 0 6px 18px var(--accent-strong);
-  text-decoration:none;
-  font-weight:600;
+.get-started {
+  background: var(--accent-orange);
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(255, 153, 34, 0.3);
 }
 .get-started:hover{filter:brightness(.98);transform:translateY(-2px)}
 

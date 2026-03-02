@@ -1,155 +1,82 @@
-.profile-container
-{
-    display: flex;
-    flex-direction: column;
-    margin: auto;
+:root {
+  --bg: #f8fafc;         
+  --text: #1e293b;         
+  --muted: #64748b;
+  --accent: #1a49aa;       
+  --accent-orange: #ff9922; 
+  --white: #ffffff;
+  --radius: 12px;          
+  --shadow: 0 10px 25px rgba(26, 73, 170, 0.08);
+  font-family: 'Inter', "Segoe UI", Roboto, sans-serif;
 }
-.profile-container h1
-{
-    font-size: 32px;
-    margin-bottom: 20px;
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px 40px; background: var(--white);
+  border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 1000;
 }
-.profile-container p
-{
-    font-size: 18px;
-    margin-bottom: 10px;
+#logo { width: 130px; height: auto; transition: transform 0.3s; }
+#logo:hover { transform: scale(1.05); }
+
+.nav-links a {
+  text-decoration: none; color: var(--text); font-weight: 500;
+  margin-left: 20px; transition: color 0.3s;
 }
-.profile-container img {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    margin-bottom: 20px;
+.nav-links a:hover { color: var(--accent-orange); }
+
+.get-started {
+  background: var(--accent-orange) !important; color: white !important;
+  padding: 10px 22px; border-radius: var(--radius);
+  font-weight: 600; box-shadow: 0 4px 12px rgba(255, 153, 34, 0.3);
 }
-.profile-container button, .change-password-form button
-{
-    background-color: #ffaf1b;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
+
+.login-container {
+  display: flex; justify-content: center; align-items: center;
+  min-height: 90vh; padding: 40px 20px;
 }
-.profile-container button:hover, .change-password-form button:hover
-{
-    background-color: #ff8c00;
+
+.login-form {
+  background: var(--white); padding: 40px; border-radius: 16px;
+  width: 100%; max-width: 450px; box-shadow: var(--shadow);
+  border: 1px solid #e2e8f0; animation: slideUp 0.5s ease-out;
 }
-.profile-container input[type="file"]
-{
-    margin-bottom: 20px;
+
+.form-header h2 { color: var(--accent); margin-bottom: 5px; font-weight: 800; }
+.form-group { margin-bottom: 18px; display: flex; flex-direction: column; }
+.form-group label { font-weight: 600; margin-bottom: 8px; font-size: 0.9em; }
+
+.form-group input, .form-group select, .form-group textarea {
+  padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px;
+  transition: all 0.3s ease; font-size: 1em;
 }
-.profile-container form
-{
-    margin-bottom: 20px;
+.form-group input:focus {
+  border-color: var(--accent-orange); outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 153, 34, 0.1);
 }
-.profile-container .messages
-{
-    margin-bottom: 20px;
+
+.submit-btn {
+  width: 100%; padding: 14px; background: var(--accent-orange);
+  color: white; border: none; border-radius: 10px;
+  font-weight: 700; cursor: pointer; transition: 0.3s;
+  box-shadow: 0 5px 15px rgba(255, 153, 34, 0.3);
 }
-.profile-container .messages .message
-{
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
+.submit-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+.hidden { display: none !important; }
+
+.section1 .s1left h2 { color: var(--accent); font-size: 2.8em; }
+.section1 .s1left h2 span { color: var(--accent-orange); }
+.section1 .s1left a { background: var(--accent-orange); border-radius: var(--radius); }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.profile-container .messages .message.success
-{
-    background-color: #d4edda;
-    color: #155724;
-}
-.profile-container .messages .message.error
-{
-    background-color: #f8d7da;
-    color: #721c24;
-}
-.profile-container .messages .message.info
-{
-    background-color: #d1ecf1;
-    color: #0c5460;
-}
-.profile-container .messages .message.warning
-{
-    background-color: #fff3cd;
-    color: #856404;
-}
-.profile-container a
-{
-    text-decoration: none;
-}
-.profile-container a button
-{
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-}
-.profile-container a button:hover
-{
-    background-color: #0056b3;
-}
-.profile-container input [type="text"],
-.profile-container input [type="email"],
-.change-password-form input[type="password"]
-{
-    width: 300px;
-    padding: 10px;
-    margin-bottom: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-.profile-container input[type="text"],
-.profile-container input[type="email"],
-.profile-container input[type="password"],
-.change-password-form input[type="password"]
-{
-    width: 100%;
-    max-width: 400px;
-    padding: 12px;
-    margin-bottom: 20px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 14px;
-    transition: border-color 0.3s ease;
-}
-.profile-container input[type="text"]:focus,
-.profile-container input[type="email"]:focus,
-.profile-container input[type="password"]:focus,
-.change-password-form input[type="password"]:focus
-{
-    outline: none;
-    border-color: #ffaf1b;
-    box-shadow: 0 0 5px rgba(255, 175, 27, 0.3);
-}
-.profile-container button, .change-password-form button
-{
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-.profile-container button:hover , .change-password-form button:hover
-{
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-.profile-container
-{
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 40px;
-    border-radius: 12px;
-    max-width: 600px;
-}
-.profile-container label, .change-password-form label
-{
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-.change-password-form
-{
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 30px;
-    border-radius: 12px;
-    max-width: 400px;
-    margin: auto;
+
+@media (max-width: 768px) {
+  nav { padding: 15px 20px; flex-direction: column; gap: 15px; }
+  .login-form { padding: 25px; }
 }
