@@ -1,0 +1,151 @@
+/* الألوان والأساسيات */
+:root {
+  --primary: #1a49aa;
+  --primary-hover: #143a8a;
+  --accent: #ff9922;
+  --accent-hover: #e68a1e;
+  --bg-soft: #f4f7fe;
+  --white: #ffffff;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-master-container {
+    max-width: 1100px;
+    margin: 60px auto; /* زيادة المسافة من فوق */
+    padding: 0 20px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* Header Card Hover */
+.profile-header-card {
+    background: var(--white);
+    padding: 40px 30px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(26,73,170,0.05);
+    margin-bottom: 40px; /* زيادة المسافة تحت الهيدر */
+    transition: var(--transition);
+}
+
+.avatar-wrapper img {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    border: 5px solid var(--bg-soft);
+    object-fit: cover;
+    transition: var(--transition);
+}
+
+/* تأثير على الصورة عند مرور الماوس */
+.avatar-wrapper img:hover {
+    transform: scale(1.08) rotate(3deg);
+    border-color: var(--accent);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* Layout Grid */
+.profile-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 40px; /* زيادة الفجوة لمنع التداخل */
+}
+
+.card {
+    background: var(--white);
+    padding: 30px;
+    border-radius: 22px;
+    border: 1px solid #eef2f6;
+    transition: var(--transition);
+}
+
+/* تأثير "الطفو" للكروت */
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(26,73,170,0.08);
+}
+
+/* Info Rows */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0; /* زيادة الـ padding الداخلي */
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s;
+}
+
+.info-row:hover {
+    background: #fafbfc; /* لون خفيف جدا عند الوقوف على السطر */
+}
+
+/* Form Styling */
+.modern-form .form-section { 
+    margin-bottom: 35px; /* مسافة أمان بين أقسام الفورم */
+}
+
+.modern-form p {
+    margin-bottom: 20px !important; /* مسافة بين حقول Django */
+}
+
+.modern-form input, .modern-form select {
+    width: 100%; 
+    padding: 14px; 
+    margin-top: 10px;
+    border: 2px solid #eef2f6; 
+    border-radius: 12px;
+    transition: var(--transition);
+}
+
+.modern-form input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(26, 73, 170, 0.1);
+    outline: none;
+    background: #fff;
+}
+
+/* Buttons Hovers */
+.btn-save {
+    background: var(--accent); 
+    color: white;
+    width: 100%; padding: 16px; border: none;
+    border-radius: 12px; font-weight: 700; cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-save:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 8px 20px rgba(255, 153, 34, 0.3);
+    transform: scale(1.01);
+}
+
+.btn-logout {
+    background: #fff1f2; color: #e11d48;
+    border: none; padding: 12px 20px; border-radius: 10px;
+    margin-top: 15px; width: 100%; cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-logout:hover {
+    background: #fb7185;
+    color: white;
+}
+
+.btn-secondary {
+    display: block; text-align: center; text-decoration: none;
+    background: var(--primary); color: white;
+    padding: 12px; border-radius: 10px; margin-top: 25px;
+    transition: var(--transition);
+}
+
+.btn-secondary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 850px) {
+    .profile-content-grid { grid-template-columns: 1fr; gap: 20px; }
+}

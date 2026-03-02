@@ -1,91 +1,95 @@
-{%load static%}
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-     <title>StoreHub — Register</title>
+  <title>StoreHub — My Profile</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="stylesheet" href="{% static 'users/style/style.css' %}">
   <link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
+  <link rel="stylesheet" href="{% static 'users/style/profile.css' %}">
   <link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
 </head>
 <body>
-    <nav>
-    <a href="{%url 'home' %}" class="brand">
+  <nav>
+    <a href="{% url 'home' %}" class="brand">
       <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
     </a>
-
     <div class="nav-links">
       <a href="#merchants">For Merchants</a>
       <a href="#customers">For Customers</a>
-     {%if not request.user.is_authenticated %}
-      <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
-      {% else %}
-      <a href="{% url 'profile' %}" class="get-started" style="padding:8px 20px;">My Profile</a>
+      {% if request.user.is_authenticated %}
+        <a href="{% url 'profile' %}" class="get-started">My Profile</a>
       {% endif %}
     </div>
   </nav>
-  <div class="profile-container">
-    <h1>My Profile</h1>
 
-    <!-- Django Messages -->
-        {% if messages %}
-        {% for message in messages %}
-            <p style="color: red;">
-                {{ message }}
-            </p>
-        {% endfor %}
-    {% endif %}
+  <div class="profile-master-container">
+    
+    <div class="profile-header-card">
+      <div class="avatar-wrapper">
+        {% if profile.picture %}
+          <img src="{{ profile.picture.url }}" alt="Profile Picture" class="profile-img">
+        {% else %}
+          <img src="{% static 'landing/imgs/default-user.png' %}" alt="Default" class="profile-img">
+        {% endif %}
+      </div>
+      <h1>Welcome, {{ request.user.username }}!</h1>
+      {% if messages %}
+        <div class="messages-container">
+          {% for message in messages %}
+            <div class="alert {{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
 
-    <hr>
-       
+    <div class="profile-content-grid">
+      
+      <div class="info-sidebar">
+        <div class="card shadow-sm">
+          <h3><i class="icon"></i> Account Details</h3>
+          <div class="info-row"><strong>Email:</strong> <span>{{ request.user.email }}</span></div>
+          <div class="info-row"><strong>Birthday:</strong> <span>{{ profile.birthday|default:"Not set" }}</span></div>
+          <div class="info-row"><strong>Gender:</strong> <span>{{ profile.get_gender_display }}</span></div>
+          <div class="info-row"><strong>Country:</strong> <span>{{ profile.country }}</span></div>
+          
+          <div class="security-section">
+             <h4>Security</h4>
+             <a href="{% url 'change-password' %}" class="btn-secondary">Change Password</a>
+             <form method="POST" style="display:inline;">
+               {% csrf_token %}
+               <button type="submit" name="logout_btn" value="1" class="btn-logout">Logout</button>
+             </form>
+          </div>
+        </div>
+      </div>
 
-    <!-- Profile Info Display -->
-    <h2>Current Information</h2>
-    <p><strong>Username:</strong> {{ request.user.username }}</p>
-    <p><strong>Email:</strong> {{ request.user.email }}</p>
-    <p><strong>Birthday:</strong> {{ profile.birthday }}</p>
-    <p><strong>Gender:</strong> {{ profile.get_gender_display }}</p>
-    <p><strong>Country:</strong> {{ profile.country }}</p>
+      <div class="settings-main">
+        <div class="card shadow-sm">
+          <h2>Update Profile Settings</h2>
+          <form method="POST" enctype="multipart/form-data" class="modern-form">
+            {% csrf_token %}
+            
+            <div class="form-section">
+              <h4>User Information</h4>
+              {{ update_user }}
+            </div>
 
-    {% if profile.picture %}
-        <p><strong>Profile Picture:</strong></p>
-        <img src="{{ profile.picture.url }}" width="150">
-    {% endif %}
+            <div class="form-section">
+              <h4>Personal Details</h4>
+              {{ update_profile }}
+            </div>
 
-    <hr>
+            <div class="form-section">
+              <h4>Store Settings</h4>
+              {{ update_settings }}
+            </div>
 
-    <!-- Update Forms -->
-    <h2>Update Account</h2>
+            <button type="submit" class="btn-save">Save All Changes</button>
+          </form>
+        </div>
+      </div>
 
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        <h3>User Info</h3>
-        {{ update_user.as_p }}
-
-        <h3>Profile Info</h3>
-        {{ update_profile.as_p }}
-
-        <h3>Settings</h3>
-        {{ update_settings.as_p }}
-
-        <button type="submit">Save Changes</button>
-        <br>
-        <button type="submit" name="logout_btn" value="1" style="margin-top:10px;background-color:red;">
-            Log Out
-        </button>
-
-    </form>
-
-    <hr>
-
-    <!-- Change Password Button -->
-    <h2>Security</h2>
-
-    <a href="{% url 'change-password' %}">
-        <button type="button">Change Password</button>
-    </a>
-</div>
+    </div>
+  </div>
 </body>
 </html>
