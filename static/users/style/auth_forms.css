@@ -18,7 +18,7 @@
 .auth-card {
     background: var(--white);
     width: 100%;
-    max-width: 480px; /* كبّرناه سنة عشان يشيل الكلام مرتاح */
+    max-width: 480px; 
     padding: 40px;
     border-radius: 24px;
     box-shadow: 0 15px 35px rgba(26, 73, 170, 0.1);
@@ -27,16 +27,15 @@
     text-align: center;
 }
 
-/* --- تنسيق نصوص المساعدة (اللي كانت عاملة زحمة) --- */
 .form-content .helptext, 
 .form-content ul.helptext {
     display: block;
     color: var(--text-muted);
     font-size: 12px;
     margin-top: 8px;
-    margin-bottom: 20px; /* مسافة عشان ميركبش على اللي تحته */
+    margin-bottom: 20px; 
     text-align: left;
-    list-style: none; /* شيلنا النقط */
+    list-style: none;
     padding-left: 5px;
     line-height: 1.6;
 }
@@ -47,7 +46,6 @@
     margin-bottom: 4px;
 }
 
-/* إضافة نقطة شيك بدل النقطة التقليدية */
 .form-content ul.helptext li::before {
     content: "•";
     color: var(--accent);
@@ -56,11 +54,9 @@
     left: 0;
 }
 
-/* --- تنسيق الـ Django as_p --- */
 .form-content p {
     text-align: left;
-    margin-bottom: 25px; /* زيادة المسافة بين كل حقل والتاني */
-}
+    margin-bottom: 25px; 
 
 .form-content label {
     display: block;
