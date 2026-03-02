@@ -1,4 +1,3 @@
-/* الألوان والأساسيات */
 :root {
   --primary: #1a49aa;
   --primary-hover: #143a8a;
@@ -11,19 +10,18 @@
 
 .profile-master-container {
     max-width: 1100px;
-    margin: 60px auto; /* زيادة المسافة من فوق */
+    margin: 60px auto; 
     padding: 0 20px;
     animation: fadeIn 0.8s ease-out;
 }
 
-/* Header Card Hover */
 .profile-header-card {
     background: var(--white);
     padding: 40px 30px;
     border-radius: 20px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(26,73,170,0.05);
-    margin-bottom: 40px; /* زيادة المسافة تحت الهيدر */
+    margin-bottom: 40px; 
     transition: var(--transition);
 }
 
@@ -35,19 +33,16 @@
     transition: var(--transition);
 }
 
-/* تأثير على الصورة عند مرور الماوس */
 .avatar-wrapper img:hover {
     transform: scale(1.08) rotate(3deg);
     border-color: var(--accent);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
-/* Layout Grid */
 .profile-content-grid {
     display: grid;
     grid-template-columns: 1fr 2fr;
-    gap: 40px; /* زيادة الفجوة لمنع التداخل */
-}
+    gap: 40px; 
 
 .card {
     background: var(--white);
@@ -57,32 +52,30 @@
     transition: var(--transition);
 }
 
-/* تأثير "الطفو" للكروت */
 .card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(26,73,170,0.08);
 }
 
-/* Info Rows */
 .info-row {
     display: flex;
     justify-content: space-between;
-    padding: 15px 0; /* زيادة الـ padding الداخلي */
+    padding: 15px 0;
     border-bottom: 1px solid #f1f5f9;
     transition: background 0.2s;
 }
 
 .info-row:hover {
-    background: #fafbfc; /* لون خفيف جدا عند الوقوف على السطر */
+    background: #fafbfc; 
 }
 
 /* Form Styling */
 .modern-form .form-section { 
-    margin-bottom: 35px; /* مسافة أمان بين أقسام الفورم */
+    margin-bottom: 35px; 
 }
 
 .modern-form p {
-    margin-bottom: 20px !important; /* مسافة بين حقول Django */
+    margin-bottom: 20px !important; 
 }
 
 .modern-form input, .modern-form select {
@@ -140,7 +133,6 @@
     transform: translateY(-2px);
 }
 
-/* Animation */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
