@@ -272,12 +272,16 @@ Please follow [Conventional Commits](https://www.conventionalcommits.org/) for c
 
 ---
 
+## 📞 Contact
+### 👥 Team Members
+- **Omar Shaker** – Python / Django / Backend   🔗 **GitHub:** [Omar-Shaker-Elbana](https://github.com/Omar-Shaker-Elbana)
+- **Mark Fahim** – PHP / HTML / CSS / JavaScript / Full-Stack   🔗 **GitHub:** [mark1234720](https://github.com/mark1234720) 
+- **Ahmed Roshdy** – Frontend (HTML, CSS, JavaScript)   🔗 **GitHub:** [AhmedMohammedRo](https://github.com/AhmedMohammedRo) 
+- **Ziad Khaled** – SQL / Backend   🔗 **GitHub:** [ZiadKhaled-wb](https://github.com/ZiadKhaled-wb) 
+---
 ## 📄 License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
 ---
 
-<div align="center">
-  Built by <a href="https://linkedin.com/in/your-linkedin">Omar</a> · GIU Cairo · 2025–2026
-</div>
+⭐ If you like this project, consider giving it a star!
