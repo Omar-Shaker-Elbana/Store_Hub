@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>StoreHub — Logout</title>
+  <link rel="stylesheet" href="{% static 'users/style/style.css' %}">
+  <link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
+</head>
+<body>
+  <nav>
+    <a href="{% url 'home' %}" class="brand">
+      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
+    </a>
+  </nav>
+  <div class="login-container">
+    <form method="POST" class="login-form" action="{% url 'account_logout' %}">
+      {% csrf_token %}
+      <div class="form-header">
+        <h2>Sign Out</h2>
+        <p>Are you sure you want to log out?</p>
+      </div>
+      <button type="submit" class="submit-btn">Log Out</button>
+      <div class="form-footer">
+        <a href="{% url 'home' %}" class="link-btn">Cancel</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

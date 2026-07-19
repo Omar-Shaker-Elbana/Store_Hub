@@ -21,7 +21,7 @@
         {% if user.is_authenticated %}
           <a href="{% url 'profile' %}" class="get-started" style="padding:8px 20px;">Profile</a>
         {% else %}
-          <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
+          <a href="{% url 'account_signup' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
         {% endif %}
       </div>
     </nav>
