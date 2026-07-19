@@ -1,0 +1,133 @@
+:root {
+  --primary: #1a49aa;
+  --accent: #ff9922;
+  --white: #ffffff;
+  --text-muted: #64748b;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-page-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 85vh;
+    background: #f8fafc;
+    padding: 20px;
+}
+
+.auth-card {
+    background: var(--white);
+    width: 100%;
+    max-width: 480px; 
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 15px 35px rgba(26, 73, 170, 0.1);
+    border: 1px solid #eef2f6;
+    animation: fadeInUp 0.6s ease-out;
+    text-align: center;
+}
+
+.form-content .helptext, 
+.form-content ul.helptext {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 8px;
+    margin-bottom: 20px; 
+    text-align: left;
+    list-style: none;
+    padding-left: 5px;
+    line-height: 1.6;
+}
+
+.form-content ul.helptext li {
+    position: relative;
+    padding-left: 15px;
+    margin-bottom: 4px;
+}
+
+.form-content ul.helptext li::before {
+    content: "•";
+    color: var(--accent);
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+.form-content p {
+    text-align: left;
+    margin-bottom: 25px; 
+
+.form-content label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #334155;
+    font-size: 14px;
+}
+
+.form-content input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #eef2f6;
+    border-radius: 12px;
+    transition: var(--transition);
+    background: #fdfdfd;
+}
+
+.form-content input:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255, 153, 34, 0.1);
+    background: var(--white);
+}
+
+/* --- الهيدر والأيقونة --- */
+.lock-icon-bg {
+    background: rgba(26, 73, 170, 0.05);
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    transition: var(--transition);
+}
+
+.auth-header h2 { color: var(--primary); font-weight: 800; margin-bottom: 10px; }
+.auth-header p { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; }
+
+/* --- الأزرار --- */
+.btn-update-pw {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 10px;
+}
+
+.btn-update-pw:hover {
+    background: #e68a1e;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255, 153, 34, 0.3);
+}
+
+.link-back {
+    display: inline-block;
+    margin-top: 25px;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.link-back:hover { color: var(--primary); font-weight: 600; }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
