@@ -7,62 +7,62 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import logout
 
-def register_view(request):
-    if request.method == "POST":
+# def register_view(request):
+#     if request.method == "POST":
         
-        user_form = UserForm(request.POST)
-        profile_form = ProfileForm(request.POST, request.FILES)
-        login_form = AuthenticationForm(request, data=request.POST)  # Initialize login form for validation
+#         user_form = UserForm(request.POST)
+#         profile_form = ProfileForm(request.POST, request.FILES)
+#         login_form = AuthenticationForm(request, data=request.POST)  # Initialize login form for validation
         
-        if 'register_btn' in request.POST:
+#         if 'register_btn' in request.POST:
            
-            if user_form.is_valid() and profile_form.is_valid():
-                # Save user first
-                new_user = user_form.save(commit=False)
-                new_user.username = user_form.cleaned_data['email']  # Set username to email
-                # new_user.set_password(user_form.cleaned_data['password'])  # hash password
-                new_user.save()
+#             if user_form.is_valid() and profile_form.is_valid():
+#                 # Save user first
+#                 new_user = user_form.save(commit=False)
+#                 new_user.username = user_form.cleaned_data['email']  # Set username to email
+#                 # new_user.set_password(user_form.cleaned_data['password'])  # hash password
+#                 new_user.save()
                 
-                # Save profile
-                new_profile = Profile.objects.get(user=new_user)  # Get the profile created by the signal
-                new_profile.birthday = profile_form.cleaned_data['birthday']
-                new_profile.picture = profile_form.cleaned_data['picture']
-                new_profile.gender = profile_form.cleaned_data['gender']
-                new_profile.country = profile_form.cleaned_data['country']
-                new_profile.user = new_user
-                new_profile.save()
+#                 # Save profile
+#                 new_profile = Profile.objects.get(user=new_user)  # Get the profile created by the signal
+#                 new_profile.birthday = profile_form.cleaned_data['birthday']
+#                 new_profile.picture = profile_form.cleaned_data['picture']
+#                 new_profile.gender = profile_form.cleaned_data['gender']
+#                 new_profile.country = profile_form.cleaned_data['country']
+#                 new_profile.user = new_user
+#                 new_profile.save()
                 
-                login(request, new_user)
-                messages.success(request, "Registration successful. You are now logged in.")
-                return redirect("/")
+#                 login(request, new_user)
+#                 messages.success(request, "Registration successful. You are now logged in.")
+#                 return redirect("/")
             
-            else:
-                messages.error(request, "Registration failed. Please check the form.")
-                # return redirect("/users/register/")
+#             else:
+#                 messages.error(request, "Registration failed. Please check the form.")
+#                 # return redirect("/users/register/")
             
-        elif 'login_btn' in request.POST:
-            login_form = AuthenticationForm(request, data=request.POST)
-            if login_form.is_valid():
-                user = login_form.get_user()
-                login(request, user)
-                messages.success(request, "Login successful.")
-                return redirect("/")
-            else:
-                messages.error(request, "Login failed. Please check the form.")
-                # return redirect("/users/register/")
+#         elif 'login_btn' in request.POST:
+#             login_form = AuthenticationForm(request, data=request.POST)
+#             if login_form.is_valid():
+#                 user = login_form.get_user()
+#                 login(request, user)
+#                 messages.success(request, "Login successful.")
+#                 return redirect("/")
+#             else:
+#                 messages.error(request, "Login failed. Please check the form.")
+#                 # return redirect("/users/register/")
 
-    else:
-        user_form = UserForm()
-        profile_form = ProfileForm()
-        login_form = AuthenticationForm()
+#     else:
+#         user_form = UserForm()
+#         profile_form = ProfileForm()
+#         login_form = AuthenticationForm()
     
-    context = {
-        'user_form': user_form,
-        'profile_form': profile_form,
-        'login_form': login_form
-    }
+#     context = {
+#         'user_form': user_form,
+#         'profile_form': profile_form,
+#         'login_form': login_form
+#     }
 
-    return render(request, "users/register.html", context)
+#     return render(request, "users/register.html", context)
 
 @login_required
 def profile_view(request):
