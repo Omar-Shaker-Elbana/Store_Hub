@@ -19,17 +19,19 @@ class Category(models.Model):
         related_name="children"
     )
 
-    constraints = [
-    models.UniqueConstraint(
-        fields=["parent", "name"],
-        name="unique_category_per_parent"
-    ),
-    models.UniqueConstraint(
-        fields=["name"],
-        condition=models.Q(parent__isnull=True),
-        name="unique_root_category_name"
-    ),
-]
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["parent", "name"],
+                name="unique_category_per_parent"
+            ),
+            models.UniqueConstraint(
+                fields=["name"],
+                condition=models.Q(parent__isnull=True),
+                name="unique_root_category_name"
+            ),
+        ]
 
     def __str__(self):
         return self.name

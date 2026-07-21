@@ -43,7 +43,7 @@ def Create_Product(request, current_store_id):
 
 @login_required
 def Create_Spec(request, product_id):
-    product = Product.objects.get(id=product_id)
+    product = Product.objects.filter(id=product_id).first()
     if not product:
         messages.error(request, "Product not found!")
         return redirect('/')
