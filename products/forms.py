@@ -17,11 +17,19 @@ class ProductForm(forms.ModelForm):
             'image3',
         ]
 
+    def clean(self):
+        cleaned_data = super().clean()
+        mfg = cleaned_data.get('manufacturing_price')
+        sell = cleaned_data.get('selling_price')
+        if mfg is not None and sell is not None and sell < mfg:
+            self.add_error('selling_price', "Selling price is below manufacturing price.")
+        return cleaned_data
+        
 class SpecForm(forms.ModelForm):
     class Meta:
         model = Spec
-        fields = ['name', 'value']
-        
+        fields = ['spec_type', 'value']
+
 class Review_Form(forms.ModelForm):
     class Meta:
         model = Review
