@@ -53,7 +53,7 @@ def Create_Spec(request, product_id):
         messages.error(request, "You don't have permission to access this page!")
         return redirect('/')
 
-    specs = Spec.objects.filter(product=product)
+    specs = Spec.objects.filter(product=product).select_related('spec_type')
 
     if request.method == "POST":
         spec_form = SpecForm(request.POST)
@@ -95,7 +95,7 @@ def Update_Product(request, product_id):
         return redirect('/')
     
 
-    specs = Spec.objects.filter(product=old_product)
+    specs = Spec.objects.filter(product=old_product).select_related('spec_type')
     
     if request.method == "POST":
         update_product_form = ProductForm(
@@ -103,9 +103,9 @@ def Update_Product(request, product_id):
         
         if "Update_Product_btn" in request.POST:
             if update_product_form.is_valid():
-                new_product = update_product_form.save()
-                new_product.save()
-                messages.success("Product updated successfuly!")
+                update_product_form.save()
+                messages.success(request, "Product updated successfully!")
+                return redirect(f'/products/view_product/{product_id}/')
 
             else:
                 messages.error(request, "Invalid form!")
@@ -116,8 +116,7 @@ def Update_Product(request, product_id):
             return redirect('/')
 
     else:
-        product = Product.objects.get(id=product_id)
-        update_product_form = ProductForm(instance=product)
+        update_product_form = ProductForm(instance=old_product)
         
     context = {
         'update_product_form' : update_product_form,
@@ -138,20 +137,19 @@ def Update_Spec(request, product_id, spec_name):
         messages.error(request, "You don't have permission to access this page!")
         return redirect('/')
 
-    specs = Spec.objects.filter(product=old_product)
-    spec = Spec.objects.filter(product=old_product, name=spec_name).first()
+    specs = Spec.objects.filter(product=old_product).select_related('spec_type')
+    spec = Spec.objects.filter(product=old_product, spec_type__name=spec_name).first()
     if not spec:
         messages.error(request, "Specification not found!")
         return redirect(f'/products/view_product/{product_id}/')
 
     if request.method == "POST":
-        Update_form = SpecForm(request.POST, instance=spec)
+        spec_form = SpecForm(request.POST, instance=spec)
 
         if "Save_and_Create_Another_Spec_btn" in request.POST or "Save_btn" in request.POST:
-            if Update_form.is_valid():
-                new_spec = Update_form.save(commit=False)
-                new_spec.save()
-                messages.success("Specification updated successfuly!")
+            if spec_form.is_valid():
+                spec_form.save()
+                messages.success(request, "Specification updated successfuly!")
                 if "Save_and_Create_Another_Spec_btn" in request.POST:
                     return redirect(f'/products/create_spec/{product_id}/')
                     
@@ -176,12 +174,12 @@ def Update_Spec(request, product_id, spec_name):
     return render(request, 'products/update_spec.html', context)
 
 def View_Product(request, product_id):
-    product = Product.objects.filter(id=product_id).first()
+    product = Product.objects.select_related('category', 'store').filter(id=product_id).first()
     if not product:
         messages.error(request, "Product not found!")
         return redirect('/')
 
-    specs = Spec.objects.filter(product=product)
+    specs = Spec.objects.filter(product=product).select_related('spec_type')
 
     context = {
         'product' : product,
@@ -197,17 +195,16 @@ def View_Product(request, product_id):
 @login_required
 def Suggest_Category(request):
     if request.method == "POST":
-        category_name = request.POST.get('category_name')
-        if category_name:
+        form = Suggest_Category_Form(request.POST)
+        if form.is_valid():
+            category_name = form.cleaned_data['category_name']
             if not Category.objects.filter(name=category_name).exists():
-                new_category = Category(name=category_name)
-                new_category.save()
-                messages.success(request, "Category suggested successfuly!")
+                SuggestedCategory.objects.create(name=category_name, suggester=request.user)
+                messages.success(request, "Category suggested successfully!")
             else:
                 messages.error(request, "Category already exists!")
         else:
-            messages.error(request, "Please enter a category name!")
-
+            messages.error(request, "Please enter a valid category name!")
         return redirect('/')
 
-    return render(request, 'products/suggest_category.html')
+    return render(request, 'products/suggest_category.html', {'form': Suggest_Category_Form()})

@@ -147,7 +147,7 @@ input:focus, select:focus, textarea:focus {
       <a href="#merchants">For Merchants</a>
       <a href="#customers">For Customers</a>
       {% if not request.user.is_authenticated %}
-      <a href="{% url 'register' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
+      <a href="{% url 'account_signup' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
       {% else %}
       <a href="{% url 'profile' %}" class="get-started" style="padding:8px 20px;">My Profile</a>
       {% endif %}
