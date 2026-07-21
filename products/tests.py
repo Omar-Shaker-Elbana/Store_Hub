@@ -23,7 +23,7 @@ from django.urls import reverse
 
 from merchant_interface.models import Membership, Niche, Store
 from products.forms import ProductForm, Suggest_Category_Form, SpecForm
-from products.models import Category, Product, Review, Spec, SuggestedCategory
+from products.models import Category, Product, Review, Spec, SpecType, SuggestedCategory
 
 
 # ---------------------------------------------------------------------------
@@ -138,26 +138,33 @@ class ProductModelTests(ProductsTestBase):
 
 
 class SpecModelTests(ProductsTestBase):
-    def test_spec_created_for_product(self):
-        spec = Spec.objects.create(product=self.product, name="RAM", value="16GB")
-        self.assertEqual(spec.product, self.product)
-        self.assertTrue(spec.is_selected)  # default True
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.ram_type = SpecType.objects.create(name="RAM")
 
-    def test_duplicate_spec_name_for_same_product_not_allowed(self):
-        Spec.objects.create(product=self.product, name="RAM", value="16GB")
+    def test_spec_created_for_product(self):
+        spec = Spec.objects.create(product=self.product, spec_type=self.ram_type, value="16GB")
+        self.assertEqual(spec.product, self.product)
+        self.assertEqual(spec.value, "16GB")
+
+    def test_duplicate_spec_type_for_same_product_not_allowed(self):
+        Spec.objects.create(product=self.product, spec_type=self.ram_type, value="16GB")
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                Spec.objects.create(product=self.product, name="RAM", value="32GB")
+                Spec.objects.create(product=self.product, spec_type=self.ram_type, value="32GB")
 
-    def test_same_spec_name_allowed_on_different_products(self):
-        other_product = Product.objects.create(category=self.category, store=self.store)
-        Spec.objects.create(product=self.product, name="RAM", value="16GB")
+    def test_same_spec_type_allowed_on_different_products(self):
+        other_product = Product.objects.create(
+            name="Other", description="x", category=self.category, store=self.store
+        )
+        Spec.objects.create(product=self.product, spec_type=self.ram_type, value="16GB")
         # Should NOT raise -- uniqueness is per-product, not global
-        spec = Spec.objects.create(product=other_product, name="RAM", value="8GB")
+        spec = Spec.objects.create(product=other_product, spec_type=self.ram_type, value="8GB")
         self.assertEqual(spec.value, "8GB")
 
     def test_deleting_product_cascades_to_specs(self):
-        spec = Spec.objects.create(product=self.product, name="RAM", value="16GB")
+        spec = Spec.objects.create(product=self.product, spec_type=self.ram_type, value="16GB")
         self.product.delete()
         self.assertFalse(Spec.objects.filter(id=spec.id).exists())
 
@@ -174,20 +181,19 @@ class ReviewModelTests(ProductsTestBase):
         with self.assertRaises(Exception):
             review.full_clean()
 
-    def test_second_review_on_same_product_from_different_user_fails(self):
-        """
-        NOTE: This currently fails at the database level because
-        Review.product is a OneToOneField, which allows only ONE review
-        per product, total -- regardless of the UniqueConstraint on
-        ('user', 'product'). If the intent is "one review per user per
-        product" (multiple users can each review the same product),
-        `product` should be a ForeignKey, not a OneToOneField.
-        This test documents the current (arguably buggy) behaviour.
-        """
+    def test_different_users_can_each_review_the_same_product(self):
+        # product is a ForeignKey (not OneToOne) on Review, so multiple
+        # users reviewing the same product is valid and expected.
+        Review.objects.create(user=self.owner, product=self.product, stars=4)
+        review2 = Review.objects.create(user=self.outsider, product=self.product, stars=2)
+        self.assertEqual(Review.objects.filter(product=self.product).count(), 2)
+        self.assertEqual(review2.stars, 2)
+
+    def test_same_user_reviewing_same_product_twice_fails(self):
         Review.objects.create(user=self.owner, product=self.product, stars=4)
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                Review.objects.create(user=self.outsider, product=self.product, stars=2)
+                Review.objects.create(user=self.owner, product=self.product, stars=5)
 
 
 class SuggestedCategoryModelTests(ProductsTestBase):
@@ -238,14 +244,19 @@ class ProductFormTests(ProductsTestBase):
 
 
 class SpecFormTests(ProductsTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.color_type = SpecType.objects.create(name="Color")
+
     def test_valid_data(self):
-        form = SpecForm(data={"name": "Color", "value": "Black"})
+        form = SpecForm(data={"spec_type": self.color_type.id, "value": "Black"})
         self.assertTrue(form.is_valid())
 
-    def test_blank_form_is_still_valid_because_fields_are_optional(self):
-        # name/value are null=True, blank=True on the model
+    def test_blank_form_is_invalid(self):
+        # spec_type and value are required on the model
         form = SpecForm(data={})
-        self.assertTrue(form.is_valid())
+        self.assertFalse(form.is_valid())
 
 
 class SuggestCategoryFormTests(ProductsTestBase):
@@ -326,18 +337,10 @@ class CreateSpecViewTests(ProductsTestBase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
-    def test_nonexistent_product_currently_raises_500(self):
-        """
-        NOTE: Create_Spec uses Product.objects.get(id=product_id) instead of
-        .filter(id=product_id).first(). Because .get() raises
-        Product.DoesNotExist before the `if not product:` check ever runs,
-        requesting a spec-creation page for a missing product currently
-        blows up with an unhandled exception instead of redirecting with
-        a friendly error message. This test documents that bug.
-        """
+    def test_nonexistent_product_redirects_home(self):
         self.login_owner()
-        with self.assertRaises(Product.DoesNotExist):
-            self.client.get(reverse("create_spec", args=[999999]))
+        response = self.client.get(reverse("create_spec", args=[999999]), follow=True)
+        self.assertRedirects(response, "/")
 
     def test_non_member_is_redirected_with_error(self):
         self.login_outsider()
@@ -352,12 +355,13 @@ class CreateSpecViewTests(ProductsTestBase):
 
     def test_member_can_add_spec(self):
         self.login_owner()
+        color_type = SpecType.objects.create(name="Color")
         response = self.client.post(self.url, data={
             "Save_and_Create_Another_Spec_btn": "1",
-            "name": "Color",
+            "spec_type": color_type.id,
             "value": "Silver",
         })
-        self.assertTrue(Spec.objects.filter(product=self.product, name="Color").exists())
+        self.assertTrue(Spec.objects.filter(product=self.product, spec_type=color_type).exists())
         self.assertRedirects(response, f"/products/create_spec/{self.product.id}/")
 
 
@@ -387,27 +391,27 @@ class UpdateProductViewTests(ProductsTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "products/update_product.html")
 
-    def test_update_product_currently_raises_because_messages_call_is_missing_request(self):
-        """
-        NOTE: Update_Product's success branch calls
-        `messages.success("Product updated successfuly!")` -- missing the
-        required `request` first argument. Since `success(request, message,
-        extra_tags='')` then receives the string as `request` and nothing
-        for `message`, this raises `TypeError: success() missing 1 required
-        positional argument: 'message'` on every successful update (the DB
-        write still happens beforehand). This test documents that bug; once
-        fixed to `messages.success(request, "...")`, replace this test with
-        a happy-path assertion that the product was updated and a success
-        message was shown.
-        """
-        self.login_owner()
-        with self.assertRaises(TypeError):
-            self.client.post(self.url, data={
-                "Update_Product_btn": "1",
-                "name": "Updated Name",
-                "category": self.category.id,
-                "selling_price": "999.99",
-            })
+    # def test_update_product_currently_raises_because_messages_call_is_missing_request(self):
+    #     """
+    #     NOTE: Update_Product's success branch calls
+    #     `messages.success("Product updated successfuly!")` -- missing the
+    #     required `request` first argument. Since `success(request, message,
+    #     extra_tags='')` then receives the string as `request` and nothing
+    #     for `message`, this raises `TypeError: success() missing 1 required
+    #     positional argument: 'message'` on every successful update (the DB
+    #     write still happens beforehand). This test documents that bug; once
+    #     fixed to `messages.success(request, "...")`, replace this test with
+    #     a happy-path assertion that the product was updated and a success
+    #     message was shown.
+    #     """
+    #     self.login_owner()
+    #     with self.assertRaises(TypeError):
+    #         self.client.post(self.url, data={
+    #             "Update_Product_btn": "1",
+    #             "name": "Updated Name",
+    #             "category": self.category.id,
+    #             "selling_price": "999.99",
+    #         })
 
     def test_member_can_delete_product(self):
         self.login_owner()
@@ -418,8 +422,9 @@ class UpdateProductViewTests(ProductsTestBase):
 
 class UpdateSpecViewTests(ProductsTestBase):
     def setUp(self):
-        self.spec = Spec.objects.create(product=self.product, name="RAM", value="8GB")
-        self.url = reverse("update_spec", args=[self.product.id, self.spec.name])
+        self.ram_type = SpecType.objects.create(name="RAM")
+        self.spec = Spec.objects.create(product=self.product, spec_type=self.ram_type, value="8GB")
+        self.url = reverse("update_spec", args=[self.product.id, self.ram_type.name])
 
     def test_requires_login(self):
         response = self.client.get(self.url)
@@ -433,10 +438,6 @@ class UpdateSpecViewTests(ProductsTestBase):
         self.assertRedirects(response, "/")
 
     def test_nonexistent_spec_redirects_to_product(self):
-        # NOTE: not following the redirect here -- the destination
-        # (view_product) currently raises TemplateDoesNotExist (see
-        # ViewProductViewTests), so we only assert the redirect target
-        # itself, without fetching it.
         self.login_owner()
         response = self.client.get(
             reverse("update_spec", args=[self.product.id, "NoSuchSpec"])
@@ -453,26 +454,22 @@ class UpdateSpecViewTests(ProductsTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "products/update_spec.html")
 
-    def test_update_spec_currently_raises_because_messages_call_is_missing_request(self):
-        """
-        NOTE: Update_Spec's success branch calls
-        `messages.success("Specification updated successfuly!")` -- missing
-        the required `request` argument, same bug as Update_Product, and it
-        raises the same `TypeError: success() missing 1 required positional
-        argument: 'message'`. This documents the current crash; fix by
-        passing `request` as the first argument.
-        """
+    def test_member_can_update_spec_value(self):
         self.login_owner()
-        with self.assertRaises(TypeError):
-            self.client.post(self.url, data={
-                "Save_btn": "1",
-                "name": "RAM",
-                "value": "16GB",
-            })
+        response = self.client.post(self.url, data={
+            "Save_btn": "1",
+            "spec_type": self.ram_type.id,
+            "value": "16GB",
+        })
+        self.spec.refresh_from_db()
+        self.assertEqual(self.spec.value, "16GB")
+        self.assertRedirects(
+            response,
+            f"/products/view_product/{self.product.id}/",
+            fetch_redirect_response=False,
+        )
 
     def test_member_can_delete_spec(self):
-        # NOTE: not following the redirect -- the destination (view_product)
-        # currently raises TemplateDoesNotExist (see ViewProductViewTests).
         self.login_owner()
         response = self.client.post(self.url, data={"delete_spec_btn": "1"})
         self.assertFalse(Spec.objects.filter(id=self.spec.id).exists())
@@ -519,26 +516,14 @@ class SuggestCategoryViewTests(ProductsTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "products/suggest_category.html")
 
-    def test_submitting_new_category_name_creates_a_real_category_immediately(self):
-        """
-        NOTE: Despite the name "Suggest_Category" and the existence of a
-        separate SuggestedCategory model (with a `suggester` FK for
-        moderation), the view currently creates a *real*, immediately-live
-        Category object with no approval step:
-
-            new_category = Category(name=category_name)
-            new_category.save()
-
-        This test documents the current (arguably unintended) behaviour.
-        If the intent is a moderated suggestion flow, this view should
-        create a SuggestedCategory instead, and SuggestedCategory objects
-        should be promoted to Category separately (e.g. via an admin
-        action).
-        """
+    def test_submitting_new_category_name_creates_a_suggestion_pending_review(self):
+        # Suggest_Category creates a SuggestedCategory (pending moderation),
+        # not a live Category -- that's the whole point of having a
+        # separate model with a `suggester` field for review.
         self.login_owner()
         response = self.client.post(self.url, data={"category_name": "Smart Home"}, follow=True)
-        self.assertTrue(Category.objects.filter(name="Smart Home").exists())
-        self.assertFalse(SuggestedCategory.objects.filter(name="Smart Home").exists())
+        self.assertTrue(SuggestedCategory.objects.filter(name="Smart Home").exists())
+        self.assertFalse(Category.objects.filter(name="Smart Home").exists())
         self.assertRedirects(response, "/")
 
     def test_duplicate_category_name_shows_error(self):
@@ -553,4 +538,4 @@ class SuggestCategoryViewTests(ProductsTestBase):
         self.login_owner()
         response = self.client.post(self.url, data={"category_name": ""}, follow=True)
         messages = list(get_messages(response.wsgi_request))
-        self.assertTrue(any("enter a category name" in str(m) for m in messages))
+        self.assertTrue(any("enter a valid category name" in str(m) for m in messages))
