@@ -4,6 +4,7 @@ from .forms import ProductForm, SpecForm, Suggest_Category_Form
 from django.contrib import messages
 from merchant_interface.models import Membership, Store
 from django.contrib.auth.decorators import login_required
+from orders.models import Cart, CartItem, Wishlist, WishlistItem
 
 # Create your views here.
 
@@ -186,9 +187,25 @@ def View_Product(request, product_id):
         'specs' : specs,
     }
 
-    # if request.method == "POST":
-    #     if "add_to_wishlist_btn" in request.POST:
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.error(request, "Please log in first.")
+            return redirect('/accounts/login/')
 
+        if "add_to_cart_btn" in request.POST:
+            cart, _ = Cart.objects.get_or_create(user=request.user)
+            cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+            if not created:
+                cart_item.quantity += 1
+                cart_item.save()
+            messages.success(request, f"{product.name} added to cart!")
+
+        elif "add_to_wishlist_btn" in request.POST:
+            wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+            WishlistItem.objects.get_or_create(wishlist=wishlist, product=product)
+            messages.success(request, f"{product.name} added to wishlist!")
+
+        return redirect('view_product', product_id=product.id)
 
     return render(request, 'products/view_product.html', context)
 
