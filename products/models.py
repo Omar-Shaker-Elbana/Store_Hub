@@ -1,8 +1,8 @@
 from django.db import models
 from django.conf import settings
 from merchant_interface.models import Store
-# from django.db.models import AutoField
 from django.core.validators import MinValueValidator, MaxValueValidator
+# from django.db.models import AutoField
 # from django.utils import timezone
 
 # Create your models here.
