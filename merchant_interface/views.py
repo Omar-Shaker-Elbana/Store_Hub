@@ -29,7 +29,9 @@ def create_store(request):
 
         if "suggest_niche_btn" in request.POST:
             if suggest_niche_form.is_valid():
-                suggest_niche_form.save()
+                suggested_niche = suggest_niche_form.save(commit=False)
+                suggested_niche.suggested_by = request.user
+                suggested_niche.save()
                 messages.success(request, 'Niche suggested successfully!')
                 return redirect('create_store')
             else:
@@ -40,7 +42,7 @@ def create_store(request):
                 store = create_store_form.save()
                 Membership.objects.create(user=request.user, store=store, role='Owner')
                 messages.success(request, 'Store created successfully!')
-                return redirect(f'/add_members/{store.id}')
+                return redirect('add_members', store_id=store.id)
             else:
                 messages.error(request, 'Error creating store. Please try again.')
 
@@ -89,11 +91,13 @@ def add_members(request, store_id):
             membership_id = request.POST.get('membership_id')
             membership = Membership.objects.filter(id=membership_id, store=store).first()
             if membership:
-                membership_form = MembershipForm(request.POST, instance=membership)
+                membership_data = request.POST.copy()
+                membership_data.setdefault('wage_type', membership.wage_type)
+                membership_form = MembershipForm(membership_data, instance=membership)
                 if membership_form.is_valid():
                     membership_form.save()
                     messages.success(request, 'Membership updated successfully!')
-                    return redirect(f'/add_members/{store.id}')
+                    return redirect('add_members', store_id=store.id)
                 else:
                     messages.error(request, 'Error updating membership. Please try again.')
             else:
@@ -178,6 +182,23 @@ def my_store(request, store_id):
 
     return render(request, 'merchant_interface/my_store.html', context)
 
+@login_required
 def my_analytics(request, store_id):
+    store = Store.objects.filter(id=store_id).first()
+    if not store:
+        messages.error(request, 'Store not found.')
+        return redirect('create_store')
+
+    user_membership = Membership.objects.filter(user=request.user, store=store).first()
+    if not user_membership:
+        messages.error(request, 'You do not have permission to view this store.')
+        return redirect('create_store')
+
     # Placeholder for analytics data retrieval and processing
-    return render(request, 'merchant_interface/my_analytics.html',)
+
+    context = {
+        'store': store,
+        'membership': user_membership
+    }
+
+    return render(request, 'merchant_interface/my_analytics.html', context)
