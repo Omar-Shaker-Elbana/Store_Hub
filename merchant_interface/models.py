@@ -35,11 +35,11 @@ class Membership(models.Model):
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=7, 
-                            choices=ROLE_CHOICES, default='helper')
+                            choices=ROLE_CHOICES, default='Helper')
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
     join_date = models.DateField(null=True, blank=True)
     wage_type = models.CharField(max_length=10, 
-                                 choices=WAGE_CHOICES, default='helper')
+                                 choices=WAGE_CHOICES, default='Salary')
     wage = models.DecimalField(null = True, blank = True, 
                                decimal_places=2, max_digits=10)
 
@@ -57,9 +57,9 @@ class MembershipInvitation(models.Model):
     invitee_email = models.EmailField(max_length=254, null=True, blank=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
     role = models.CharField(max_length=7, 
-                            choices=Membership.ROLE_CHOICES, default='helper')
+                            choices=Membership.ROLE_CHOICES, default='Helper')
     wage_type = models.CharField(max_length=10, 
-                                 choices=Membership.WAGE_CHOICES, default='helper')
+                                 choices=Membership.WAGE_CHOICES, default='Salary')
     wage = models.DecimalField(null=True, blank=True, 
                                decimal_places=2, max_digits=10)
     sent_at = models.DateTimeField(auto_now_add=True)
