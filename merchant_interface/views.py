@@ -37,7 +37,7 @@ def create_store(request):
             else:
                 messages.error(request, 'Error suggesting niche. Please try again.')
 
-        if "create_store_btn" in request.POST and create_store_form.is_valid():
+        if "create_store_btn" in request.POST:
             if create_store_form.is_valid():
                 store = create_store_form.save()
                 Membership.objects.create(user=request.user, store=store, role='Owner')
@@ -83,7 +83,7 @@ def add_members(request, store_id):
                 invitation.store = store
                 invitation.save()
                 messages.success(request, 'Invitation sent successfully!')
-                return redirect(f'/add_members/{store.id}')
+                return redirect('add_members', store_id=store.id)
             else:
                 messages.error(request, 'Error sending invitation. Please try again.')
 
@@ -133,7 +133,7 @@ def edit_store(request, store_id):
         if form.is_valid():
             form.save()
             messages.success(request, 'Store updated successfully!')
-            return redirect(f'/add_members/{store.id}')
+            return redirect('add_members', store_id=store.id)
         else:
             messages.error(request, 'Error updating store. Please try again.')
     else:

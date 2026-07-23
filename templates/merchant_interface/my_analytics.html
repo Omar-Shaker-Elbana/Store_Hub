@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ store.name }} — Analytics</title>
+</head>
+<body>
+    <h1>{{ store.name }} — Analytics</h1>
+    <p>Your role: {{ membership.role }}</p>
+
+    <p>Analytics data is not yet available for this store.</p>
+
+    <a href="{% url 'my_store' store.id %}">Back to store</a>
+</body>
+</html>

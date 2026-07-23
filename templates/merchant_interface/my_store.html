@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ store.name }}</title>
+</head>
+<body>
+    <h1>{{ store.name }}</h1>
+    <p>Your role: {{ membership.role }}</p>
+
+    <ul>
+        <li><a href="{% url 'show_store' store.id %}">View storefront</a></li>
+        {% if membership.role == 'Owner' %}
+            <li><a href="{% url 'edit_store' store.id %}">Edit store</a></li>
+            <li><a href="{% url 'add_members' store.id %}">Manage members</a></li>
+        {% endif %}
+        <li><a href="{% url 'my_analytics' store.id %}">View analytics</a></li>
+    </ul>
+</body>
+</html>
