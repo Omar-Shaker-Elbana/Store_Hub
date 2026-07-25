@@ -17,6 +17,7 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    added_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -38,6 +39,7 @@ class Wishlist(models.Model):
 class WishlistItem(models.Model):
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -68,3 +70,4 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

@@ -62,3 +62,31 @@ class StoreFollow(models.Model):
 
     def __str__(self):
         return f"{self.user} follows {self.store}"
+
+class Interaction(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    action = models.CharField(choices=[('view','view'),('cart','cart'),('wishlist','wishlist'),('purchase','purchase')])
+    weight = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+class RecentSearch(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recent_searches')
+    query_text = models.CharField(max_length=255)
+    normalized_query = models.CharField(max_length=255, db_index=True)  # lowered + stripped, for dedup
+    searched_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-searched_at']
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'normalized_query'], name='unique_recent_search_per_user')
+        ]
+
+class SearchTrend(models.Model):
+    normalized_query = models.CharField(max_length=255, unique=True)
+    display_query = models.CharField(max_length=255)  # nicely-cased version to show
+    hit_count = models.PositiveIntegerField(default=0)
+    last_searched_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-hit_count']
