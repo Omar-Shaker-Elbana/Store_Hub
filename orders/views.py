@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from .models import Order, OrderItem, Cart, CartItem, Wishlist, WishlistItem
 from . import forms
-
+from shopper_interface.recommendations import get_frequently_bought_together
+from shopper_interface.recommendations import get_frequently_bought_together
 
 @login_required
 def Cart_view(request):
@@ -37,8 +38,18 @@ def Cart_view(request):
     current_cart.total_price = total
     current_cart.save()
 
+    seen = {item.product_id for item in items}
+    suggestions = []
+    for item in items:
+        for p in get_frequently_bought_together(item.product, limit=3):
+            if p.id not in seen:
+                suggestions.append(p)
+                seen.add(p.id)
+        if len(suggestions) >= 6:
+            break
+
     form = forms.Cart_Item_Form()
-    context = {'items': items, 'form': form}
+    context = {'items': items, 'form': form, 'suggestions': suggestions[:6]}
     return render(request, 'orders/cart.html', context)
 
 
