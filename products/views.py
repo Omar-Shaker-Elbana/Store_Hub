@@ -174,17 +174,25 @@ def Update_Spec(request, product_id, spec_name):
 
     return render(request, 'products/update_spec.html', context)
 
+from shopper_interface.models import RecentlyViewed
+from shopper_interface.recommendations import get_related_products
+
 def View_Product(request, product_id):
     product = Product.objects.select_related('category', 'store').filter(id=product_id).first()
     if not product:
         messages.error(request, "Product not found!")
         return redirect('/')
 
+    if request.user.is_authenticated:
+        rv, _ = RecentlyViewed.objects.get_or_create(user=request.user, product=product)
+        rv.save()  # bumps viewed_at + triggers the 'view' Interaction signal
+
     specs = Spec.objects.filter(product=product).select_related('spec_type')
 
     context = {
-        'product' : product,
-        'specs' : specs,
+        'product': product,
+        'specs': specs,
+        'related_products': get_related_products(product, limit=8),
     }
 
     if request.method == "POST":
