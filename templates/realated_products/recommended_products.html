@@ -1,0 +1,11 @@
+<div class="product-grid">
+  {% for p in recommended_products %}
+    <a href="{% url 'view_product' p.id %}" class="product-card">
+      {% if p.image1 %}<img src="{{ p.image1.url }}" alt="{{ p.name }}">{% endif %}
+      <h4>{{ p.name }}</h4>
+      <span>${{ p.selling_price }}</span>
+    </a>
+  {% empty %}
+    <p>No recommendations yet.</p>
+  {% endfor %}
+</div>

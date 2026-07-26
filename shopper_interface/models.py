@@ -70,6 +70,12 @@ class Interaction(models.Model):
     weight = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['product', 'user']),
+            models.Index(fields=['user', 'product']),
+        ]
+
 class RecentSearch(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recent_searches')
     query_text = models.CharField(max_length=255)
