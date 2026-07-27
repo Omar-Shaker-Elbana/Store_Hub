@@ -5,7 +5,6 @@ from django.db import transaction
 from .models import Order, OrderItem, Cart, CartItem, Wishlist, WishlistItem
 from . import forms
 from shopper_interface.recommendations import get_frequently_bought_together
-from shopper_interface.recommendations import get_frequently_bought_together
 
 @login_required
 def Cart_view(request):
