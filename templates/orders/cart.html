@@ -1,0 +1,569 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Your Cart | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes shimmerBar{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}
+  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+  @keyframes floatBag{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+
+  /* ---------- top progress bar (page-navigation feedback) ---------- */
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
+
+  /* ---------- nav ---------- */
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-links a.active{color:var(--accent)}
+  .nav-icon-link{position:relative}
+  .nav-badge{
+    position:absolute;top:-8px;right:-12px;background:var(--orange);color:#fff;
+    font-size:10.5px;font-weight:700;min-width:18px;height:18px;border-radius:999px;
+    display:flex;align-items:center;justify-content:center;padding:0 4px;
+  }
+
+  /* ---------- toasts ---------- */
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast svg{flex-shrink:0}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 24px 0}
+  .page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:8px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:28px}
+  .page-head .count{color:var(--muted);font-size:14.5px;font-weight:500}
+  .continue-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .continue-link:hover{text-decoration:underline}
+
+  .cart-grid{display:grid;grid-template-columns:1fr 380px;gap:30px;align-items:flex-start}
+  @media(max-width:900px){.cart-grid{grid-template-columns:1fr}}
+
+  /* ---------- cart items ---------- */
+  .items-col{display:flex;flex-direction:column;gap:14px}
+
+  .item-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;display:flex;gap:18px;align-items:center;
+    animation:slideInUp .5s ease both;
+    transition:box-shadow .25s ease, transform .25s ease, opacity .35s ease, max-height .35s ease, margin .35s ease, padding .35s ease;
+    overflow:hidden;
+  }
+  .item-card:hover{box-shadow:var(--shadow)}
+  .item-card.removing{opacity:0;transform:scale(.92);max-height:0;padding-top:0;padding-bottom:0;margin:0;border-width:0}
+  .item-card.saving{opacity:.55;pointer-events:none}
+  .items-col .item-card:nth-child(1){animation-delay:.02s}
+  .items-col .item-card:nth-child(2){animation-delay:.08s}
+  .items-col .item-card:nth-child(3){animation-delay:.14s}
+  .items-col .item-card:nth-child(4){animation-delay:.2s}
+  .items-col .item-card:nth-child(5){animation-delay:.26s}
+  .items-col .item-card:nth-child(n+6){animation-delay:.3s}
+
+  .item-thumb{
+    width:88px;height:88px;border-radius:12px;flex-shrink:0;overflow:hidden;
+    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .item-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+  .item-card:hover .item-thumb img{transform:scale(1.08)}
+  .item-thumb svg{color:var(--accent);opacity:.55}
+
+  .item-info{flex:1;min-width:0}
+  .item-info h4{font-size:15.5px;font-weight:600;margin-bottom:4px;transition:color .2s}
+  .item-info h4:hover{color:var(--accent)}
+  .item-unit-price{color:var(--muted);font-size:13.5px}
+  .stock-tag{
+    display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:11.5px;font-weight:700;
+    padding:2px 8px;border-radius:999px;background:var(--success-light);color:var(--success);
+  }
+  .stock-tag.low{background:#fff7ed;color:var(--orange)}
+  .stock-tag.out{background:var(--danger-light);color:var(--danger);animation:pulseWarn 1.8s infinite}
+
+  .qty-block{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .qty-stepper{
+    display:flex;align-items:center;border:1.5px solid var(--border);border-radius:999px;overflow:hidden;background:#fff;
+  }
+  .qty-btn{
+    width:30px;height:30px;border:none;background:transparent;color:var(--accent);
+    font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;
+    transition:background .2s;
+  }
+  .qty-btn:hover:not(:disabled){background:var(--accent-light)}
+  .qty-btn:disabled{color:#cbd5e1;cursor:not-allowed}
+  .qty-input{
+    width:42px;border:none;text-align:center;font-size:14.5px;font-weight:700;color:var(--text);
+    -moz-appearance:textfield;background:transparent;
+  }
+  .qty-input::-webkit-outer-spin-button,.qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .qty-input:focus{outline:none}
+  .qty-form{display:none}
+
+  .line-subtotal{width:92px;text-align:right;font-weight:700;font-size:15px}
+
+  .remove-btn{
+    width:34px;height:34px;border-radius:999px;border:none;background:transparent;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s,transform .2s;
+  }
+  .remove-btn:hover{background:var(--danger-light);color:var(--danger);transform:scale(1.08)}
+
+  .row-spinner{
+    width:14px;height:14px;border-radius:50%;border:2px solid var(--accent-light);border-top-color:var(--accent);
+    animation:spin .7s linear infinite;display:none;
+  }
+  .item-card.saving .row-spinner{display:inline-block}
+  .item-card.saving .qty-stepper,.item-card.saving .remove-btn{visibility:hidden}
+
+  /* ---------- empty state ---------- */
+  .empty-state{
+    background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);
+    padding:70px 30px;text-align:center;animation:scaleIn .5s ease;
+  }
+  .empty-state .bag-icon{color:var(--accent);animation:floatBag 3.2s ease-in-out infinite;display:inline-block;margin-bottom:14px}
+  .empty-state h2{font-size:21px;margin-bottom:8px}
+  .empty-state p{color:var(--muted);font-size:14.5px;margin-bottom:22px}
+
+  /* ---------- buttons ---------- */
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:13px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+    width:100%;
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:active{transform:translateY(0)}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-ghost{
+    background:var(--accent-light);color:var(--accent);border:none;padding:12px 24px;border-radius:999px;
+    font-weight:600;font-size:14px;transition:background .2s;
+  }
+  .btn-ghost:hover{background:#dfe9fb}
+
+  /* ---------- summary ---------- */
+  .summary{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px;position:sticky;top:86px;animation:slideInUp .5s ease .1s both;
+  }
+  .summary h3{font-size:17px;margin-bottom:18px}
+  .summary-row{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:12px}
+  .summary-row span:last-child{color:var(--text);font-weight:600}
+  .summary-divider{height:1px;background:var(--border);margin:14px 0}
+  .summary-total{display:flex;justify-content:space-between;font-size:18px;font-weight:700;margin-bottom:20px}
+  .summary-total span:last-child{color:var(--accent)}
+
+  .field-label{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block}
+  textarea.address-input{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;
+    font-family:inherit;font-size:14px;resize:none;min-height:64px;transition:border-color .2s,box-shadow .2s;margin-bottom:16px;
+  }
+  textarea.address-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+
+  .secure-note{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin-top:14px;justify-content:center}
+
+  /* ---------- suggestions ---------- */
+  .suggestions{margin-top:52px;animation:slideInUp .5s ease}
+  .suggestions h3{font-size:19px;margin-bottom:16px}
+  .sugg-scroll{display:flex;gap:16px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}
+  .sugg-scroll::-webkit-scrollbar{height:6px}
+  .sugg-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px}
+  .sugg-card{
+    flex:0 0 170px;background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    overflow:hidden;scroll-snap-align:start;transition:transform .25s ease,box-shadow .25s ease;
+  }
+  .sugg-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .sugg-thumb{width:100%;height:120px;background:linear-gradient(135deg,var(--accent-light),#dbe6fb);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .sugg-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .3s ease}
+  .sugg-card:hover .sugg-thumb img{transform:scale(1.06)}
+  .sugg-body{padding:10px 12px 14px}
+  .sugg-body h4{font-size:13px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sugg-body span{color:var(--accent);font-weight:700;font-size:13.5px}
+
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .nav-links{gap:14px}
+    .item-card{flex-wrap:wrap}
+    .line-subtotal{width:auto;margin-left:auto}
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar"></div>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'wishlist' %}" class="nav-icon-link">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+      Wishlist
+    </a>
+    <a href="{% url 'mycart' %}" class="nav-icon-link active">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+      Cart
+      {% if items %}<span class="nav-badge">{{ items|length }}</span>{% endif %}
+    </a>
+    <a href="{% url 'profile' %}">Profile</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+
+  <a href="{% url 'home' %}" class="continue-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Continue shopping
+  </a>
+
+  <div class="page-head">
+    <h1>Your Cart</h1>
+    <span class="count">{% if items %}{{ items|length }} item{{ items|length|pluralize }}{% else %}0 items{% endif %}</span>
+  </div>
+
+  {% if items %}
+  <div class="cart-grid">
+
+    <div class="items-col" id="items-col">
+      {% for item in items %}
+        {% with stock=item.product.current_stock|default_if_none:0 %}
+        <div class="item-card"
+             id="row-{{ item.id }}"
+             data-price="{{ item.product.selling_price|default_if_none:0 }}"
+             data-quantity="{{ item.quantity }}">
+
+          <div class="item-thumb">
+            {% if item.product.image1 %}
+              <a href="{% url 'view_product' item.product.id %}">
+                <img src="{{ item.product.image1.url }}" alt="{{ item.product.name }}">
+              </a>
+            {% else %}
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            {% endif %}
+          </div>
+
+          <div class="item-info">
+            <a href="{% url 'view_product' item.product.id %}"><h4>{{ item.product.name|default:"Unnamed product" }}</h4></a>
+            {% if item.product.selling_price %}
+              <div class="item-unit-price">${{ item.product.selling_price }} each</div>
+            {% else %}
+              <div class="item-unit-price">Price unavailable</div>
+            {% endif %}
+
+            {% if stock <= 0 %}
+              <span class="stock-tag out">Out of stock</span>
+            {% elif stock <= 5 %}
+              <span class="stock-tag low">Only {{ stock }} left</span>
+            {% else %}
+              <span class="stock-tag">In stock</span>
+            {% endif %}
+          </div>
+
+          <div class="qty-block">
+            <div class="qty-stepper">
+              <button type="button" class="qty-btn minus" aria-label="Decrease quantity" {% if item.quantity <= 1 %}disabled{% endif %}>&minus;</button>
+              <input type="number"
+                     class="qty-input"
+                     form="form-{{ item.id }}"
+                     name="quantity"
+                     value="{{ item.quantity }}"
+                     min="1"
+                     max="{{ stock }}"
+                     inputmode="numeric"
+                     {% if stock <= 0 %}disabled{% endif %}>
+              <button type="button" class="qty-btn plus" aria-label="Increase quantity" {% if item.quantity >= stock %}disabled{% endif %}>&plus;</button>
+            </div>
+            <span class="row-spinner"></span>
+          </div>
+
+          <div class="line-subtotal" data-subtotal-for="{{ item.id }}">$0.00</div>
+
+          <form id="form-{{ item.id }}" class="qty-form" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+          </form>
+
+          <button type="button" class="remove-btn" data-remove-for="{{ item.id }}" aria-label="Remove item" title="Remove item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16z"/></svg>
+          </button>
+
+        </div>
+        {% endwith %}
+      {% endfor %}
+    </div>
+
+    <div class="summary">
+      <h3>Order Summary</h3>
+      <div class="summary-row"><span>Subtotal</span><span id="summary-subtotal">$0.00</span></div>
+      <div class="summary-row"><span>Shipping</span><span>Calculated at checkout</span></div>
+      <div class="summary-divider"></div>
+      <div class="summary-total"><span>Estimated total</span><span id="summary-total">$0.00</span></div>
+
+      <form method="POST" action="{% url 'place_order' %}" id="checkout-form">
+        {% csrf_token %}
+        <label class="field-label" for="shipping_address">Shipping address</label>
+        <textarea class="address-input" id="shipping_address" name="shipping_address" placeholder="Street, city, postal code..." required></textarea>
+        <button type="submit" class="btn-primary" id="checkout-btn">
+          Place Order
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+
+      <div class="secure-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Review your cart before placing the order
+      </div>
+    </div>
+
+  </div>
+
+  {% else %}
+    <div class="empty-state">
+      <span class="bag-icon">
+        <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </span>
+      <h2>Your cart is empty</h2>
+      <p>Looks like you haven't added anything yet. Let's fix that.</p>
+      <a href="{% url 'home' %}" class="btn-ghost">Start Shopping</a>
+    </div>
+  {% endif %}
+
+  {% if suggestions %}
+    <div class="suggestions">
+      <h3>You might also like</h3>
+      <div class="sugg-scroll">
+        {% for p in suggestions %}
+          <a href="{% url 'view_product' p.id %}" class="sugg-card">
+            <div class="sugg-thumb">
+              {% if p.image1 %}
+                <img src="{{ p.image1.url }}" alt="{{ p.name }}">
+              {% else %}
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              {% endif %}
+            </div>
+            <div class="sugg-body">
+              <h4>{{ p.name|default:"Unnamed product" }}</h4>
+              {% if p.selling_price %}<span>${{ p.selling_price }}</span>{% endif %}
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const rows = Array.from(document.querySelectorAll('.item-card'));
+  const topbar = document.getElementById('topbar');
+
+  function fmt(n){ return '$' + n.toFixed(2); }
+
+  function recalcRow(row){
+    const price = parseFloat(row.dataset.price) || 0;
+    const qtyInput = row.querySelector('.qty-input');
+    const qty = qtyInput ? (parseInt(qtyInput.value, 10) || 0) : (parseInt(row.dataset.quantity, 10) || 0);
+    const subtotalEl = row.querySelector('.line-subtotal');
+    const lineTotal = price * qty;
+    if (subtotalEl) subtotalEl.textContent = fmt(lineTotal);
+    return lineTotal;
+  }
+
+  function recalcAll(){
+    let grand = 0;
+    rows.forEach(row => { grand += recalcRow(row); });
+    const subtotalEl = document.getElementById('summary-subtotal');
+    const totalEl = document.getElementById('summary-total');
+    if (subtotalEl) subtotalEl.textContent = fmt(grand);
+    if (totalEl) totalEl.textContent = fmt(grand);
+  }
+
+  function startLoading(){
+    topbar.classList.add('loading');
+  }
+
+  function submitRow(row){
+    const form = document.getElementById('form-' + row.id.replace('row-', ''));
+    if (!form) return;
+    row.classList.add('saving');
+    startLoading();
+    form.submit();
+  }
+
+  let debounceTimers = {};
+
+  rows.forEach(row => {
+    const id = row.id.replace('row-', '');
+    const qtyInput = row.querySelector('.qty-input');
+    const minusBtn = row.querySelector('.qty-btn.minus');
+    const plusBtn = row.querySelector('.qty-btn.plus');
+    const removeBtn = row.querySelector('[data-remove-for="' + id + '"]');
+    const max = qtyInput ? (parseInt(qtyInput.max, 10) || 0) : 0;
+
+    function clamp(val){
+      val = Math.max(1, Math.min(max, val));
+      return val;
+    }
+
+    function refreshButtons(){
+      const val = parseInt(qtyInput.value, 10) || 1;
+      minusBtn.disabled = val <= 1;
+      plusBtn.disabled = val >= max || max <= 0;
+    }
+
+    function scheduleSubmit(){
+      recalcAll();
+      clearTimeout(debounceTimers[id]);
+      debounceTimers[id] = setTimeout(() => submitRow(row), 550);
+    }
+
+    if (minusBtn){
+      minusBtn.addEventListener('click', function(){
+        if (max <= 0) return;
+        qtyInput.value = clamp((parseInt(qtyInput.value, 10) || 1) - 1);
+        refreshButtons();
+        scheduleSubmit();
+      });
+    }
+
+    if (plusBtn){
+      plusBtn.addEventListener('click', function(){
+        if (max <= 0) return;
+        qtyInput.value = clamp((parseInt(qtyInput.value, 10) || 1) + 1);
+        refreshButtons();
+        scheduleSubmit();
+      });
+    }
+
+    if (qtyInput){
+      qtyInput.addEventListener('input', function(){
+        recalcAll();
+      });
+      qtyInput.addEventListener('change', function(){
+        if (max <= 0) return;
+        qtyInput.value = clamp(parseInt(qtyInput.value, 10) || 1);
+        refreshButtons();
+        scheduleSubmit();
+      });
+    }
+
+    if (removeBtn){
+      removeBtn.addEventListener('click', function(){
+        clearTimeout(debounceTimers[id]);
+        row.classList.add('removing');
+        startLoading();
+        setTimeout(() => {
+          const form = document.getElementById('form-' + id);
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'remove_btn';
+          hidden.value = '1';
+          form.appendChild(hidden);
+          form.submit();
+        }, 320);
+      });
+    }
+  });
+
+  const checkoutForm = document.getElementById('checkout-form');
+  if (checkoutForm){
+    checkoutForm.addEventListener('submit', function(){
+      document.getElementById('checkout-btn').disabled = true;
+      startLoading();
+    });
+  }
+
+  recalcAll();
+
+  // Toasts: auto-dismiss
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
+</script>
+
+</body>
+</html>

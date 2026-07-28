@@ -23,6 +23,8 @@ class Profile(models.Model):
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    is_merchant = models.BooleanField(default=False)
+    is_delivery_person = models.BooleanField(default=False)
     birthday = models.DateField(null=True, blank=True)
     picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True, blank=True)

@@ -58,11 +58,20 @@ class Order(models.Model):
         ('card', 'Card'),
     )
 
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Processing', 'Processing'),
+        ('Shipped', 'Shipped'),
+        ('Delivered', 'Delivered'),
+        ('Cancelled', 'Cancelled'),
+    )
+
+    delivery_person = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_orders')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     shipping_address = models.CharField(max_length=255)
-    status = models.CharField(max_length=20, default='Pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     payment_type = models.CharField(max_length=4, choices=PAYMENT_CHOICES, null=True, blank=True)
     card = models.ForeignKey("users.Card", on_delete=models.CASCADE, null=True, blank=True)
 

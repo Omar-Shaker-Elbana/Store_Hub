@@ -38,13 +38,6 @@ class Category(models.Model):
         
 class Product(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
-    # id = AutoField(primary_key=True)
-    image1 = models.ImageField(upload_to='products_pics/',
-                                null=True, blank=True)
-    image2 = models.ImageField(upload_to='products_pics/',
-                                null=True, blank=True)
-    image3 = models.ImageField(upload_to='products_pics/',
-                                null=True, blank=True) 
     description = models.CharField(max_length=500, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='products')
@@ -58,8 +51,6 @@ class Product(models.Model):
                                         decimal_places=2)
     creation_date = models.DateField(auto_now_add=True,
                                       null=True, blank=True)
-    # store =  models.ForeignKey(Store, on_delete=models.CASCADE,
-                                # db_index=True)
     current_stock = models.IntegerField( default=0, 
                                         null=True, blank=True)
     sold = models.IntegerField(null=True, blank=True, default=0)
@@ -76,6 +67,10 @@ class Product(models.Model):
         models.Index(fields=['store', 'category']),
         models.Index(fields=["category"])
     ]
+
+class Product_Image(models.Model):
+    image = models.ImageField(upload_to='products_pics/')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
 
 class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
