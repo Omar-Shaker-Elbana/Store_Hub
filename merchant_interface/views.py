@@ -18,7 +18,7 @@ def show_store(request, store_id):
     store = Store.objects.filter(id=store_id).first()
     if not store:
         messages.error(request, 'Store not found.')
-        return redirect('shopper_interface/home')
+        return redirect('create_store')
     
     store_products = Product.objects.filter(store=store)
     context = {
@@ -89,12 +89,13 @@ def add_members(request, store_id):
                 invitation.inviter = request.user
                 invitation.store = store
                 invitation.save()
-                noti = Notification.objects.create(
-    recipient = User.objects.filter(email=invitation.invitee_email).first(),
-    sender=request.user,
-    message=f"You have been invited to join {store.name} as a {invitation.role}."
-)
-                noti.save()
+                invitee_user = User.objects.filter(email=invitation.invitee_email).first()
+                if invitee_user:
+                    Notification.objects.create(
+                        recipient=invitee_user,
+                        sender=request.user,
+                        message=f"You have been invited to join {store.name} as a {invitation.role}."
+                    )
                 messages.success(request, 'Invitation sent successfully!')
                 return redirect('add_members', store_id=store.id)
             else:

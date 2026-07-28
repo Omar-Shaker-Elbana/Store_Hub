@@ -18,7 +18,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 from django.db import IntegrityError, transaction
-from django.template import TemplateDoesNotExist
+# from django.template import TemplateDoesNotExist
 from django.test import TestCase
 from django.urls import reverse
 
@@ -220,36 +220,28 @@ class CartViewTests(OrdersTestBase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
-    def test_get_currently_raises_missing_template(self):
-        """
-        NOTE: Cart_view renders 'orders/cart.html', which does not exist
-        anywhere in the templates directory. Every GET request to this
-        view currently raises TemplateDoesNotExist. This test documents
-        that bug; once the template is added, replace this with a test
-        asserting a 200 response and the cart's items in the rendered
-        content.
-        """
+    def test_get_renders_cart_with_items(self):
         self.login()
         CartItem.objects.create(cart=self.cart, product=self.product, quantity=1)
-        with self.assertRaises(TemplateDoesNotExist):
-            self.client.get(self.url)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "orders/cart.html")
+        self.assertContains(response, self.product.name)
 
     def test_get_recalculates_total_price(self):
-        # Recalculation happens before the template render, so it takes
-        # effect even though the render itself fails (see test above).
         self.login()
         CartItem.objects.create(cart=self.cart, product=self.product, quantity=2)
         CartItem.objects.create(cart=self.cart, product=self.product2, quantity=1)
-        with self.assertRaises(TemplateDoesNotExist):
-            self.client.get(self.url)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
         self.cart.refresh_from_db()
         self.assertEqual(self.cart.total_price, Decimal("220.00"))
 
     def test_get_clamps_item_quantity_to_available_stock(self):
         self.login()
         item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=999)
-        with self.assertRaises(TemplateDoesNotExist):
-            self.client.get(self.url)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
         item.refresh_from_db()
         self.assertEqual(item.quantity, self.product.current_stock)
 
@@ -293,18 +285,11 @@ class WishlistViewTests(OrdersTestBase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
-    def test_get_currently_raises_missing_template(self):
-        """
-        NOTE: Wishlist_view renders 'orders/wishlist.html', which does not
-        exist anywhere in the templates directory. Every GET request to
-        this view currently raises TemplateDoesNotExist. This test
-        documents that bug; once the template is added, replace this with
-        a test asserting a 200 response and the wishlist's items in the
-        rendered content.
-        """
+    def test_get_renders_wishlist(self):
         self.login()
-        with self.assertRaises(TemplateDoesNotExist):
-            self.client.get(self.url)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "orders/wishlist.html")
 
     def test_post_remove_btn_deletes_item_and_redirects(self):
         self.login()

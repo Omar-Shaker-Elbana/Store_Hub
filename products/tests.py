@@ -284,7 +284,7 @@ class CreateProductViewTests(ProductsTestBase):
     def test_non_member_is_redirected_with_error(self):
         self.login_outsider()
         response = self.client.get(self.url, follow=True)
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("permission" in str(m) for m in messages))
 
@@ -293,7 +293,7 @@ class CreateProductViewTests(ProductsTestBase):
         response = self.client.get(
             reverse("create_product", args=[999999]), follow=True
         )
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
 
     def test_member_can_load_create_product_page(self):
         self.login_owner()
@@ -340,12 +340,12 @@ class CreateSpecViewTests(ProductsTestBase):
     def test_nonexistent_product_redirects_home(self):
         self.login_owner()
         response = self.client.get(reverse("create_spec", args=[999999]), follow=True)
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
 
     def test_non_member_is_redirected_with_error(self):
         self.login_outsider()
         response = self.client.get(self.url, follow=True)
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
 
     def test_member_can_load_create_spec_page(self):
         self.login_owner()
@@ -378,12 +378,12 @@ class UpdateProductViewTests(ProductsTestBase):
         response = self.client.get(
             reverse("update_product", args=[999999]), follow=True
         )
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
 
     def test_non_member_is_redirected_with_error(self):
         self.login_outsider()
         response = self.client.get(self.url, follow=True)
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
 
     def test_member_can_load_update_page(self):
         self.login_owner()
@@ -417,7 +417,7 @@ class UpdateProductViewTests(ProductsTestBase):
         self.login_owner()
         response = self.client.post(self.url, data={"delete_product_btn": "1"}, follow=True)
         self.assertFalse(Product.objects.filter(id=self.product.id).exists())
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
 
 
 class UpdateSpecViewTests(ProductsTestBase):
@@ -435,7 +435,7 @@ class UpdateSpecViewTests(ProductsTestBase):
         response = self.client.get(
             reverse("update_spec", args=[999999, "RAM"]), follow=True
         )
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
 
     def test_nonexistent_spec_redirects_to_product(self):
         self.login_owner()
@@ -524,7 +524,7 @@ class SuggestCategoryViewTests(ProductsTestBase):
         response = self.client.post(self.url, data={"category_name": "Smart Home"}, follow=True)
         self.assertTrue(SuggestedCategory.objects.filter(name="Smart Home").exists())
         self.assertFalse(Category.objects.filter(name="Smart Home").exists())
-        self.assertRedirects(response, "/")
+        self.assertRedirects(response, "/shopper/")
 
     def test_duplicate_category_name_shows_error(self):
         self.login_owner()

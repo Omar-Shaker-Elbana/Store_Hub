@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home | StoreHub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+</head>
+<body>
+  <h1>Welcome back{% if user.is_authenticated %}, {{ user.username }}{% endif %}!</h1>
+
+  {% if recommended_products %}
+    <section>
+      <h2>Recommended for you</h2>
+      <ul>
+        {% for product in recommended_products %}
+          <li>{{ product.name }} — {{ product.selling_price }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% else %}
+    <p>No recommendations yet — start browsing to see picks tailored for you.</p>
+  {% endif %}
+</body>
+</html>
