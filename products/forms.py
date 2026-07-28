@@ -12,9 +12,9 @@ class ProductForm(forms.ModelForm):
             'selling_price',
             'current_stock',
             'offer',
-            'image1',
-            'image2',
-            'image3',
+            # 'image1',
+            # 'image2',
+            # 'image3',
         ]
 
     def clean(self):

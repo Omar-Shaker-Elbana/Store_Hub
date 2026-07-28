@@ -1,0 +1,462 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Wishlist — StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --text:#1e293b;
+    --muted:#64748b;
+    --accent:#2563EB;
+    --accent-dark:#1a49aa;
+    --orange:#F59E0B;
+    --orange-dark:#d97706;
+    --radius:14px;
+    --border:#e5e7eb;
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    animation:fadeIn .5s ease-in-out;
+  }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+
+  a{text-decoration:none;color:inherit;}
+
+  /* Nav */
+  nav{
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:24px;
+    padding:15px 40px;
+    border-bottom:1px solid var(--border);
+    position:sticky;
+    top:0;
+    z-index:50;
+  }
+  #logo{width:130px;height:auto;display:block;max-width:100%}
+  .brand{display:flex;align-items:center;}
+  .nav-links{display:flex;align-items:center;gap:22px;}
+  .nav-links a{
+    color:var(--text);
+    font-weight:500;
+    padding:8px 4px;
+    position:relative;
+    transition:color .18s ease;
+  }
+  .nav-links a:hover{color:var(--accent);}
+  .nav-links a.active{color:var(--accent);font-weight:700;}
+  .nav-links a.active::after{
+    content:"";
+    position:absolute;
+    left:0;right:0;bottom:-2px;
+    height:2px;
+    background:var(--orange);
+    border-radius:2px;
+  }
+  .nav-cart-icon{position:relative;display:flex;align-items:center;}
+  .nav-badge{
+    position:absolute;
+    top:-8px;right:-12px;
+    background:var(--orange);
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    min-width:18px;
+    height:18px;
+    border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 4px;
+  }
+
+  /* Layout */
+  .page{
+    max-width:1200px;
+    margin:0 auto;
+    padding:40px 24px 80px;
+  }
+
+  .page-header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:32px;
+    animation:slideInUp .5s ease-out;
+  }
+  .page-header h1{
+    font-size:2.1em;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .page-header h1 svg{width:32px;height:32px;color:var(--orange);}
+  .page-header p{color:var(--muted);margin-top:6px;font-size:.98em;}
+  .continue-link{
+    color:var(--accent);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:10px 16px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:#fff;
+    transition:all .18s ease;
+    white-space:nowrap;
+  }
+  .continue-link:hover{
+    border-color:var(--accent);
+    background:#eff4ff;
+    transform:translateY(-1px);
+  }
+
+  /* Messages */
+  .messages{max-width:1200px;margin:20px auto 0;padding:0 24px;}
+  .message{
+    padding:14px 18px;
+    border-radius:10px;
+    margin-bottom:12px;
+    font-size:.95em;
+    font-weight:500;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    animation:slideInUp .35s ease-out;
+    transition:opacity .4s ease, transform .4s ease;
+  }
+  .message.success{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;}
+  .message.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+
+  /* Grid */
+  .wishlist-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
+    gap:24px;
+  }
+
+  .wish-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    transition:transform .25s ease, box-shadow .25s ease;
+    animation:scaleIn .4s ease-out;
+    position:relative;
+  }
+  .wish-card:hover{
+    transform:translateY(-6px);
+    box-shadow:0 14px 30px rgba(16,24,40,0.12);
+  }
+
+  .wish-thumb{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    background:#f1f5f9;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .wish-thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transition:transform .35s ease;
+  }
+  .wish-card:hover .wish-thumb img{transform:scale(1.06);}
+  .wish-thumb .no-image{
+    color:#cbd5e1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    font-size:.8em;
+  }
+  .wish-thumb .no-image svg{width:44px;height:44px;}
+
+  .offer-badge{
+    position:absolute;
+    top:12px;left:12px;
+    background:var(--orange);
+    color:#fff;
+    font-size:.75em;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:999px;
+    box-shadow:0 4px 10px rgba(245,158,11,.35);
+  }
+
+  .remove-form{
+    position:absolute;
+    top:10px;right:10px;
+  }
+  .remove-btn{
+    width:34px;height:34px;
+    border-radius:50%;
+    border:none;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(4px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 2px 8px rgba(16,24,40,.15);
+    transition:background .18s ease, transform .18s ease;
+    color:#94a3b8;
+  }
+  .remove-btn svg{width:16px;height:16px;}
+  .remove-btn:hover{
+    background:#fef2f2;
+    color:#dc2626;
+    transform:scale(1.08);
+  }
+
+  .stock-pill{
+    position:absolute;
+    bottom:12px;left:12px;
+    font-size:.72em;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:999px;
+  }
+  .stock-pill.in{background:#ecfdf5;color:#047857;}
+  .stock-pill.out{background:#fef2f2;color:#dc2626;}
+
+  .wish-body{
+    padding:16px 18px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    flex:1;
+  }
+  .wish-body h3{
+    font-size:1.02em;
+    font-weight:700;
+    line-height:1.35;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    min-height:2.7em;
+  }
+  .wish-body .category{
+    font-size:.78em;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    font-weight:600;
+  }
+  .price-row{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    margin-top:2px;
+  }
+  .price{
+    font-size:1.2em;
+    font-weight:800;
+    color:var(--accent-dark);
+  }
+  .added-date{
+    font-size:.78em;
+    color:var(--muted);
+    margin-top:auto;
+    padding-top:6px;
+  }
+
+  .wish-actions{
+    display:flex;
+    gap:10px;
+    padding:0 18px 18px;
+  }
+  .btn-view{
+    flex:1;
+    text-align:center;
+    padding:10px 12px;
+    border-radius:10px;
+    font-weight:700;
+    font-size:.9em;
+    background:linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color:#fff;
+    box-shadow:0 6px 16px rgba(37,99,235,.25);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .btn-view:hover{
+    transform:translateY(-2px);
+    box-shadow:0 10px 22px rgba(37,99,235,.32);
+  }
+
+  /* Empty state */
+  .empty-state{
+    text-align:center;
+    padding:100px 24px;
+    background:#fff;
+    border:1px dashed var(--border);
+    border-radius:var(--radius);
+    animation:scaleIn .5s ease-out;
+  }
+  .empty-state svg{width:74px;height:74px;color:#fbbf24;margin-bottom:20px;}
+  .empty-state h2{font-size:1.5em;font-weight:800;margin-bottom:10px;}
+  .empty-state p{color:var(--muted);margin-bottom:26px;}
+  .empty-state a{
+    display:inline-block;
+    padding:12px 28px;
+    background:linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+    color:#fff;
+    font-weight:700;
+    border-radius:var(--radius);
+    box-shadow:0 8px 20px rgba(245,158,11,.3);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .empty-state a:hover{
+    transform:translateY(-2px);
+    box-shadow:0 12px 26px rgba(245,158,11,.4);
+  }
+
+  @media (max-width:640px){
+    nav{padding:12px 18px;}
+    #logo{width:108px;}
+    .nav-links{gap:12px;}
+    .nav-links a{font-size:13.5px;}
+    .page{padding:28px 16px 60px;}
+    .page-header h1{font-size:1.6em;}
+    .wishlist-grid{grid-template-columns:repeat(auto-fill, minmax(150px,1fr));gap:14px;}
+    .empty-state{padding:60px 20px;}
+  }
+</style>
+</head>
+<body>
+
+  <nav>
+    <a href="{% url 'home' %}" class="brand">
+      <img id="logo" src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+    </a>
+    <div class="nav-links">
+      <a href="{% url 'home' %}">Home</a>
+      <a href="{% url 'mycart' %}" class="nav-cart-icon">
+        Cart
+      </a>
+      <a href="{% url 'wishlist' %}" class="active">Wishlist</a>
+      <a href="{% url 'profile' %}">Profile</a>
+    </div>
+  </nav>
+
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+      <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main class="page">
+    <div class="page-header">
+      <div>
+        <h1>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.716-4.35-9.428-8.35C.6 9.99 1.2 6.2 4.2 4.7c2.4-1.2 4.9-.3 6.2 1.6.4.6 1.2.6 1.6 0 1.3-1.9 3.8-2.8 6.2-1.6 3 1.5 3.6 5.3 1.6 7.95C18.716 16.65 12 21 12 21z"/></svg>
+          My Wishlist
+        </h1>
+        <p>{{ items.count }} item{{ items.count|pluralize }} saved for later</p>
+      </div>
+      <a href="{% url 'home' %}" class="continue-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Continue shopping
+      </a>
+    </div>
+
+    {% if items %}
+      <div class="wishlist-grid">
+        {% for item in items %}
+          <div class="wish-card">
+            <div class="wish-thumb">
+              {% if item.product.image1 %}
+                <img src="{{ item.product.image1.url }}" alt="{{ item.product.name }}">
+              {% else %}
+                <div class="no-image">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>No image</span>
+                </div>
+              {% endif %}
+
+              {% if item.product.offer %}
+                <span class="offer-badge">-{{ item.product.offer|floatformat:0 }}% OFF</span>
+              {% endif %}
+
+              {% if item.product.current_stock and item.product.current_stock > 0 %}
+                <span class="stock-pill in">In stock</span>
+              {% else %}
+                <span class="stock-pill out">Out of stock</span>
+              {% endif %}
+
+              <form method="POST" action="{% url 'wishlist' %}" class="remove-form">
+                {% csrf_token %}
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <button type="submit" name="remove_btn" class="remove-btn" title="Remove from wishlist" onclick="return confirm('Remove {{ item.product.name|default:'this item' }} from your wishlist?');">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg>
+                </button>
+              </form>
+            </div>
+
+            <div class="wish-body">
+              <span class="category">{{ item.product.category.name|default:"" }}</span>
+              <h3>{{ item.product.name|default:"Unnamed product" }}</h3>
+              <div class="price-row">
+                <span class="price">${{ item.product.selling_price|default:"—" }}</span>
+              </div>
+              <span class="added-date">Added {{ item.added_at|date:"M d, Y" }}</span>
+            </div>
+
+            <div class="wish-actions">
+              <a href="{% url 'view_product' item.product.id %}" class="btn-view">View Product</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21s-6.716-4.35-9.428-8.35C.6 9.99 1.2 6.2 4.2 4.7c2.4-1.2 4.9-.3 6.2 1.6.4.6 1.2.6 1.6 0 1.3-1.9 3.8-2.8 6.2-1.6 3 1.5 3.6 5.3 1.6 7.95C18.716 16.65 12 21 12 21z"/></svg>
+        <h2>Your wishlist is empty</h2>
+        <p>Save products you love and find them here anytime.</p>
+        <a href="{% url 'home' %}">Start Browsing</a>
+      </div>
+    {% endif %}
+  </main>
+
+  <script>
+    // Auto-dismiss flash messages
+    setTimeout(() => {
+      document.querySelectorAll('.message').forEach(msg => {
+        msg.style.opacity = '0';
+        msg.style.transform = 'translateY(-8px)';
+        setTimeout(() => msg.remove(), 400);
+      });
+    }, 3500);
+  </script>
+
+</body>
+</html>

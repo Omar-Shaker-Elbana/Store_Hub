@@ -52,6 +52,13 @@ class Membership(models.Model):
         ]
 
 class MembershipInvitation(models.Model):
+
+    STATUS_CHOICES = [
+        ('Accepted', 'accepted'),
+        ('Rejected', 'rejected'),
+        ('Pending', 'pending')
+        ]
+
     inviter = models.ForeignKey(User, on_delete=models.CASCADE, 
                                 related_name='sent_invitations')
     invitee_email = models.EmailField(max_length=254, null=True, blank=True)
@@ -63,6 +70,8 @@ class MembershipInvitation(models.Model):
     wage = models.DecimalField(null=True, blank=True, 
                                decimal_places=2, max_digits=10)
     sent_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Pending')
+
 
 class SuggestedNiche(models.Model):
     name = models.CharField(max_length=100, unique=True)
