@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chat with {{ other_user }} | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<h2>Conversation with {{ other_user }}</h2>
+
+<div id="message-list">
+  {% for message in message_list %}
+    <p>
+      <strong>{{ message.sender }}:</strong>
+      {{ message.content }}
+      <small>{{ message.created_at }}</small>
+    </p>
+    {% for attachment in message.attachments.all %}
+      <p><a href="{{ attachment.file.url }}">{{ attachment.original_filename }}</a></p>
+    {% endfor %}
+  {% empty %}
+    <p>No messages yet — say hello.</p>
+  {% endfor %}
+</div>
+
+<form method="post" enctype="multipart/form-data" action="{% url 'chat:send_direct_attachment' conversation.id %}">
+  {% csrf_token %}
+  <input type="text" name="content" placeholder="Type a message...">
+  <input type="file" name="file">
+  <button type="submit">Send</button>
+</form>
+
+</body>
+</html>
