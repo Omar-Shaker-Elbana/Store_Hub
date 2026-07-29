@@ -4,5 +4,5 @@ sqlparse==0.5.5
 tzdata==2025.3
 Pillow
 python-dotenv==1.0.1
-django-allauth[socialaccount]>=65.13.1
+django-allauth[socialaccount]>=65.18.0
 channels>=4.1.0
