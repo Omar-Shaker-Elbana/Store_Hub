@@ -275,7 +275,7 @@ def my_analytics(request, store_id):
 
 def my_job_invitations(request):
     recieved_invitations = MembershipInvitation.objects.filter(invitee_email=request.user.email, status='Pending')
-    sent_invitations = MembershipInvitation.objects.filter(inviter_email=request.user.email, status='Pending')
+    sent_invitations = MembershipInvitation.objects.filter(inviter=request.user, status='Pending')
     # invitations = recieved_invitations | sent_invitations
     context = {
         'received_invitations': recieved_invitations,
@@ -296,7 +296,7 @@ def my_job_invitations(request):
             Membership.objects.create(user=request.user, store=invitation.store, role=invitation.role, wage_type=invitation.wage_type, wage=invitation.wage)
             messages.success(request, 'Invitation accepted successfully!')
         elif action == 'decline':
-            invitation.status = 'Declined'
+            invitation.status = 'Rejected'
             messages.success(request, 'Invitation declined successfully!')
         else:
             messages.error(request, 'Invalid action.')
@@ -323,7 +323,7 @@ def view_orders(request, store_id):
         order_id = request.POST.get('order_id')
         action = request.POST.get('action')
 
-        order = store.orders.filter(id=order_id).first()
+        order = Order.objects.filter(id=order_id, orderitem__product__store=store).distinct().first()
         if not order:
             messages.error(request, 'Order not found.')
             return redirect('view_orders', store_id=store.id)
@@ -336,14 +336,14 @@ def view_orders(request, store_id):
                 message=f"Your order #{order.id} from {store.name} has been marked as shipped."
             )
             messages.success(request, 'Order marked as shipped successfully!')
-        # elif action == 'mark_as_delivered':
-        #     order.status = 'Delivered'
-        #     noti = Notification.objects.create(
-        #         recipient=order.user,
-        #         sender=request.user,
-        #         message=f"Your order #{order.id} from {store.name} has been marked as delivered."
-        #     )
-        #     messages.success(request, 'Order marked as delivered successfully!')
+        elif action == 'mark_as_delivered':
+            order.status = 'Delivered'
+            noti = Notification.objects.create(
+                recipient=order.user,
+                sender=request.user,
+                message=f"Your order #{order.id} from {store.name} has been marked as delivered."
+            )
+            messages.success(request, 'Order marked as delivered successfully!')
         else:
             messages.error(request, 'Invalid action.')
             return redirect('view_orders', store_id=store.id)
