@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Inbox | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<h2>Conversations</h2>
+
+<ul>
+  {% for row in conversation_rows %}
+    <li>
+      <a href="{% url 'chat:conversation_detail' row.conversation.id %}">
+        {{ row.other_user }}
+      </a>
+      {% if row.last_message %}
+        — {{ row.last_message.content|truncatechars:50 }}
+      {% endif %}
+      {% if row.unread_count %}
+        <strong>({{ row.unread_count }} unread)</strong>
+      {% endif %}
+    </li>
+  {% empty %}
+    <li>No conversations yet.</li>
+  {% endfor %}
+</ul>
+
+<h3>Start a new conversation</h3>
+<ul>
+  {% for merchant in merchants %}
+    <li>
+      <a href="{% url 'chat:start_conversation' merchant.id %}">{{ merchant }}</a>
+    </li>
+  {% empty %}
+    <li>No other merchants to chat with yet.</li>
+  {% endfor %}
+</ul>
+
+</body>
+</html>
