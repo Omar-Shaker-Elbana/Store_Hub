@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'orders',
     'shopper_interface',
     'merchant_interface',
+    'chat',
 
     #allauth
     'allauth',
