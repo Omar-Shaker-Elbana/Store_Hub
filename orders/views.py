@@ -87,7 +87,12 @@ def Place_Order_View(request):
     )
 
     for item in items:
-        OrderItem.objects.create(order=current_order, product=item.product, quantity=item.quantity)
+        OrderItem.objects.create(
+            order=current_order,
+            product=item.product,
+            quantity=item.quantity,
+            price_at_purchase=item.product.selling_price,
+        )
         item.product.current_stock -= item.quantity
         item.product.sold = (item.product.sold or 0) + item.quantity
         item.product.save()
