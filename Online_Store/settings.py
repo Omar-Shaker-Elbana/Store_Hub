@@ -194,3 +194,9 @@ CHANNEL_LAYERS = {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
+
+ACCOUNT_FORMS = {
+    'signup': 'users.forms.CustomSignupForm',
+}
+
+SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'

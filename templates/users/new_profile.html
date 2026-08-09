@@ -3,206 +3,806 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>StoreHub — My Profile</title>
+<title>My Profile | StoreHub</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link rel="stylesheet" href="{% static 'users/style/style.css' %}">
-<link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
 <link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" rel="stylesheet">
 
 <style>
-body {
-    font-family: 'Poppins', sans-serif;
-    margin: 0;
-    background: #0f172a;
-    color: #f1f5f9;
-}
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
 
-.profile-wrapper {
-    max-width: 900px;
-    margin: 60px auto;
-    padding: 20px;
-}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:80px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
 
-.page-title {
-    font-size: 32px;
-    font-weight: 600;
-    margin-bottom: 40px;
-}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes fieldIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes popIn{0%{opacity:0;transform:translateY(16px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
 
-.card {
-    background: #1e293b;
-    border-radius: 16px;
-    padding: 35px;
-    margin-bottom: 30px;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.35);
-    border: 1px solid rgba(255,255,255,0.05);
-}
+  /* ---------- nav ---------- */
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-links a.active{color:var(--accent)}
 
-.card h2 {
-    margin-top: 0;
-    margin-bottom: 25px;
-    font-weight: 500;
-    border-left: 4px solid #6366f1;
-    padding-left: 12px;
-}
+  /* ---------- toasts ---------- */
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast svg{flex-shrink:0}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
 
-form h3 {
-    margin-top: 25px;
-    margin-bottom: 12px;
-    font-weight: 500;
-    color: #ffffff;
-}
+  /* ---------- layout ---------- */
+  .wrap{max-width:880px;margin:0 auto;padding:34px 24px 0}
 
-form p {
-    margin-bottom: 18px;
-}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:14px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:28px}
+  .page-head p{color:var(--muted);font-size:14px;margin-top:4px}
 
-label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 14px;
-    color: #94a3b8;
-}
+  /* ---------- profile header card ---------- */
+  .hero-card{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    border-radius:var(--radius);padding:30px 32px;display:flex;align-items:center;gap:22px;
+    color:#fff;margin-bottom:22px;position:relative;overflow:hidden;
+    box-shadow:var(--shadow-lg);animation:slideInUp .5s ease;
+  }
+  .hero-card::after{
+    content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;
+    background:rgba(255,255,255,0.08);
+  }
+  .avatar{
+    width:76px;height:76px;border-radius:50%;flex-shrink:0;object-fit:cover;
+    background:rgba(255,255,255,0.18);border:3px solid rgba(255,255,255,0.35);
+    display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;
+    position:relative;z-index:1;
+  }
+  .hero-info{position:relative;z-index:1;min-width:0;padding-right:150px}
+  .hero-info h2{font-size:21px;margin-bottom:4px;color:#fff}
+  .hero-info span{font-size:13.5px;opacity:.85;display:block}
+  .hero-badges{display:flex;gap:8px;margin-top:10px}
+  .hero-badge{
+    font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+    background:rgba(255,255,255,0.18);letter-spacing:.3px;
+  }
 
-input, select, textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #334155;
-    background: #0f172a;
-    color: #f1f5f9;
-    transition: 0.3s ease;
-}
+  .edit-toggle-wrap{position:absolute;top:18px;right:24px;z-index:2}
 
-input:focus, select:focus, textarea:focus {
-    outline: none;
-    border: 1px solid #6366f1;
-    box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
-}
+  /* ---------- buttons ---------- */
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:12px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:active{transform:translateY(0)}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
 
-.button-group {
-    display: flex;
-    gap: 15px;
-    margin-top: 25px;
-    flex-wrap: wrap;
-}
+  .btn-ghost{
+    background:var(--accent-light);color:var(--accent);border:none;padding:11px 22px;border-radius:999px;
+    font-weight:600;font-size:14px;transition:background .2s, transform .2s;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .btn-ghost:hover{background:#dfe9fb;transform:translateY(-1px)}
 
-.btn {
-    padding: 12px 25px;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    font-weight: 500;
-    transition: 0.3s ease;
-}
+  .btn-on-hero{
+    background:rgba(255,255,255,0.16);color:#fff;border:1.5px solid rgba(255,255,255,0.4);
+    padding:10px 20px;border-radius:999px;font-weight:600;font-size:14px;
+    display:inline-flex;align-items:center;gap:7px;transition:background .2s, transform .2s;
+  }
+  .btn-on-hero:hover{background:rgba(255,255,255,0.28);transform:translateY(-1px)}
 
-.btn-primary {
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
-    color: white;
-}
+  .btn-danger-ghost{
+    background:var(--danger-light);color:var(--danger);border:none;padding:11px 22px;border-radius:999px;
+    font-weight:600;font-size:14px;transition:background .2s;
+  }
+  .btn-danger-ghost:hover{background:#fde2e2}
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(99,102,241,0.4);
-}
+  .btn-text{background:none;border:none;color:var(--muted);font-weight:600;font-size:14px;padding:11px 18px;border-radius:999px;transition:background .2s,color .2s}
+  .btn-text:hover{background:var(--border);color:var(--text)}
 
-.btn-danger {
-    background: #dc2626;
-    color: white;
-}
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px 28px;margin-bottom:20px;animation:slideInUp .5s ease both;
+  }
+  .card:nth-of-type(1){animation-delay:.04s}
+  .card:nth-of-type(2){animation-delay:.09s}
+  .card:nth-of-type(3){animation-delay:.14s}
 
-.btn-danger:hover {
-    background: #b91c1c;
-}
+  .card-head{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+  .card-head .icon{
+    width:34px;height:34px;border-radius:10px;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .card-head h3{font-size:16px}
 
-.btn-secondary {
-    background: #334155;
-    color: white;
-}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 22px}
+  .field-grid.single{grid-template-columns:1fr}
+  @media(max-width:600px){
+    .field-grid{grid-template-columns:1fr}
+    .hero-card{flex-direction:column;align-items:flex-start;padding-top:56px}
+    .hero-info{padding-right:0}
+    .edit-toggle-wrap{top:16px;right:16px}
+  }
 
-.btn-secondary:hover {
-    background: #475569;
-}
+  .field-group{min-width:0}
+  .field-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:block}
 
-.messages p {
-    background: rgba(220,38,38,0.2);
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
+  .view-value{
+    font-size:15px;font-weight:500;color:var(--text);padding:2px 0;min-height:22px;
+    transition:opacity .2s ease;
+  }
+  .view-value.empty{color:#94a3b8;font-weight:400;font-style:italic}
+
+  .edit-field{display:none}
+  .editing .view-value{display:none}
+  .editing .edit-field{display:block;animation:fieldIn .3s ease both}
+
+  input[type=text], input[type=email], input[type=date], input[type=number], select, textarea, input[type=file]{
+    width:100%;padding:11px 13px;border-radius:var(--radius-sm);border:1.5px solid var(--border);
+    background:var(--bg);color:var(--text);font-family:inherit;font-size:14px;
+    transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);background:#fff;
+  }
+  input[type=file]{padding:9px 13px;font-size:13px}
+
+  /* ---------- profile picture uploader (edit mode) ---------- */
+  .avatar-upload-edit{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .avatar-circle-edit{
+    position:relative;width:92px;height:92px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    cursor:pointer;border:3px solid var(--surface);
+    box-shadow:0 6px 18px rgba(26,73,170,.18);
+    transition:transform .25s ease,box-shadow .25s ease;
+  }
+  .avatar-circle-edit:hover{transform:scale(1.05);box-shadow:0 8px 22px rgba(26,73,170,.26)}
+  .avatar-circle-edit svg{color:var(--accent);opacity:.55}
+  .avatar-circle-edit img{width:100%;height:100%;object-fit:cover}
+  .avatar-badge-edit{
+    position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;
+    background:linear-gradient(135deg,var(--orange),#ffb84d);color:#fff;
+    display:flex;align-items:center;justify-content:center;border:2.5px solid var(--surface);
+  }
+  .avatar-circle-edit input[type="file"]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+
+  .btn-remove-photo{
+    display:inline-flex;align-items:center;gap:6px;background:var(--danger-light);color:var(--danger);
+    border:none;padding:8px 16px;border-radius:999px;font-weight:600;font-size:12.5px;
+    transition:background .2s;
+  }
+  .btn-remove-photo:hover{background:#fde2e2}
+
+  /* ---------- crop modal ---------- */
+  .crop-overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,0.55);display:none;
+    align-items:center;justify-content:center;z-index:1000;padding:20px;
+    animation:fadeIn .2s ease;
+  }
+  .crop-overlay.open{display:flex}
+  .crop-modal{
+    background:var(--surface);border-radius:var(--radius);width:100%;max-width:440px;
+    padding:24px;box-shadow:var(--shadow-lg);animation:popIn .25s ease both;
+  }
+  .crop-modal h3{font-size:16px;margin-bottom:16px}
+  .crop-canvas-wrap{width:100%;height:320px;background:#0f172a;border-radius:var(--radius-sm);overflow:hidden}
+  .crop-canvas-wrap img{display:block;max-width:100%}
+  .crop-zoom-row{display:flex;align-items:center;gap:10px;margin-top:16px}
+  .crop-zoom-row svg{color:var(--muted);flex-shrink:0}
+  .crop-zoom-row input[type=range]{flex:1;accent-color:var(--accent);height:4px}
+  .crop-ratio-row{display:flex;gap:8px;margin-top:14px}
+  .crop-ratio-btn{
+    flex:1;background:var(--accent-light);color:var(--accent);border:none;padding:8px 0;
+    border-radius:var(--radius-sm);font-weight:600;font-size:12.5px;transition:background .2s;
+  }
+  .crop-ratio-btn.active,.crop-ratio-btn:hover{background:var(--accent);color:#fff}
+  .crop-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+
+  /* ---------- calendar icon polish ---------- */
+  input[type=date]{color-scheme:light}
+  input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.65;transition:opacity .2s}
+  input[type=date]::-webkit-calendar-picker-indicator:hover{opacity:1}
+
+  /* ---------- country searchable dropdown ---------- */
+  .country-select{position:relative}
+  .country-select-trigger{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:11px 13px;border-radius:var(--radius-sm);border:1.5px solid var(--border);
+    background:var(--bg);color:var(--text);font-family:inherit;font-size:14px;text-align:left;
+    transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .country-select-trigger:focus,.country-select.open .country-select-trigger{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);background:#fff;
+  }
+  .country-select-trigger svg{flex-shrink:0;color:var(--muted);transition:transform .2s}
+  .country-select.open .country-select-trigger svg{transform:rotate(180deg)}
+  .country-select-panel{
+    display:none;position:fixed;z-index:3000;
+    background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-lg);overflow:hidden;
+  }
+  .country-select-panel.open{display:block;animation:fieldIn .18s ease both}
+  .country-select-search{
+    width:100%;border:none;border-bottom:1.5px solid var(--border);padding:10px 13px;
+    font-family:inherit;font-size:14px;background:#fff;
+  }
+  .country-select-search:focus{outline:none;background:var(--accent-light)}
+  .country-select-list{list-style:none;margin:0;padding:6px;max-height:220px;overflow-y:auto}
+  .country-select-list li{padding:9px 11px;border-radius:8px;font-size:14px;cursor:pointer;transition:background .15s}
+  .country-select-list li:hover,.country-select-list li.highlighted{background:var(--accent-light);color:var(--accent)}
+  .country-select-list li.no-results{color:var(--muted);font-style:italic;cursor:default}
+  .country-select-list li.no-results:hover{background:none}
+
+  /* ---------- sticky action bar ---------- */
+  .action-bar{
+    position:fixed;left:0;right:0;bottom:-100px;background:var(--surface);border-top:1px solid var(--border);
+    box-shadow:0 -10px 30px rgba(30,41,59,0.08);padding:16px 24px;
+    display:flex;justify-content:center;gap:14px;z-index:200;
+    transition:bottom .35s cubic-bezier(.16,.9,.35,1);
+  }
+  .editing .action-bar{bottom:0}
+  .action-bar-inner{max-width:880px;width:100%;display:flex;justify-content:flex-end;gap:12px;align-items:center}
+  .save-note{margin-right:auto;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px}
+
+  .spinner{
+    width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+    animation:spin .7s linear infinite;display:none;
+  }
+  .btn-primary.saving .spinner{display:inline-block}
+  .btn-primary.saving .btn-label{opacity:.85}
+
+  .security-card{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+  .security-card p{color:var(--muted);font-size:13.5px;margin-top:4px}
 </style>
 </head>
-
 <body>
 
 <nav>
-    <a href="{%url 'home' %}" class="brand">
-      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
-    </a>
-
-    <div class="nav-links">
-      <a href="#merchants">For Merchants</a>
-      <a href="#customers">For Customers</a>
-      {% if not request.user.is_authenticated %}
-      <a href="{% url 'account_signup' %}" class="get-started" style="padding:8px 20px;">Get Started</a>
-      {% else %}
-      <a href="{% url 'profile' %}" class="get-started" style="padding:8px 20px;">My Profile</a>
-      {% endif %}
-    </div>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'wishlist' %}">Wishlist</a>
+    <a href="{% url 'mycart' %}">Cart</a>
+    <a href="{% url 'profile' %}" class="active">Profile</a>
+  </div>
 </nav>
 
-<div class="profile-wrapper">
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
 
-    <div class="page-title">Account Settings ⚙️</div>
+<div class="wrap" id="profile-root">
 
-    {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
+  <div class="page-head">
+    <div>
+      <h1>My Profile</h1>
+      <p>View and manage your account details</p>
+    </div>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" id="profile-form">
+    {% csrf_token %}
+
+    <!-- ---------- hero / avatar ---------- -->
+    <div class="hero-card">
+      {% if profile.picture %}
+        <img class="avatar" id="avatar-img" src="{{ profile.picture.url }}" alt="Profile picture">
+      {% else %}
+        <div class="avatar" id="avatar-img">{{ request.user.first_name|first|upper|default:request.user.username|first|upper }}</div>
+      {% endif %}
+      <div class="hero-info">
+        <h2>{{ request.user.first_name|default:"" }} {{ request.user.last_name|default:"" }}{% if not request.user.first_name and not request.user.last_name %}{{ request.user.username }}{% endif %}</h2>
+        <span>{{ request.user.email|default:"No email on file" }}</span>
+        <div class="hero-badges">
+          {% if profile.is_merchant %}<span class="hero-badge">Merchant</span>{% endif %}
+          {% if profile.is_delivery_person %}<span class="hero-badge">Delivery Partner</span>{% endif %}
         </div>
-    {% endif %}
+      </div>
+      <div class="edit-toggle-wrap">
+        <button type="button" class="btn-on-hero" id="edit-toggle-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          Edit Profile
+        </button>
+      </div>
+    </div>
 
+    <!-- ---------- personal info ---------- -->
     <div class="card">
-        <h2>Edit Your Information</h2>
+      <div class="card-head">
+        <span class="icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        <h3>Personal Information</h3>
+      </div>
 
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label" for="{{ update_user.first_name.id_for_label }}">First Name</label>
+          <div class="view-value {% if not request.user.first_name %}empty{% endif %}">{{ request.user.first_name|default:"Not set" }}</div>
+          <div class="edit-field">{{ update_user.first_name }}</div>
+        </div>
 
-            <h3>User Info</h3>
-            {{ update_user.as_p }}
+        <div class="field-group">
+          <label class="field-label" for="{{ update_user.last_name.id_for_label }}">Last Name</label>
+          <div class="view-value {% if not request.user.last_name %}empty{% endif %}">{{ request.user.last_name|default:"Not set" }}</div>
+          <div class="edit-field">{{ update_user.last_name }}</div>
+        </div>
 
-            <h3>Profile Info</h3>
-            {{ update_profile.as_p }}
+        <div class="field-group">
+          <label class="field-label">Email</label>
+          <div class="view-value">{{ request.user.email|default:"Not set" }}</div>
+        </div>
 
-            <h3>Preferences</h3>
-            {{ update_settings.as_p }}
+        <div class="field-group">
+          <label class="field-label" for="id_birthday">Birthday</label>
+          <div class="view-value {% if not profile.birthday %}empty{% endif %}">{{ profile.birthday|default:"Not set" }}</div>
+          <div class="edit-field">
+            <input type="date" name="birthday" id="id_birthday" value="{{ profile.birthday|date:'Y-m-d' }}">
+          </div>
+        </div>
 
-            <div class="button-group">
-                <button type="submit" class="btn btn-primary">
-                    Save Changes
-                </button>
+        <div class="field-group">
+          <label class="field-label" for="{{ update_profile.gender.id_for_label }}">Gender</label>
+          <div class="view-value {% if not profile.gender %}empty{% endif %}">{{ profile.get_gender_display|default:"Not set" }}</div>
+          <div class="edit-field">{{ update_profile.gender }}</div>
+        </div>
 
-                <button type="submit" name="logout_btn" value="1" class="btn btn-danger">
-                    Log Out
-                </button>
+        <div class="field-group">
+          <label class="field-label" for="country-select-trigger">Country</label>
+          <div class="view-value {% if not profile.country %}empty{% endif %}">{{ profile.country|default:"Not set" }}</div>
+          <div class="edit-field">
+            <div class="country-select" id="country-select">
+              <input type="hidden" name="country" id="id_country" value="{{ profile.country|default:'' }}">
+              <button type="button" class="country-select-trigger" id="country-select-trigger">
+                <span id="country-select-label">{{ profile.country|default:"Select a country" }}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="country-select-panel" id="country-select-panel">
+                <input type="text" id="country_search" class="country-select-search" placeholder="Search countries..." autocomplete="off">
+                <ul class="country-select-list" id="country-select-list"></ul>
+              </div>
             </div>
-        </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-field" style="margin-top:22px" id="picture-field-wrap">
+        <label class="field-label" style="text-align:center">Profile Picture</label>
+        <div class="avatar-upload-edit">
+          <label for="id_picture" class="avatar-circle-edit">
+            <svg id="picture-placeholder-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" {% if profile.picture %}style="display:none"{% endif %}><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <img id="picture-preview-img" alt="Profile picture" {% if profile.picture %}src="{{ profile.picture.url }}"{% else %}style="display:none"{% endif %}>
+            <span class="avatar-badge-edit">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </span>
+            <input type="file" name="picture" id="id_picture" accept="image/*">
+          </label>
+          <input type="checkbox" name="picture-clear" id="picture-clear_id" style="display:none">
+          <button type="button" class="btn-remove-photo" id="remove-photo-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            Remove Photo
+          </button>
+        </div>
+      </div>
     </div>
 
+    <!-- ---------- address ---------- -->
     <div class="card">
-        <h2>Security</h2>
-        <a href="{% url 'change-password' %}">
-            <button type="button" class="btn btn-secondary">
-                Change Password
-            </button>
-        </a>
+      <div class="card-head">
+        <span class="icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+        <h3>Address</h3>
+      </div>
+
+      <div class="field-grid single">
+        <div class="field-group">
+          <label class="field-label" for="{{ update_profile.address1.id_for_label }}">Address Line 1</label>
+          <div class="view-value {% if not profile.address1 %}empty{% endif %}">{{ profile.address1|default:"Not set" }}</div>
+          <div class="edit-field">{{ update_profile.address1 }}</div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="{{ update_profile.address2.id_for_label }}">Address Line 2</label>
+          <div class="view-value {% if not profile.address2 %}empty{% endif %}">{{ profile.address2|default:"Not set" }}</div>
+          <div class="edit-field">{{ update_profile.address2 }}</div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="{{ update_profile.address3.id_for_label }}">Address Line 3</label>
+          <div class="view-value {% if not profile.address3 %}empty{% endif %}">{{ profile.address3|default:"Not set" }}</div>
+          <div class="edit-field">{{ update_profile.address3 }}</div>
+        </div>
+      </div>
     </div>
+
+    <!-- ---------- preferences ---------- -->
+    <div class="card">
+      <div class="card-head">
+        <span class="icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </span>
+        <h3>Preferences</h3>
+      </div>
+
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label" for="{{ update_settings.theme.id_for_label }}">Theme</label>
+          <div class="view-value {% if not request.user.usersettings.theme %}empty{% endif %}">{{ request.user.usersettings.get_theme_display|default:"Not set" }}</div>
+          <div class="edit-field">{{ update_settings.theme }}</div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="{{ update_settings.language.id_for_label }}">Language</label>
+          <div class="view-value {% if not request.user.usersettings.language %}empty{% endif %}">{{ request.user.usersettings.get_language_display|default:"Not set" }}</div>
+          <div class="edit-field">{{ update_settings.language }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar" id="action-bar">
+      <div class="action-bar-inner">
+        <span class="save-note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          You're editing your profile
+        </span>
+        <button type="button" class="btn-text" id="cancel-btn">Cancel</button>
+        <button type="submit" class="btn-primary" id="save-btn">
+          <span class="spinner"></span>
+          <span class="btn-label">Save Changes</span>
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- ---------- security ---------- -->
+  <div class="card security-card">
+    <div>
+      <h3 style="font-size:16px">Security</h3>
+      <p>Update your password to keep your account safe</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="{% url 'change-password' %}"><button type="button" class="btn-ghost">Change Password</button></a>
+      <form method="POST" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" name="logout_btn" value="1" class="btn-danger-ghost">Log Out</button>
+      </form>
+    </div>
+  </div>
 
 </div>
+
+<div class="crop-overlay" id="crop-overlay">
+  <div class="crop-modal">
+    <h3>Adjust your photo</h3>
+    <div class="crop-canvas-wrap">
+      <img id="crop-target-img" alt="Crop preview">
+    </div>
+    <div class="crop-zoom-row">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="range" id="crop-zoom-slider" min="0" max="100" value="0" step="1">
+    </div>
+    <div class="crop-ratio-row">
+      <button type="button" class="crop-ratio-btn active" data-ratio="1">Square</button>
+      <button type="button" class="crop-ratio-btn" data-ratio="1.3333333333">4:3</button>
+      <button type="button" class="crop-ratio-btn" data-ratio="1.7777777778">16:9</button>
+      <button type="button" class="crop-ratio-btn" data-ratio="0">Free</button>
+    </div>
+    <div class="crop-actions">
+      <button type="button" class="btn-text" id="crop-cancel-btn">Cancel</button>
+      <button type="button" class="btn-primary" id="crop-confirm-btn"><span class="btn-label">Apply</span></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const root = document.getElementById('profile-root');
+  const editBtn = document.getElementById('edit-toggle-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const form = document.getElementById('profile-form');
+  const saveBtn = document.getElementById('save-btn');
+
+  function enterEdit(){
+    root.classList.add('editing');
+    editBtn.style.display = 'none';
+    setTimeout(() => {
+      root.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 80);
+  }
+
+  function exitEdit(){
+    root.classList.remove('editing');
+    editBtn.style.display = '';
+  }
+
+  editBtn.addEventListener('click', enterEdit);
+
+  const pictureInput = document.getElementById('id_picture');
+  const picturePreview = document.getElementById('picture-preview-img');
+  const picturePlaceholder = document.getElementById('picture-placeholder-icon');
+  const pictureClearCheckbox = document.getElementById('picture-clear_id');
+  const removePhotoBtn = document.getElementById('remove-photo-btn');
+  const originalPictureSrc = picturePreview && picturePreview.getAttribute('src')
+    ? picturePreview.getAttribute('src') : '';
+
+  // ---- crop modal ----
+  const cropOverlay = document.getElementById('crop-overlay');
+  const cropTargetImg = document.getElementById('crop-target-img');
+  const cropZoomSlider = document.getElementById('crop-zoom-slider');
+  const cropCancelBtn = document.getElementById('crop-cancel-btn');
+  const cropConfirmBtn = document.getElementById('crop-confirm-btn');
+  const cropRatioBtns = document.querySelectorAll('.crop-ratio-btn');
+  let cropper = null;
+  let pendingFileName = 'profile.jpg';
+
+  function openCropModal(dataUrl, fileName) {
+    pendingFileName = fileName || 'profile.jpg';
+    cropTargetImg.src = dataUrl;
+    cropOverlay.classList.add('open');
+    if (cropper) { cropper.destroy(); cropper = null; }
+    cropper = new Cropper(cropTargetImg, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 1,
+      background: false,
+      zoomOnWheel: false,
+      ready: function () { cropZoomSlider.value = 0; }
+    });
+    cropRatioBtns.forEach(b => b.classList.toggle('active', b.dataset.ratio === '1'));
+  }
+
+  function closeCropModal() {
+    cropOverlay.classList.remove('open');
+    if (cropper) { cropper.destroy(); cropper = null; }
+  }
+
+  cropZoomSlider.addEventListener('input', function () {
+    if (!cropper) return;
+    cropper.zoomTo(Number(this.value) / 100 * 2);
+  });
+
+  cropRatioBtns.forEach(btn => {
+    btn.addEventListener('click', function () {
+      cropRatioBtns.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const ratio = Number(this.dataset.ratio);
+      if (!cropper) return;
+      cropper.setAspectRatio(ratio === 0 ? NaN : ratio);
+    });
+  });
+
+  cropCancelBtn.addEventListener('click', function () {
+    closeCropModal();
+    pictureInput.value = '';
+  });
+
+  cropConfirmBtn.addEventListener('click', function () {
+    if (!cropper) return;
+    const canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200, imageSmoothingQuality: 'high' });
+    canvas.toBlob(function (blob) {
+      const croppedFile = new File([blob], pendingFileName, { type: 'image/jpeg' });
+      const dt = new DataTransfer();
+      dt.items.add(croppedFile);
+      pictureInput.files = dt.files;
+
+      const previewUrl = canvas.toDataURL('image/jpeg', 0.92);
+      picturePreview.src = previewUrl;
+      picturePreview.style.display = 'block';
+      picturePlaceholder.style.display = 'none';
+      pictureClearCheckbox.checked = false;
+
+      closeCropModal();
+    }, 'image/jpeg', 0.92);
+  });
+
+  if (pictureInput) {
+    pictureInput.addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        openCropModal(ev.target.result, file.name);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (removePhotoBtn) {
+    removePhotoBtn.addEventListener('click', function () {
+      pictureInput.value = '';
+      pictureClearCheckbox.checked = true;
+      picturePreview.removeAttribute('src');
+      picturePreview.style.display = 'none';
+      picturePlaceholder.style.display = 'block';
+    });
+  }
+
+  // ---- country searchable select ----
+  const COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo (Congo-Brazzaville)","Costa Rica","Croatia","Cuba","Cyprus","Czechia","Democratic Republic of the Congo","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States of America","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+
+  const countrySelect = document.getElementById('country-select');
+  if (countrySelect) {
+    const trigger = document.getElementById('country-select-trigger');
+    const label = document.getElementById('country-select-label');
+    const panel = document.getElementById('country-select-panel');
+    const search = document.getElementById('country_search');
+    const list = document.getElementById('country-select-list');
+    const hiddenInput = document.getElementById('id_country');
+    const originalCountryValue = hiddenInput.value;
+    const originalCountryLabel = label.textContent;
+
+    // Move the panel to <body> so it always floats above every other
+    // element on the page instead of getting trapped behind sibling
+    // cards/animations that create their own stacking context.
+    document.body.appendChild(panel);
+
+    function renderList(filter) {
+      const q = (filter || '').trim().toLowerCase();
+      const matches = COUNTRIES.filter(c => c.toLowerCase().includes(q));
+      list.innerHTML = '';
+      if (matches.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'no-results';
+        li.textContent = 'No matching country';
+        list.appendChild(li);
+        return;
+      }
+      matches.forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = c;
+        if (c === hiddenInput.value) li.classList.add('highlighted');
+        li.addEventListener('click', function () {
+          hiddenInput.value = c;
+          label.textContent = c;
+          closePanel();
+        });
+        list.appendChild(li);
+      });
+    }
+
+    function positionPanel() {
+      const rect = trigger.getBoundingClientRect();
+      panel.style.top = (rect.bottom + 6) + 'px';
+      panel.style.left = rect.left + 'px';
+      panel.style.width = rect.width + 'px';
+    }
+
+    function openPanel() {
+      countrySelect.classList.add('open');
+      positionPanel();
+      panel.classList.add('open');
+      search.value = '';
+      renderList('');
+      setTimeout(() => search.focus(), 30);
+      window.addEventListener('scroll', positionPanel, true);
+      window.addEventListener('resize', positionPanel);
+    }
+    function closePanel() {
+      countrySelect.classList.remove('open');
+      panel.classList.remove('open');
+      window.removeEventListener('scroll', positionPanel, true);
+      window.removeEventListener('resize', positionPanel);
+    }
+
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      countrySelect.classList.contains('open') ? closePanel() : openPanel();
+    });
+    search.addEventListener('input', function () { renderList(this.value); });
+    document.addEventListener('click', function (e) {
+      if (!countrySelect.contains(e.target) && !panel.contains(e.target)) closePanel();
+    });
+    search.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closePanel();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const first = list.querySelector('li:not(.no-results)');
+        if (first) first.click();
+      }
+    });
+    cancelBtn.addEventListener('click', function () {
+      hiddenInput.value = originalCountryValue;
+      label.textContent = originalCountryLabel;
+      closePanel();
+    });
+  }
+
+  cancelBtn.addEventListener('click', function(){
+    form.reset();
+    if (picturePreview) {
+      if (originalPictureSrc) {
+        picturePreview.src = originalPictureSrc;
+        picturePreview.style.display = 'block';
+        if (picturePlaceholder) picturePlaceholder.style.display = 'none';
+      } else {
+        picturePreview.removeAttribute('src');
+        picturePreview.style.display = 'none';
+        if (picturePlaceholder) picturePlaceholder.style.display = 'block';
+      }
+    }
+    exitEdit();
+  });
+
+  form.addEventListener('submit', function(){
+    saveBtn.classList.add('saving');
+    saveBtn.disabled = true;
+  });
+
+  // Toasts: auto-dismiss
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
+</script>
 
 </body>
 </html>

@@ -215,6 +215,24 @@ input:focus, select:focus {
     </div>
 </div>
 
+<div class="crop-overlay" id="crop-overlay">
+  <div class="crop-modal">
+    <h3 class="crop-title">Adjust your photo</h3>
+    <div class="crop-viewport" id="crop-viewport">
+      <img id="crop-img" alt="Crop preview" draggable="false">
+    </div>
+    <div class="crop-controls">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.6-3.6"/></svg>
+      <input type="range" id="crop-zoom" min="100" max="300" value="100">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.6-3.6"/></svg>
+    </div>
+    <div class="crop-actions">
+      <button type="button" class="btn-text-crop" id="crop-cancel">Cancel</button>
+      <button type="button" class="btn-primary" id="crop-save">Save Photo</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // Image preview
 document.addEventListener("DOMContentLoaded", function() {

@@ -3,73 +3,508 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>StoreHub — Register</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{% static 'users/style/style.css' %}">
-  <link rel="stylesheet" href="{% static 'landing/style/style.css' %}">
-  <link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+<meta charset="UTF-8">
+<title>Create Account | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:60px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  h1,h2,h3{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes floatBlob{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-16px)}}
+
+  /* ---------- decorative color blobs ---------- */
+  body::before,body::after{
+    content:"";position:fixed;border-radius:50%;filter:blur(90px);z-index:0;pointer-events:none;
+    animation:floatBlob 9s ease-in-out infinite;
+  }
+  body::before{width:420px;height:420px;background:var(--accent);opacity:.22;top:-140px;left:-140px}
+  body::after{width:380px;height:380px;background:var(--orange);opacity:.22;bottom:-150px;right:-110px;animation-delay:2s}
+
+  /* ---------- nav ---------- */
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+
+  /* ---------- toasts ---------- */
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+
+  /* ---------- auth card ---------- */
+  .auth-wrap{max-width:480px;margin:48px auto 0;padding:0 24px;position:relative;z-index:1}
+  .auth-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:36px;animation:slideInUp .5s ease both;
+    position:relative;overflow:hidden;
+  }
+  .auth-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:6px;
+    background:linear-gradient(90deg,var(--accent),var(--orange));
+  }
+  .auth-header{text-align:center;margin-bottom:22px}
+  .auth-header h1{
+    font-size:24px;margin-bottom:6px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .auth-header p{color:var(--muted);font-size:14px}
+
+  /* ---------- avatar upload ---------- */
+  .avatar-upload{display:flex;flex-direction:column;align-items:center;margin-bottom:24px}
+  .avatar-circle{
+    position:relative;width:96px;height:96px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    cursor:pointer;border:3px solid var(--surface);
+    box-shadow:0 6px 18px rgba(26,73,170,.22);
+    transition:transform .25s ease,box-shadow .25s ease;
+  }
+  .avatar-circle:hover{transform:scale(1.05);box-shadow:0 8px 22px rgba(26,73,170,.3)}
+  .avatar-circle svg{color:var(--accent);opacity:.55}
+  .avatar-circle img{width:100%;height:100%;object-fit:cover;display:none}
+  .avatar-badge{
+    position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;
+    background:linear-gradient(135deg,var(--orange),#ffb84d);color:#fff;
+    display:flex;align-items:center;justify-content:center;border:2.5px solid var(--surface);
+  }
+  .avatar-upload input[type="file"]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+  .avatar-hint{font-size:12px;color:var(--muted);margin-top:9px}
+
+  /* ---------- crop modal ---------- */
+  .crop-overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,0.55);backdrop-filter:blur(2px);
+    display:none;align-items:center;justify-content:center;z-index:10000;
+    animation:fadeIn .2s ease;
+  }
+  .crop-overlay.open{display:flex}
+  .crop-modal{
+    background:var(--surface);border-radius:var(--radius);padding:28px;width:380px;max-width:90vw;
+    box-shadow:var(--shadow-lg);animation:slideInUp .3s ease;text-align:left;
+  }
+  .crop-title{font-size:17px;margin-bottom:18px;text-align:center}
+  .crop-canvas-wrap{width:100%;height:300px;background:#0f172a;border-radius:var(--radius-sm);overflow:hidden}
+  .crop-canvas-wrap img{display:block;max-width:100%}
+  .crop-zoom-row{display:flex;align-items:center;gap:10px;margin-top:16px;color:var(--muted)}
+  .crop-zoom-row input[type="range"]{flex:1;accent-color:var(--accent)}
+  .crop-ratio-row{display:flex;gap:8px;margin-top:14px}
+  .crop-ratio-btn{
+    flex:1;background:var(--accent-light);color:var(--accent);border:none;padding:8px 0;
+    border-radius:var(--radius-sm);font-weight:600;font-size:12.5px;transition:background .2s;
+  }
+  .crop-ratio-btn.active,.crop-ratio-btn:hover{background:var(--accent);color:#fff}
+  .crop-actions{display:flex;gap:10px;margin-top:20px}
+  .crop-actions .btn-primary{width:auto;flex:1;padding:11px 18px}
+  .btn-text-crop{
+    flex:1;background:var(--border);color:var(--text);border:none;padding:11px 18px;
+    border-radius:999px;font-weight:600;font-size:14px;transition:background .2s;
+  }
+  .btn-text-crop:hover{background:#cbd5e1}
+
+  .field{margin-bottom:16px}
+  .field-label{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block}
+  .field input[type="text"],
+  .field input[type="email"],
+  .field input[type="password"],
+  .field input[type="date"],
+  .field select{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;
+    font-family:inherit;font-size:14px;background:var(--surface);color:var(--text);
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .field input:focus,.field select:focus{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);
+  }
+  .field-error{color:var(--danger);font-size:12.5px;margin-top:5px;display:block}
+  .field-help{color:var(--muted);font-size:12px;margin-top:5px;display:block}
+  .non-field-error{
+    background:var(--danger-light);color:var(--danger);border-radius:var(--radius-sm);
+    padding:12px 14px;font-size:13.5px;margin-bottom:18px;
+  }
+
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:13px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    width:100%;transition:transform .2s ease, box-shadow .2s ease;
+    box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+
+  .divider{display:flex;align-items:center;text-align:center;color:var(--muted);font-size:12.5px;margin:22px 0}
+  .divider::before,.divider::after{content:"";flex:1;border-bottom:1px solid var(--border)}
+  .divider span{padding:0 12px;color:var(--accent);font-weight:600}
+
+  .btn-google{
+    display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+    padding:12px;border:1.5px solid var(--border);border-radius:999px;
+    background:var(--surface);color:var(--text);font-weight:600;font-size:14px;
+    transition:border-color .2s,background .2s;
+  }
+  .btn-google:hover{border-color:var(--accent);background:var(--accent-light)}
+
+  .auth-footer{text-align:center;margin-top:20px;font-size:13.5px;color:var(--muted)}
+  .auth-footer a{color:var(--accent);font-weight:600}
+  .auth-footer a:hover{text-decoration:underline}
+
+  /* ---------- country searchable dropdown ---------- */
+  .country-select{position:relative}
+  .country-select-trigger{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:11px 13px;border-radius:var(--radius-sm);border:1.5px solid var(--border);
+    background:var(--surface);color:var(--text);font-family:inherit;font-size:14px;text-align:left;
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .country-select-trigger:focus,.country-select.open .country-select-trigger{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);
+  }
+  .country-select-trigger svg{flex-shrink:0;color:var(--muted);transition:transform .2s}
+  .country-select.open .country-select-trigger svg{transform:rotate(180deg)}
+  .country-select-panel{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;
+    background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-lg);overflow:hidden;
+  }
+  .country-select.open .country-select-panel{display:block;animation:slideInUp .18s ease both}
+  .country-select-search{
+    width:100%;border:none;border-bottom:1.5px solid var(--border);padding:10px 13px;
+    font-family:inherit;font-size:14px;background:#fff;
+  }
+  .country-select-search:focus{outline:none;background:var(--accent-light)}
+  .country-select-list{list-style:none;margin:0;padding:6px;max-height:220px;overflow-y:auto}
+  .country-select-list li{padding:9px 11px;border-radius:8px;font-size:14px;cursor:pointer;transition:background .15s}
+  .country-select-list li:hover,.country-select-list li.highlighted{background:var(--accent-light);color:var(--accent)}
+  .country-select-list li.no-results{color:var(--muted);font-style:italic;cursor:default}
+  .country-select-list li.no-results:hover{background:none}
+
+  @media(max-width:600px){
+    nav{padding:12px 18px}
+    .auth-card{padding:26px}
+  }
+</style>
 </head>
 <body>
-  <nav>
-    <a href="{% url 'home' %}" class="brand">
-      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo" id="logo">
-    </a>
-    <div class="nav-links">
-      <a href="{% url 'home' %}#merchants">For Merchants</a>
-      <a href="{% url 'home' %}#customers">For Customers</a>
-      <a href="{% url 'account_login' %}" class="get-started" style="padding:8px 20px;">Login</a>
-    </div>
-  </nav>
 
-  <div class="login-container">
-    <form method="POST" class="login-form" action="{% url 'account_signup' %}">
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'account_login' %}">Log In</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+
+    <div class="auth-header">
+      <h1>Create Your Account</h1>
+      <p>Join StoreHub to start shopping or selling</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="non-field-error">{{ form.non_field_errors|striptags }}</div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'account_signup' %}" enctype="multipart/form-data">
       {% csrf_token %}
 
-      <div class="form-header">
-        <h2>Create Account</h2>
-        <p>Register to get started — add your profile details anytime after</p>
+      <div class="avatar-upload">
+        <label for="{{ form.picture.id_for_label }}" class="avatar-circle">
+          <svg id="avatar-placeholder" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <img id="avatar-img" alt="Profile preview">
+          <span class="avatar-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </span>
+          {{ form.picture }}
+        </label>
+        <span class="avatar-hint">Add a profile photo</span>
+        {% if form.picture.errors %}<span class="field-error">{{ form.picture.errors|striptags }}</span>{% endif %}
       </div>
 
-      {% if form.non_field_errors %}
-        <small style="color:#dc2626;">{{ form.non_field_errors|striptags }}</small>
-      {% endif %}
+      {% for field in form %}
+        {% if field.name != 'picture' and field.name != 'country' %}
+          <div class="field">
+            <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
+            {% if field.help_text %}<span class="field-help">{{ field.help_text|safe }}</span>{% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
 
-      <div class="form-group">
-        <label>Email</label>
-        {{ form.email }}
-        {% if form.email.errors %}<small style="color:#dc2626;">{{ form.email.errors|striptags }}</small>{% endif %}
+      <div class="field">
+        <label class="field-label" for="country-select-trigger">Country</label>
+        <div class="country-select" id="country-select">
+          <input type="hidden" name="country" id="id_country" value="{{ form.country.value|default:'' }}">
+          <button type="button" class="country-select-trigger" id="country-select-trigger">
+            <span id="country-select-label">{{ form.country.value|default:"Select a country" }}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="country-select-panel" id="country-select-panel">
+            <input type="text" id="country_search" class="country-select-search" placeholder="Search countries..." autocomplete="off">
+            <ul class="country-select-list" id="country-select-list"></ul>
+          </div>
+        </div>
+        {% if form.country.errors %}<span class="field-error">{{ form.country.errors|striptags }}</span>{% endif %}
       </div>
 
-      <div class="form-group">
-        <label>Password</label>
-        {{ form.password1 }}
-        {% if form.password1.errors %}<small style="color:#dc2626;">{{ form.password1.errors|striptags }}</small>{% endif %}
-      </div>
+      <button type="submit" class="btn-primary">Sign Up</button>
+    </form>
 
-      <div class="form-group">
-        <label>Confirm Password</label>
-        {{ form.password2 }}
-        {% if form.password2.errors %}<small style="color:#dc2626;">{{ form.password2.errors|striptags }}</small>{% endif %}
-      </div>
+    <div class="divider"><span>or</span></div>
 
-      {% if redirect_field_value %}
-        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
-      {% endif %}
-
-      <button type="submit" class="submit-btn">Register</button>
-
-      <div class="social-divider"><span>or</span></div>
-
-      <a href="{% provider_login_url 'google' %}" class="google-btn">
+    <form method="post" action="{% provider_login_url 'google' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-google">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.5 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3c-7.6 0-14.1 4.3-17.4 10.6l-.3 1.1z"/><path fill="#4CAF50" d="M24 45c5.4 0 10.3-1.8 14-5.6l-6.6-5.4C29.5 35.9 26.9 37 24 37c-5.3 0-9.7-3.1-11.4-7.8l-6.6 5.1C9.8 40.5 16.4 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.6 5.4C41.4 35.9 44 30.3 44 24c0-1.4-.1-2.7-.4-3.5z"/></svg>
         Continue with Google
-      </a>
-
-      <div class="form-footer">
-        Already have an account?
-        <a href="{% url 'account_login' %}" class="link-btn">Login</a>
-      </div>
+      </button>
     </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="{% url 'account_login' %}">Log In</a>
+    </div>
+
   </div>
+</div>
+
+<div class="crop-overlay" id="crop-overlay">
+  <div class="crop-modal">
+    <h3 class="crop-title">Adjust your photo</h3>
+    <div class="crop-canvas-wrap">
+      <img id="crop-img" alt="Crop preview">
+    </div>
+    <div class="crop-zoom-row">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.6-3.6"/></svg>
+      <input type="range" id="crop-zoom" min="0" max="100" value="0" step="1">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.6-3.6"/></svg>
+    </div>
+    <div class="crop-ratio-row">
+      <button type="button" class="crop-ratio-btn active" data-ratio="1">Square</button>
+      <button type="button" class="crop-ratio-btn" data-ratio="1.3333333333">4:3</button>
+      <button type="button" class="crop-ratio-btn" data-ratio="1.7777777778">16:9</button>
+      <button type="button" class="crop-ratio-btn" data-ratio="0">Free</button>
+    </div>
+    <div class="crop-actions">
+      <button type="button" class="btn-text-crop" id="crop-cancel">Cancel</button>
+      <button type="button" class="btn-primary" id="crop-save">Save Photo</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('{{ form.picture.id_for_label }}');
+  const img = document.getElementById('avatar-img');
+  const placeholder = document.getElementById('avatar-placeholder');
+
+  // ---- country searchable select ----
+  const COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo (Congo-Brazzaville)","Costa Rica","Croatia","Cuba","Cyprus","Czechia","Democratic Republic of the Congo","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States of America","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+
+  const countrySelect = document.getElementById('country-select');
+  if (countrySelect) {
+    const csTrigger = document.getElementById('country-select-trigger');
+    const csLabel = document.getElementById('country-select-label');
+    const csSearch = document.getElementById('country_search');
+    const csList = document.getElementById('country-select-list');
+    const csHidden = document.getElementById('id_country');
+
+    function renderCountryList(filter) {
+      const q = (filter || '').trim().toLowerCase();
+      const matches = COUNTRIES.filter(c => c.toLowerCase().includes(q));
+      csList.innerHTML = '';
+      if (matches.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'no-results';
+        li.textContent = 'No matching country';
+        csList.appendChild(li);
+        return;
+      }
+      matches.forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = c;
+        if (c === csHidden.value) li.classList.add('highlighted');
+        li.addEventListener('click', function () {
+          csHidden.value = c;
+          csLabel.textContent = c;
+          closeCountryPanel();
+        });
+        csList.appendChild(li);
+      });
+    }
+    function openCountryPanel() {
+      countrySelect.classList.add('open');
+      csSearch.value = '';
+      renderCountryList('');
+      setTimeout(() => csSearch.focus(), 30);
+    }
+    function closeCountryPanel() {
+      countrySelect.classList.remove('open');
+    }
+    csTrigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      countrySelect.classList.contains('open') ? closeCountryPanel() : openCountryPanel();
+    });
+    csSearch.addEventListener('input', function () { renderCountryList(this.value); });
+    document.addEventListener('click', function (e) {
+      if (!countrySelect.contains(e.target)) closeCountryPanel();
+    });
+    csSearch.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeCountryPanel();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const first = csList.querySelector('li:not(.no-results)');
+        if (first) first.click();
+      }
+    });
+  }
+
+  const overlay = document.getElementById('crop-overlay');
+  const cropImg = document.getElementById('crop-img');
+  const zoomSlider = document.getElementById('crop-zoom');
+  const cancelBtn = document.getElementById('crop-cancel');
+  const saveBtn = document.getElementById('crop-save');
+  const ratioBtns = document.querySelectorAll('.crop-ratio-btn');
+
+  if (!input) return;
+
+  let cropper = null;
+  let pendingBaseName = 'avatar';
+
+  function openCropper(file){
+    pendingBaseName = file.name ? file.name.replace(/\.[^.]+$/, '') : 'avatar';
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      cropImg.src = ev.target.result;
+      overlay.classList.add('open');
+      if (cropper) { cropper.destroy(); cropper = null; }
+      cropper = new Cropper(cropImg, {
+        aspectRatio: 1,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 1,
+        background: false,
+        zoomOnWheel: false,
+        ready: function () { zoomSlider.value = 0; }
+      });
+      ratioBtns.forEach(b => b.classList.toggle('active', b.dataset.ratio === '1'));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  input.addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    openCropper(file);
+  });
+
+  zoomSlider.addEventListener('input', function () {
+    if (!cropper) return;
+    cropper.zoomTo(Number(this.value) / 100 * 2);
+  });
+
+  ratioBtns.forEach(btn => {
+    btn.addEventListener('click', function () {
+      ratioBtns.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      if (!cropper) return;
+      const ratio = Number(this.dataset.ratio);
+      cropper.setAspectRatio(ratio === 0 ? NaN : ratio);
+    });
+  });
+
+  function closeCropper(clearInput){
+    overlay.classList.remove('open');
+    if (cropper) { cropper.destroy(); cropper = null; }
+    if (clearInput) input.value = '';
+  }
+
+  cancelBtn.addEventListener('click', function () {
+    closeCropper(true);
+  });
+
+  saveBtn.addEventListener('click', function () {
+    if (!cropper) return;
+    const canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200, imageSmoothingQuality: 'high' });
+    canvas.toBlob(function (blob) {
+      const croppedFile = new File([blob], pendingBaseName + '.jpg', { type: 'image/jpeg' });
+      const dt = new DataTransfer();
+      dt.items.add(croppedFile);
+      input.files = dt.files;
+
+      img.src = URL.createObjectURL(blob);
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+
+      closeCropper(false);
+    }, 'image/jpeg', 0.92);
+  });
+});
+</script>
+
 </body>
 </html>

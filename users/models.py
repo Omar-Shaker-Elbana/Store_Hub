@@ -25,6 +25,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     is_merchant = models.BooleanField(default=False)
     is_delivery_person = models.BooleanField(default=False)
+    is_warehouse_staff = models.BooleanField(default=False)
     birthday = models.DateField(null=True, blank=True)
     picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True, blank=True)
@@ -42,22 +43,6 @@ class UserSettings(models.Model):
     ('light', 'Light'),
     ('dark', 'Dark'),
     ]
-
-    LANGUAGE_CHOICES = [
-    ('en', 'English'),
-    ('es', 'Spanish'),
-    ('fr', 'French'),
-    ('de', 'German'),
-    ('ar', 'Arabic'),
-    ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     theme = models.CharField(max_length=10, choices=THEME_CHOICES, default='dark')
-    language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default='en')
-
-class Card(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    card_num = models.IntegerField(null=True, blank=True)
-    card_name = models.CharField(max_length=50, null=True, blank= True)
-    expiration_date = models.DateField(null=True, blank=True)
-    OTP = models.IntegerField(null=True, blank=True)

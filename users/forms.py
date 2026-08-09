@@ -1,30 +1,27 @@
-from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django import forms
 from django.contrib.auth.models import User
 from .models import Profile, UserSettings
-from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.forms import AuthenticationForm
+from allauth.account.forms import SignupForm
 
-class UserRegisterForm(UserCreationForm):
-    class Meta:
-        model = User
-        fields = ['username', 'email']
+class CustomSignupForm(SignupForm):
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
+    birthday = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    picture = forms.ImageField(required=False)
+    gender = forms.ChoiceField(choices=Profile.GENDER_CHOICES, required=False)
+    country = forms.CharField(max_length=100, required=False)
 
+    def save(self, request):
+        user = super().save(request)  # allauth handles user + EmailAddress creation
 
-class UserForm(UserCreationForm):
-    # password = forms.CharField(widget=forms.PasswordInput)
-    
-    class Meta:
-        model = User
-        fields = ['first_name', 'last_name', 'email']
+        profile = user.profile  # created by the post_save signal
+        profile.birthday = self.cleaned_data.get('birthday')
+        profile.picture = self.cleaned_data.get('picture')
+        profile.gender = self.cleaned_data.get('gender')
+        profile.country = self.cleaned_data.get('country')
+        profile.save()
 
-class ProfileForm(forms.ModelForm):
-    class Meta:
-        model = Profile
-        fields = ['birthday', 'picture', 'gender', 'country']
-
-# class EmailAuthenticationForm(AuthenticationForm):
-    # username = forms.EmailField(label="Email")
+        return user
 
 class UpdateProfileForm(forms.ModelForm):
     class Meta:
@@ -36,13 +33,7 @@ class UpdateUserForm(forms.ModelForm):
         model = User
         fields = ['first_name', 'last_name']
 
-
 class UpdateSettingsForm(forms.ModelForm):
     class Meta:
         model = UserSettings
-        fields = ['theme', 'language']
-
-# class UpdatePasswordForm(forms.Form):
-#     current_password = forms.CharField(widget=forms.PasswordInput, label="Current Password")
-#     new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
-#     confirm_password = forms.CharField(widget=forms.PasswordInput, label="Confirm New Password")
+        fields = ['theme',]

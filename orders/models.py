@@ -73,7 +73,7 @@ class Order(models.Model):
     shipping_address = models.CharField(max_length=255)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     payment_type = models.CharField(max_length=4, choices=PAYMENT_CHOICES, null=True, blank=True)
-    card = models.ForeignKey("users.Card", on_delete=models.CASCADE, null=True, blank=True)
+    # card = models.ForeignKey("users.Card", on_delete=models.CASCADE, null=True, blank=True)
 
 class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
