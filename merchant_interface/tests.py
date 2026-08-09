@@ -6,14 +6,12 @@ from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
-from .forms import (
-    MembershipForm,
-    MembershipInvitationForm,
-    StoreForm,
-    SuggestNicheForm,
-)
-from .models import Membership, MembershipInvitation, Niche, Store, SuggestedNiche
 from products.models import Category, Product
+
+from .forms import (MembershipForm, MembershipInvitationForm, StoreForm,
+                    SuggestNicheForm)
+from .models import (Membership, MembershipInvitation, Niche, Store,
+                     SuggestedNiche)
 
 User = get_user_model()
 
@@ -62,6 +60,7 @@ class MerchantTestMixin:
 # Model tests
 # ---------------------------------------------------------------------------
 
+
 class NicheModelTests(MerchantTestMixin, TestCase):
     def test_niche_name_must_be_unique(self):
         Niche.objects.create(name="Fashion")
@@ -102,14 +101,17 @@ class MembershipModelTests(MerchantTestMixin, TestCase):
 # Form tests
 # ---------------------------------------------------------------------------
 
+
 class StoreFormTests(MerchantTestMixin, TestCase):
     def test_valid_data(self):
         niche = self.make_niche()
-        form = StoreForm(data={
-            "name": "My Shop",
-            "niche": niche.id,
-            "nationality": "Egyptian",
-        })
+        form = StoreForm(
+            data={
+                "name": "My Shop",
+                "niche": niche.id,
+                "nationality": "Egyptian",
+            }
+        )
         self.assertTrue(form.is_valid())
 
     def test_missing_niche_is_invalid(self):
@@ -130,21 +132,25 @@ class StoreFormTests(MerchantTestMixin, TestCase):
 
 class MembershipInvitationFormTests(MerchantTestMixin, TestCase):
     def test_valid_data(self):
-        form = MembershipInvitationForm(data={
-            "invitee_email": "invitee@example.com",
-            "role": "Helper",
-            "wage_type": "Salary",
-            "wage": "500.00",
-        })
+        form = MembershipInvitationForm(
+            data={
+                "invitee_email": "invitee@example.com",
+                "role": "Helper",
+                "wage_type": "Salary",
+                "wage": "500.00",
+            }
+        )
         self.assertTrue(form.is_valid())
 
     def test_invalid_email_is_rejected(self):
-        form = MembershipInvitationForm(data={
-            "invitee_email": "not-an-email",
-            "role": "Helper",
-            "wage_type": "Salary",
-            "wage": "500.00",
-        })
+        form = MembershipInvitationForm(
+            data={
+                "invitee_email": "not-an-email",
+                "role": "Helper",
+                "wage_type": "Salary",
+                "wage": "500.00",
+            }
+        )
         self.assertFalse(form.is_valid())
         self.assertIn("invitee_email", form.errors)
 
@@ -168,17 +174,20 @@ class SuggestNicheFormTests(MerchantTestMixin, TestCase):
 
 class MembershipFormTests(MerchantTestMixin, TestCase):
     def test_valid_data(self):
-        form = MembershipForm(data={
-            "role": "Manager",
-            "wage_type": "Percentage",
-            "wage": "12.50",
-        })
+        form = MembershipForm(
+            data={
+                "role": "Manager",
+                "wage_type": "Percentage",
+                "wage": "12.50",
+            }
+        )
         self.assertTrue(form.is_valid())
 
 
 # ---------------------------------------------------------------------------
 # View tests
 # ---------------------------------------------------------------------------
+
 
 class ShowStoreViewTests(MerchantTestMixin, TestCase):
     def test_existing_store_lists_its_products(self):
@@ -229,12 +238,15 @@ class CreateStoreViewTests(MerchantTestMixin, TestCase):
 
     def test_valid_post_creates_store_and_owner_membership(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "create_store_btn": "1",
-            "name": "Brand New Store",
-            "niche": self.niche.id,
-            "nationality": "Egyptian",
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "create_store_btn": "1",
+                "name": "Brand New Store",
+                "niche": self.niche.id,
+                "nationality": "Egyptian",
+            },
+        )
         store = Store.objects.get(name="Brand New Store")
         self.assertRedirects(response, reverse("add_members", args=[store.id]))
         membership = Membership.objects.get(user=self.user, store=store)
@@ -242,11 +254,14 @@ class CreateStoreViewTests(MerchantTestMixin, TestCase):
 
     def test_invalid_store_post_does_not_create_a_store(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "create_store_btn": "1",
-            # niche omitted -> invalid
-            "name": "Broken Store",
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "create_store_btn": "1",
+                # niche omitted -> invalid
+                "name": "Broken Store",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Store.objects.filter(name="Broken Store").exists())
 
@@ -260,29 +275,40 @@ class CreateStoreViewTests(MerchantTestMixin, TestCase):
         # edit_store/add_members which do surface their error messages
         # correctly. This test documents today's behavior.
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "create_store_btn": "1",
-            "name": "Broken Store",
-        }, follow=True)
+        response = self.client.post(
+            self.url,
+            data={
+                "create_store_btn": "1",
+                "name": "Broken Store",
+            },
+            follow=True,
+        )
         messages = list(response.context["messages"])
         self.assertTrue(any("Error creating store" in str(m) for m in messages))
 
     def test_valid_suggest_niche_post_creates_suggestion(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "suggest_niche_btn": "1",
-            "name": "Pet Supplies",
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "suggest_niche_btn": "1",
+                "name": "Pet Supplies",
+            },
+        )
         self.assertRedirects(response, self.url)
         suggestion = SuggestedNiche.objects.get(name="Pet Supplies")
         self.assertEqual(suggestion.suggested_by, self.user)
 
     def test_invalid_suggest_niche_post_shows_error(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "suggest_niche_btn": "1",
-            "name": "",
-        }, follow=True)
+        response = self.client.post(
+            self.url,
+            data={
+                "suggest_niche_btn": "1",
+                "name": "",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         messages = list(response.context["messages"])
         self.assertTrue(any("Error suggesting niche" in str(m) for m in messages))
@@ -330,34 +356,43 @@ class AddMembersViewTests(MerchantTestMixin, TestCase):
 
     def test_valid_invitation_creates_invitation_with_inviter_and_store(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "send_invitation_btn": "1",
-            "invitee_email": "newmember@example.com",
-            "role": "Helper",
-            "wage_type": "Salary",
-            "wage": "300.00",
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "send_invitation_btn": "1",
+                "invitee_email": "newmember@example.com",
+                "role": "Helper",
+                "wage_type": "Salary",
+                "wage": "300.00",
+            },
+        )
         # NOTE: the view redirects to the hardcoded path f"/add_members/{store.id}"
         # rather than using reverse('add_members', ...), so it is missing the
         # '/merchant' prefix and trailing slash that the actual URL pattern
         # requires. This test documents the current (likely unintended)
         # behavior rather than the "correct" URL.
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('add_members', args=[self.store.id]))
+        self.assertEqual(response.url, reverse("add_members", args=[self.store.id]))
 
-        invitation = MembershipInvitation.objects.get(invitee_email="newmember@example.com")
+        invitation = MembershipInvitation.objects.get(
+            invitee_email="newmember@example.com"
+        )
         self.assertEqual(invitation.inviter, self.owner)
         self.assertEqual(invitation.store, self.store)
 
     def test_invalid_invitation_shows_error(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "send_invitation_btn": "1",
-            "invitee_email": "not-an-email",
-            "role": "Helper",
-            "wage_type": "Salary",
-            "wage": "300.00",
-        }, follow=True)
+        response = self.client.post(
+            self.url,
+            data={
+                "send_invitation_btn": "1",
+                "invitee_email": "not-an-email",
+                "role": "Helper",
+                "wage_type": "Salary",
+                "wage": "300.00",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(MembershipInvitation.objects.filter(store=self.store).exists())
         messages = list(response.context["messages"])
@@ -368,12 +403,15 @@ class AddMembersViewTests(MerchantTestMixin, TestCase):
         membership = self.make_membership(helper_user, self.store, role="Helper")
 
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "membership_id": membership.id,
-            "role": "Manager",
-            "wage_type": "Salary",
-            "wage": "1000.00",
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "membership_id": membership.id,
+                "role": "Manager",
+                "wage_type": "Salary",
+                "wage": "1000.00",
+            },
+        )
         self.assertRedirects(response, reverse("add_members", args=[self.store.id]))
         membership.refresh_from_db()
         self.assertEqual(membership.role, "Manager")
@@ -386,24 +424,31 @@ class AddMembersViewTests(MerchantTestMixin, TestCase):
         membership.save()
 
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "membership_id": membership.id,
-            "role": "Manager",
-            "wage": "5.00",
-            # wage_type intentionally omitted
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "membership_id": membership.id,
+                "role": "Manager",
+                "wage": "5.00",
+                # wage_type intentionally omitted
+            },
+        )
         self.assertRedirects(response, reverse("add_members", args=[self.store.id]))
         membership.refresh_from_db()
         self.assertEqual(membership.wage_type, "Percentage")
 
     def test_update_of_unknown_membership_shows_error(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "membership_id": 999999,
-            "role": "Manager",
-            "wage_type": "Salary",
-            "wage": "5.00",
-        }, follow=True)
+        response = self.client.post(
+            self.url,
+            data={
+                "membership_id": 999999,
+                "role": "Manager",
+                "wage_type": "Salary",
+                "wage": "5.00",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         messages = list(response.context["messages"])
         self.assertTrue(any("Membership not found" in str(m) for m in messages))
@@ -440,23 +485,30 @@ class EditStoreViewTests(MerchantTestMixin, TestCase):
 
     def test_valid_post_updates_store(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "name": "Renamed Store",
-            "niche": self.store.niche.id,
-            "nationality": "Egyptian",
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "name": "Renamed Store",
+                "niche": self.store.niche.id,
+                "nationality": "Egyptian",
+            },
+        )
         # Same hardcoded-redirect caveat as add_members - see note there.
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('add_members', args=[self.store.id]))
+        self.assertEqual(response.url, reverse("add_members", args=[self.store.id]))
         self.store.refresh_from_db()
         self.assertEqual(self.store.name, "Renamed Store")
 
     def test_invalid_post_shows_error_and_does_not_save(self):
         self.client.login(username="owner", password="pass12345")
-        response = self.client.post(self.url, data={
-            "name": "Should Not Save",
-            # niche omitted -> invalid
-        }, follow=True)
+        response = self.client.post(
+            self.url,
+            data={
+                "name": "Should Not Save",
+                # niche omitted -> invalid
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.store.refresh_from_db()
         self.assertNotEqual(self.store.name, "Should Not Save")

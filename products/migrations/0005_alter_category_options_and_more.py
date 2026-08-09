@@ -6,20 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('products', '0004_alter_category_options_and_more'),
+        ("products", "0004_alter_category_options_and_more"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='category',
-            options={'ordering': ['name']},
+            name="category",
+            options={"ordering": ["name"]},
         ),
         migrations.AddConstraint(
-            model_name='category',
-            constraint=models.UniqueConstraint(fields=('parent', 'name'), name='unique_category_per_parent'),
+            model_name="category",
+            constraint=models.UniqueConstraint(
+                fields=("parent", "name"), name="unique_category_per_parent"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='category',
-            constraint=models.UniqueConstraint(condition=models.Q(('parent__isnull', True)), fields=('name',), name='unique_root_category_name'),
+            model_name="category",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("parent__isnull", True)),
+                fields=("name",),
+                name="unique_root_category_name",
+            ),
         ),
     ]

@@ -6,23 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('orders', '0004_alter_wishlist_user_cartitem_unique_product_per_cart_and_more'),
+        (
+            "orders",
+            "0004_alter_wishlist_user_cartitem_unique_product_per_cart_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='cartitem',
-            name='added_at',
+            model_name="cartitem",
+            name="added_at",
             field=models.DateTimeField(auto_now_add=True, null=True),
         ),
         migrations.AddField(
-            model_name='orderitem',
-            name='price_at_purchase',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True),
+            model_name="orderitem",
+            name="price_at_purchase",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=10, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='wishlistitem',
-            name='added_at',
+            model_name="wishlistitem",
+            name="added_at",
             field=models.DateTimeField(auto_now_add=True, null=True),
         ),
     ]

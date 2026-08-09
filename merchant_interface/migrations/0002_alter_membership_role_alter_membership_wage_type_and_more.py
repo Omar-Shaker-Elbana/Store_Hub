@@ -6,28 +6,52 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('merchant_interface', '0001_initial'),
+        ("merchant_interface", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='membership',
-            name='role',
-            field=models.CharField(choices=[('Owner', 'owner'), ('Helper', 'helper'), ('Manager', 'manager')], default='Helper', max_length=7),
+            model_name="membership",
+            name="role",
+            field=models.CharField(
+                choices=[
+                    ("Owner", "owner"),
+                    ("Helper", "helper"),
+                    ("Manager", "manager"),
+                ],
+                default="Helper",
+                max_length=7,
+            ),
         ),
         migrations.AlterField(
-            model_name='membership',
-            name='wage_type',
-            field=models.CharField(choices=[('Salary', 'salary'), ('Percentage', 'percentage')], default='Salary', max_length=10),
+            model_name="membership",
+            name="wage_type",
+            field=models.CharField(
+                choices=[("Salary", "salary"), ("Percentage", "percentage")],
+                default="Salary",
+                max_length=10,
+            ),
         ),
         migrations.AlterField(
-            model_name='membershipinvitation',
-            name='role',
-            field=models.CharField(choices=[('Owner', 'owner'), ('Helper', 'helper'), ('Manager', 'manager')], default='Helper', max_length=7),
+            model_name="membershipinvitation",
+            name="role",
+            field=models.CharField(
+                choices=[
+                    ("Owner", "owner"),
+                    ("Helper", "helper"),
+                    ("Manager", "manager"),
+                ],
+                default="Helper",
+                max_length=7,
+            ),
         ),
         migrations.AlterField(
-            model_name='membershipinvitation',
-            name='wage_type',
-            field=models.CharField(choices=[('Salary', 'salary'), ('Percentage', 'percentage')], default='Salary', max_length=10),
+            model_name="membershipinvitation",
+            name="wage_type",
+            field=models.CharField(
+                choices=[("Salary", "salary"), ("Percentage", "percentage")],
+                default="Salary",
+                max_length=10,
+            ),
         ),
     ]

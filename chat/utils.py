@@ -5,7 +5,7 @@ from channels.layers import get_channel_layer
 
 
 def direct_conversation_group_name(conversation_id):
-    return f'direct_chat_{conversation_id}'
+    return f"direct_chat_{conversation_id}"
 
 
 def serialize_direct_message(message):
@@ -13,18 +13,19 @@ def serialize_direct_message(message):
     websocket (and returned by the HTTP attachment endpoint), so both paths
     render identically on the client."""
     return {
-        'id': message.id,
-        'sender_id': message.sender_id,
-        'sender_name': str(message.sender),
-        'content': message.content,
-        'created_at': message.created_at.isoformat(),
-        'attachments': [
+        "id": message.id,
+        "sender_id": message.sender_id,
+        "sender_name": str(message.sender),
+        "content": message.content,
+        "created_at": message.created_at.isoformat(),
+        "attachments": [
             {
-                'id': attachment.id,
-                'url': attachment.file.url,
-                'name': attachment.original_filename or os.path.basename(attachment.file.name),
-                'kind': attachment.kind,
-                'size': attachment.size,
+                "id": attachment.id,
+                "url": attachment.file.url,
+                "name": attachment.original_filename
+                or os.path.basename(attachment.file.name),
+                "kind": attachment.kind,
+                "size": attachment.size,
             }
             for attachment in message.attachments.all()
         ],
@@ -41,5 +42,5 @@ def broadcast_direct_message(message):
         return
     async_to_sync(channel_layer.group_send)(
         direct_conversation_group_name(message.conversation_id),
-        {'type': 'chat_message', 'message': serialize_direct_message(message)},
+        {"type": "chat_message", "message": serialize_direct_message(message)},
     )

@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('orders', '0008_remove_order_card'),
-        ('users', '0004_profile_is_delivery_person_profile_is_merchant'),
+        ("orders", "0008_remove_order_card"),
+        ("users", "0004_profile_is_delivery_person_profile_is_merchant"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='Card',
+            name="Card",
         ),
     ]

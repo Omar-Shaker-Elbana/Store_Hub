@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0003_alter_card_otp_alter_card_card_num'),
+        ("users", "0003_alter_card_otp_alter_card_card_num"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='is_delivery_person',
+            model_name="profile",
+            name="is_delivery_person",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='is_merchant',
+            model_name="profile",
+            name="is_merchant",
             field=models.BooleanField(default=False),
         ),
     ]

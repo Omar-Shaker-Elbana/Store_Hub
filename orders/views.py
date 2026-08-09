@@ -1,10 +1,13 @@
-from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from .models import Order, OrderItem, Cart, CartItem, Wishlist, WishlistItem
-from . import forms
+from django.shortcuts import redirect, render
+
 from shopper_interface.recommendations import get_frequently_bought_together
+
+from . import forms
+from .models import Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
+
 
 @login_required
 def Cart_view(request):
@@ -16,10 +19,13 @@ def Cart_view(request):
         if current_product.current_stock < item.quantity:
             item.quantity = current_product.current_stock
             item.save()
-            messages.error(request, f"{item.product.name} has only {item.product.current_stock} in stock!")
+            messages.error(
+                request,
+                f"{item.product.name} has only {item.product.current_stock} in stock!",
+            )
 
     if request.method == "POST":
-        item_id = request.POST.get('item_id')
+        item_id = request.POST.get("item_id")
         cart_item = CartItem.objects.filter(id=item_id, cart=current_cart).first()
 
         if "remove_btn" in request.POST:
@@ -31,9 +37,13 @@ def Cart_view(request):
             if form.is_valid():
                 form.save()
 
-        return redirect('mycart')
+        return redirect("mycart")
 
-    total = sum((item.quantity * item.product.selling_price) for item in items if item.product.selling_price)
+    total = sum(
+        (item.quantity * item.product.selling_price)
+        for item in items
+        if item.product.selling_price
+    )
     current_cart.total_price = total
     current_cart.save()
 
@@ -48,8 +58,8 @@ def Cart_view(request):
             break
 
     form = forms.Cart_Item_Form()
-    context = {'items': items, 'form': form, 'suggestions': suggestions[:6]}
-    return render(request, 'orders/cart.html', context)
+    context = {"items": items, "form": form, "suggestions": suggestions[:6]}
+    return render(request, "orders/cart.html", context)
 
 
 @login_required
@@ -57,33 +67,41 @@ def Wishlist_view(request):
     wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
 
     if request.method == "POST" and "remove_btn" in request.POST:
-        item_id = request.POST.get('item_id')
+        item_id = request.POST.get("item_id")
         WishlistItem.objects.filter(id=item_id, wishlist=wishlist).delete()
         messages.success(request, "Removed from wishlist!")
-        return redirect('wishlist')
+        return redirect("wishlist")
 
     items = WishlistItem.objects.filter(wishlist=wishlist)
-    return render(request, 'orders/wishlist.html', {'items': items})
+    return render(request, "orders/wishlist.html", {"items": items})
+
 
 @login_required
 @transaction.atomic
 def Place_Order_View(request):
     current_cart = Cart.objects.filter(user=request.user).first()
-    items = CartItem.objects.filter(cart=current_cart) if current_cart else CartItem.objects.none()
+    items = (
+        CartItem.objects.filter(cart=current_cart)
+        if current_cart
+        else CartItem.objects.none()
+    )
 
     if not items.exists():
         messages.error(request, "Your cart is empty!")
-        return redirect('mycart')
+        return redirect("mycart")
 
     for item in items:
         if item.product.current_stock < item.quantity:
-            messages.error(request, f"{item.product.name} has only {item.product.current_stock} in stock!")
-            return redirect('mycart')
+            messages.error(
+                request,
+                f"{item.product.name} has only {item.product.current_stock} in stock!",
+            )
+            return redirect("mycart")
 
     current_order = Order.objects.create(
         user=request.user,
         total_price=current_cart.total_price,
-        shipping_address=request.POST.get('shipping_address', ''),
+        shipping_address=request.POST.get("shipping_address", ""),
     )
 
     for item in items:
@@ -102,4 +120,4 @@ def Place_Order_View(request):
     current_cart.save()
 
     messages.success(request, "Order placed successfully!")
-    return redirect('mycart')
+    return redirect("mycart")

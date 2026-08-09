@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class MerchantInterfaceConfig(AppConfig):
-    name = 'merchant_interface'
+    name = "merchant_interface"

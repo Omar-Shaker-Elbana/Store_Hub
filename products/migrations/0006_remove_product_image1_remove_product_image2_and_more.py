@@ -7,28 +7,43 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('products', '0005_alter_category_options_and_more'),
+        ("products", "0005_alter_category_options_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='product',
-            name='image1',
+            model_name="product",
+            name="image1",
         ),
         migrations.RemoveField(
-            model_name='product',
-            name='image2',
+            model_name="product",
+            name="image2",
         ),
         migrations.RemoveField(
-            model_name='product',
-            name='image3',
+            model_name="product",
+            name="image3",
         ),
         migrations.CreateModel(
-            name='Product_Image',
+            name="Product_Image",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.ImageField(upload_to='products_pics/')),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='products.product')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("image", models.ImageField(upload_to="products_pics/")),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="products.product",
+                    ),
+                ),
             ],
         ),
     ]

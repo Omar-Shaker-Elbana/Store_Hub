@@ -8,23 +8,29 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('orders', '0003_rename_quantiy_orderitem_quantity_order_card'),
-        ('products', '0005_alter_category_options_and_more'),
+        ("orders", "0003_rename_quantiy_orderitem_quantity_order_card"),
+        ("products", "0005_alter_category_options_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='wishlist',
-            name='user',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="wishlist",
+            name="user",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddConstraint(
-            model_name='cartitem',
-            constraint=models.UniqueConstraint(fields=('cart', 'product'), name='unique_product_per_cart'),
+            model_name="cartitem",
+            constraint=models.UniqueConstraint(
+                fields=("cart", "product"), name="unique_product_per_cart"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='wishlistitem',
-            constraint=models.UniqueConstraint(fields=('wishlist', 'product'), name='unique_product_per_wishlist'),
+            model_name="wishlistitem",
+            constraint=models.UniqueConstraint(
+                fields=("wishlist", "product"), name="unique_product_per_wishlist"
+            ),
         ),
     ]

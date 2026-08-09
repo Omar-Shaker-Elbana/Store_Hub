@@ -7,18 +7,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('products', '0005_alter_category_options_and_more'),
-        ('shopper_interface', '0002_searchtrend_interaction_recentsearch'),
+        ("products", "0005_alter_category_options_and_more"),
+        ("shopper_interface", "0002_searchtrend_interaction_recentsearch"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='interaction',
-            index=models.Index(fields=['product', 'user'], name='shopper_int_product_156423_idx'),
+            model_name="interaction",
+            index=models.Index(
+                fields=["product", "user"], name="shopper_int_product_156423_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='interaction',
-            index=models.Index(fields=['user', 'product'], name='shopper_int_user_id_8b77ba_idx'),
+            model_name="interaction",
+            index=models.Index(
+                fields=["user", "product"], name="shopper_int_user_id_8b77ba_idx"
+            ),
         ),
     ]

@@ -7,19 +7,24 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('orders', '0002_remove_order_payment_card_alter_cart_user'),
-        ('users', '0003_alter_card_otp_alter_card_card_num'),
+        ("orders", "0002_remove_order_payment_card_alter_cart_user"),
+        ("users", "0003_alter_card_otp_alter_card_card_num"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='orderitem',
-            old_name='quantiy',
-            new_name='quantity',
+            model_name="orderitem",
+            old_name="quantiy",
+            new_name="quantity",
         ),
         migrations.AddField(
-            model_name='order',
-            name='card',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.card'),
+            model_name="order",
+            name="card",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="users.card",
+            ),
         ),
     ]

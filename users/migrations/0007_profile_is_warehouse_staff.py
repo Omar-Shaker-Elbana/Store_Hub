@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0006_remove_usersettings_language'),
+        ("users", "0006_remove_usersettings_language"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='is_warehouse_staff',
+            model_name="profile",
+            name="is_warehouse_staff",
             field=models.BooleanField(default=False),
         ),
     ]

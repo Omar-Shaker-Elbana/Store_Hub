@@ -9,115 +9,172 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('merchant_interface', '0001_initial'),
-        ('products', '0002_alter_review_product'),
+        ("merchant_interface", "0001_initial"),
+        ("products", "0002_alter_review_product"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SpecType',
+            name="SpecType",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100, unique=True)),
             ],
             options={
-                'ordering': ['name'],
+                "ordering": ["name"],
             },
         ),
         migrations.AlterModelOptions(
-            name='category',
-            options={'ordering': ['name']},
+            name="category",
+            options={"ordering": ["name"]},
         ),
         migrations.AlterModelOptions(
-            name='spec',
-            options={'ordering': ['spec_type__name']},
+            name="spec",
+            options={"ordering": ["spec_type__name"]},
         ),
         migrations.RemoveConstraint(
-            model_name='spec',
-            name='unique_spec_name_per_product',
+            model_name="spec",
+            name="unique_spec_name_per_product",
         ),
         migrations.AddField(
-            model_name='category',
-            name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='children', to='products.category'),
+            model_name="category",
+            name="parent",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="children",
+                to="products.category",
+            ),
         ),
         migrations.AlterField(
-            model_name='category',
-            name='name',
+            model_name="category",
+            name="name",
             field=models.CharField(max_length=100),
         ),
         migrations.AlterField(
-            model_name='product',
-            name='category',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='products', to='products.category'),
+            model_name="product",
+            name="category",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="products",
+                to="products.category",
+            ),
         ),
         migrations.AlterField(
-            model_name='product',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="product",
+            name="id",
+            field=models.BigAutoField(
+                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+            ),
         ),
         migrations.AlterField(
-            model_name='product',
-            name='store',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='products', to='merchant_interface.store'),
+            model_name="product",
+            name="store",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="products",
+                to="merchant_interface.store",
+            ),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='product',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to='products.product'),
+            model_name="review",
+            name="product",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="reviews",
+                to="products.product",
+            ),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='stars',
-            field=models.PositiveSmallIntegerField(validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(5)]),
+            model_name="review",
+            name="stars",
+            field=models.PositiveSmallIntegerField(
+                validators=[
+                    django.core.validators.MinValueValidator(1),
+                    django.core.validators.MaxValueValidator(5),
+                ]
+            ),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to=settings.AUTH_USER_MODEL),
+            model_name="review",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="reviews",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='spec',
-            name='product',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='specs', to='products.product'),
+            model_name="spec",
+            name="product",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="specs",
+                to="products.product",
+            ),
         ),
         migrations.AlterField(
-            model_name='spec',
-            name='value',
+            model_name="spec",
+            name="value",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddIndex(
-            model_name='product',
-            index=models.Index(fields=['category'], name='products_pr_categor_9edb3d_idx'),
+            model_name="product",
+            index=models.Index(
+                fields=["category"], name="products_pr_categor_9edb3d_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='category',
-            constraint=models.UniqueConstraint(fields=('parent', 'name'), name='unique_category_per_parent'),
+            model_name="category",
+            constraint=models.UniqueConstraint(
+                fields=("parent", "name"), name="unique_category_per_parent"
+            ),
         ),
         migrations.AddField(
-            model_name='spec',
-            name='spec_type',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='specs', to='products.spectype'),
+            model_name="spec",
+            name="spec_type",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="specs",
+                to="products.spectype",
+            ),
         ),
         migrations.AddIndex(
-            model_name='spec',
-            index=models.Index(fields=['spec_type'], name='products_sp_spec_ty_8f137e_idx'),
+            model_name="spec",
+            index=models.Index(
+                fields=["spec_type"], name="products_sp_spec_ty_8f137e_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='spec',
-            index=models.Index(fields=['spec_type', 'value'], name='products_sp_spec_ty_8223b5_idx'),
+            model_name="spec",
+            index=models.Index(
+                fields=["spec_type", "value"], name="products_sp_spec_ty_8223b5_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='spec',
-            constraint=models.UniqueConstraint(fields=('product', 'spec_type'), name='unique_spec_per_product'),
+            model_name="spec",
+            constraint=models.UniqueConstraint(
+                fields=("product", "spec_type"), name="unique_spec_per_product"
+            ),
         ),
         migrations.RemoveField(
-            model_name='spec',
-            name='is_selected',
+            model_name="spec",
+            name="is_selected",
         ),
         migrations.RemoveField(
-            model_name='spec',
-            name='name',
+            model_name="spec",
+            name="name",
         ),
     ]

@@ -7,21 +7,31 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('products', '0003_spectype_alter_category_options_alter_spec_options_and_more'),
+        (
+            "products",
+            "0003_spectype_alter_category_options_alter_spec_options_and_more",
+        ),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='category',
+            name="category",
             options={},
         ),
         migrations.RemoveConstraint(
-            model_name='category',
-            name='unique_category_per_parent',
+            model_name="category",
+            name="unique_category_per_parent",
         ),
         migrations.AlterField(
-            model_name='review',
-            name='stars',
-            field=models.PositiveSmallIntegerField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(5)]),
+            model_name="review",
+            name="stars",
+            field=models.PositiveSmallIntegerField(
+                blank=True,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(1),
+                    django.core.validators.MaxValueValidator(5),
+                ],
+            ),
         ),
     ]

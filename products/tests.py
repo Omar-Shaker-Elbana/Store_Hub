@@ -22,8 +22,9 @@ from django.test import TestCase
 from django.urls import reverse
 
 from merchant_interface.models import Membership, Niche, Store
-from products.forms import ProductForm, Suggest_Category_Form, SpecForm
-from products.models import Category, Product, Review, Spec, SpecType, SuggestedCategory
+from products.forms import ProductForm, SpecForm, Suggest_Category_Form
+from products.models import (Category, Product, Review, Spec, SpecType,
+                             SuggestedCategory)
 
 
 # ---------------------------------------------------------------------------
@@ -48,7 +49,9 @@ class ProductsTestBase(TestCase):
         Membership.objects.create(user=cls.owner, store=cls.store, role="Owner")
 
         # A second store the owner has NO membership in, to test permission checks
-        cls.other_store = Store.objects.create(name="Someone Else's Store", niche=cls.niche)
+        cls.other_store = Store.objects.create(
+            name="Someone Else's Store", niche=cls.niche
+        )
 
         # --- Catalog data ---
         cls.category = Category.objects.create(name="Laptops")
@@ -144,7 +147,9 @@ class SpecModelTests(ProductsTestBase):
         cls.ram_type = SpecType.objects.create(name="RAM")
 
     def test_spec_created_for_product(self):
-        spec = Spec.objects.create(product=self.product, spec_type=self.ram_type, value="16GB")
+        spec = Spec.objects.create(
+            product=self.product, spec_type=self.ram_type, value="16GB"
+        )
         self.assertEqual(spec.product, self.product)
         self.assertEqual(spec.value, "16GB")
 
@@ -152,7 +157,9 @@ class SpecModelTests(ProductsTestBase):
         Spec.objects.create(product=self.product, spec_type=self.ram_type, value="16GB")
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                Spec.objects.create(product=self.product, spec_type=self.ram_type, value="32GB")
+                Spec.objects.create(
+                    product=self.product, spec_type=self.ram_type, value="32GB"
+                )
 
     def test_same_spec_type_allowed_on_different_products(self):
         other_product = Product.objects.create(
@@ -160,11 +167,15 @@ class SpecModelTests(ProductsTestBase):
         )
         Spec.objects.create(product=self.product, spec_type=self.ram_type, value="16GB")
         # Should NOT raise -- uniqueness is per-product, not global
-        spec = Spec.objects.create(product=other_product, spec_type=self.ram_type, value="8GB")
+        spec = Spec.objects.create(
+            product=other_product, spec_type=self.ram_type, value="8GB"
+        )
         self.assertEqual(spec.value, "8GB")
 
     def test_deleting_product_cascades_to_specs(self):
-        spec = Spec.objects.create(product=self.product, spec_type=self.ram_type, value="16GB")
+        spec = Spec.objects.create(
+            product=self.product, spec_type=self.ram_type, value="16GB"
+        )
         self.product.delete()
         self.assertFalse(Spec.objects.filter(id=spec.id).exists())
 
@@ -185,7 +196,9 @@ class ReviewModelTests(ProductsTestBase):
         # product is a ForeignKey (not OneToOne) on Review, so multiple
         # users reviewing the same product is valid and expected.
         Review.objects.create(user=self.owner, product=self.product, stars=4)
-        review2 = Review.objects.create(user=self.outsider, product=self.product, stars=2)
+        review2 = Review.objects.create(
+            user=self.outsider, product=self.product, stars=2
+        )
         self.assertEqual(Review.objects.filter(product=self.product).count(), 2)
         self.assertEqual(review2.stars, 2)
 
@@ -208,7 +221,9 @@ class SuggestedCategoryModelTests(ProductsTestBase):
         SuggestedCategory.objects.create(name="Smart Home", suggester=self.owner)
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                SuggestedCategory.objects.create(name="Smart Home", suggester=self.outsider)
+                SuggestedCategory.objects.create(
+                    name="Smart Home", suggester=self.outsider
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -216,23 +231,27 @@ class SuggestedCategoryModelTests(ProductsTestBase):
 # ---------------------------------------------------------------------------
 class ProductFormTests(ProductsTestBase):
     def test_valid_data(self):
-        form = ProductForm(data={
-            "name": "New Phone",
-            "description": "A phone",
-            "category": self.category.id,
-            "manufacturing_price": "100.00",
-            "selling_price": "199.99",
-            "current_stock": 5,
-            "offer": "10.00",
-        })
+        form = ProductForm(
+            data={
+                "name": "New Phone",
+                "description": "A phone",
+                "category": self.category.id,
+                "manufacturing_price": "100.00",
+                "selling_price": "199.99",
+                "current_stock": 5,
+                "offer": "10.00",
+            }
+        )
         self.assertTrue(form.is_valid(), form.errors)
 
     def test_offer_over_100_is_invalid(self):
-        form = ProductForm(data={
-            "name": "New Phone",
-            "category": self.category.id,
-            "offer": "150.00",
-        })
+        form = ProductForm(
+            data={
+                "name": "New Phone",
+                "category": self.category.id,
+                "offer": "150.00",
+            }
+        )
         self.assertFalse(form.is_valid())
         self.assertIn("offer", form.errors)
 
@@ -303,15 +322,18 @@ class CreateProductViewTests(ProductsTestBase):
 
     def test_member_can_create_product(self):
         self.login_owner()
-        response = self.client.post(self.url, data={
-            "Create_Product_btn": "1",
-            "name": "New Gadget",
-            "description": "Shiny",
-            "category": self.category.id,
-            "manufacturing_price": "10.00",
-            "selling_price": "19.99",
-            "current_stock": 3,
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "Create_Product_btn": "1",
+                "name": "New Gadget",
+                "description": "Shiny",
+                "category": self.category.id,
+                "manufacturing_price": "10.00",
+                "selling_price": "19.99",
+                "current_stock": 3,
+            },
+        )
         new_product = Product.objects.filter(name="New Gadget").first()
         self.assertIsNotNone(new_product)
         self.assertEqual(new_product.store, self.store)
@@ -320,10 +342,13 @@ class CreateProductViewTests(ProductsTestBase):
     def test_invalid_form_does_not_create_product(self):
         self.login_owner()
         before_count = Product.objects.count()
-        response = self.client.post(self.url, data={
-            "Create_Product_btn": "1",
-            "offer": "999.00",  # invalid: over 100
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "Create_Product_btn": "1",
+                "offer": "999.00",  # invalid: over 100
+            },
+        )
         self.assertEqual(Product.objects.count(), before_count)
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Invalid form" in str(m) for m in messages))
@@ -356,12 +381,17 @@ class CreateSpecViewTests(ProductsTestBase):
     def test_member_can_add_spec(self):
         self.login_owner()
         color_type = SpecType.objects.create(name="Color")
-        response = self.client.post(self.url, data={
-            "Save_and_Create_Another_Spec_btn": "1",
-            "spec_type": color_type.id,
-            "value": "Silver",
-        })
-        self.assertTrue(Spec.objects.filter(product=self.product, spec_type=color_type).exists())
+        response = self.client.post(
+            self.url,
+            data={
+                "Save_and_Create_Another_Spec_btn": "1",
+                "spec_type": color_type.id,
+                "value": "Silver",
+            },
+        )
+        self.assertTrue(
+            Spec.objects.filter(product=self.product, spec_type=color_type).exists()
+        )
         self.assertRedirects(response, f"/products/create_spec/{self.product.id}/")
 
 
@@ -415,7 +445,9 @@ class UpdateProductViewTests(ProductsTestBase):
 
     def test_member_can_delete_product(self):
         self.login_owner()
-        response = self.client.post(self.url, data={"delete_product_btn": "1"}, follow=True)
+        response = self.client.post(
+            self.url, data={"delete_product_btn": "1"}, follow=True
+        )
         self.assertFalse(Product.objects.filter(id=self.product.id).exists())
         self.assertRedirects(response, "/shopper/")
 
@@ -423,7 +455,9 @@ class UpdateProductViewTests(ProductsTestBase):
 class UpdateSpecViewTests(ProductsTestBase):
     def setUp(self):
         self.ram_type = SpecType.objects.create(name="RAM")
-        self.spec = Spec.objects.create(product=self.product, spec_type=self.ram_type, value="8GB")
+        self.spec = Spec.objects.create(
+            product=self.product, spec_type=self.ram_type, value="8GB"
+        )
         self.url = reverse("update_spec", args=[self.product.id, self.ram_type.name])
 
     def test_requires_login(self):
@@ -456,11 +490,14 @@ class UpdateSpecViewTests(ProductsTestBase):
 
     def test_member_can_update_spec_value(self):
         self.login_owner()
-        response = self.client.post(self.url, data={
-            "Save_btn": "1",
-            "spec_type": self.ram_type.id,
-            "value": "16GB",
-        })
+        response = self.client.post(
+            self.url,
+            data={
+                "Save_btn": "1",
+                "spec_type": self.ram_type.id,
+                "value": "16GB",
+            },
+        )
         self.spec.refresh_from_db()
         self.assertEqual(self.spec.value, "16GB")
         self.assertRedirects(
@@ -521,7 +558,9 @@ class SuggestCategoryViewTests(ProductsTestBase):
         # not a live Category -- that's the whole point of having a
         # separate model with a `suggester` field for review.
         self.login_owner()
-        response = self.client.post(self.url, data={"category_name": "Smart Home"}, follow=True)
+        response = self.client.post(
+            self.url, data={"category_name": "Smart Home"}, follow=True
+        )
         self.assertTrue(SuggestedCategory.objects.filter(name="Smart Home").exists())
         self.assertFalse(Category.objects.filter(name="Smart Home").exists())
         self.assertRedirects(response, "/shopper/")

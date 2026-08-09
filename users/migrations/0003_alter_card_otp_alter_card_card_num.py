@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0002_card'),
+        ("users", "0002_card"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='card',
-            name='OTP',
+            model_name="card",
+            name="OTP",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='card',
-            name='card_num',
+            model_name="card",
+            name="card_num",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

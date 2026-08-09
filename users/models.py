@@ -1,13 +1,14 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.conf import settings
+
 from orders.models import Cart
 
 # Create your models here.
 
 User = settings.AUTH_USER_MODEL
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_related(sender, instance, created, **kwargs):
@@ -16,10 +17,11 @@ def create_user_related(sender, instance, created, **kwargs):
         UserSettings.objects.create(user=instance)
         Cart.objects.create(user=instance)
 
+
 class Profile(models.Model):
     GENDER_CHOICES = (
-        ('M', 'Male'),
-        ('F', 'Female'),
+        ("M", "Male"),
+        ("F", "Female"),
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -27,8 +29,10 @@ class Profile(models.Model):
     is_delivery_person = models.BooleanField(default=False)
     is_warehouse_staff = models.BooleanField(default=False)
     birthday = models.DateField(null=True, blank=True)
-    picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True, blank=True)
+    picture = models.ImageField(upload_to="profile_pics/", null=True, blank=True)
+    gender = models.CharField(
+        max_length=1, choices=GENDER_CHOICES, null=True, blank=True
+    )
     country = models.CharField(max_length=100, null=True, blank=True)
     address1 = models.CharField(max_length=255, null=True, blank=True)
     address2 = models.CharField(max_length=255, null=True, blank=True)
@@ -37,12 +41,13 @@ class Profile(models.Model):
     def __str__(self):
         return str(self.user)
 
+
 class UserSettings(models.Model):
 
     THEME_CHOICES = [
-    ('light', 'Light'),
-    ('dark', 'Dark'),
+        ("light", "Light"),
+        ("dark", "Dark"),
     ]
-    
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    theme = models.CharField(max_length=10, choices=THEME_CHOICES, default='dark')
+    theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="dark")

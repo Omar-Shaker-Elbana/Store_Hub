@@ -1,14 +1,16 @@
-from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
 # Create your views here.
+
 
 @login_required
 def notifications(request):
     read_messages = request.user.notifications.filter(is_read=True)
     unread_messages = request.user.notifications.filter(is_read=False)
     context = {
-        'read_messages': read_messages,
-        'unread_messages': unread_messages,
-    }   
-    
-    return render(request, 'notifications/notifications.html', context)
+        "read_messages": read_messages,
+        "unread_messages": unread_messages,
+    }
+
+    return render(request, "notifications/notifications.html", context)

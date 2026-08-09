@@ -86,9 +86,18 @@ User = settings.AUTH_USER_MODEL
 #     if created:
 #         NotificationPreference.objects.create(user=instance)
 
+
 class Notification(models.Model):
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_notifications')
+    recipient = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="notifications"
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sent_notifications",
+    )
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

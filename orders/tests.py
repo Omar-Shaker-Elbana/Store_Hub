@@ -24,9 +24,9 @@ from django.urls import reverse
 
 from merchant_interface.models import Niche, Store
 from orders.forms import Cart_Item_Form
-from orders.models import Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
+from orders.models import (Cart, CartItem, Order, OrderItem, Wishlist,
+                           WishlistItem)
 from products.models import Category, Product
-from users.models import Card
 
 
 class OrdersTestBase(TestCase):
@@ -135,7 +135,9 @@ class WishlistItemModelTests(OrdersTestBase):
         WishlistItem.objects.create(wishlist=self.wishlist, product=self.product)
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                WishlistItem.objects.create(wishlist=self.wishlist, product=self.product)
+                WishlistItem.objects.create(
+                    wishlist=self.wishlist, product=self.product
+                )
 
     def test_deleting_wishlist_cascades_to_items(self):
         item = WishlistItem.objects.create(wishlist=self.wishlist, product=self.product)
@@ -146,31 +148,25 @@ class WishlistItemModelTests(OrdersTestBase):
 class OrderModelTests(OrdersTestBase):
     def test_order_status_defaults_to_pending(self):
         order = Order.objects.create(
-            user=self.user, total_price=Decimal("100.00"), shipping_address="123 Main St"
+            user=self.user,
+            total_price=Decimal("100.00"),
+            shipping_address="123 Main St",
         )
         self.assertEqual(order.status, "Pending")
 
     def test_order_payment_type_optional(self):
         order = Order.objects.create(
-            user=self.user, total_price=Decimal("100.00"), shipping_address="123 Main St"
-        )
-        self.assertIsNone(order.payment_type)
-
-    def test_order_can_be_linked_to_a_card(self):
-        card = Card.objects.create(user=self.user, card_num=1234, card_name="Test Card")
-        order = Order.objects.create(
             user=self.user,
             total_price=Decimal("100.00"),
             shipping_address="123 Main St",
-            payment_type="card",
-            card=card,
         )
-        self.assertEqual(order.card, card)
-        self.assertEqual(order.payment_type, "card")
+        self.assertIsNone(order.payment_type)
 
     def test_deleting_user_cascades_to_orders(self):
         order = Order.objects.create(
-            user=self.other_user, total_price=Decimal("50.00"), shipping_address="Somewhere"
+            user=self.other_user,
+            total_price=Decimal("50.00"),
+            shipping_address="Somewhere",
         )
         self.other_user.delete()
         self.assertFalse(Order.objects.filter(id=order.id).exists())
@@ -179,7 +175,9 @@ class OrderModelTests(OrdersTestBase):
 class OrderItemModelTests(OrdersTestBase):
     def setUp(self):
         self.order = Order.objects.create(
-            user=self.user, total_price=Decimal("100.00"), shipping_address="123 Main St"
+            user=self.user,
+            total_price=Decimal("100.00"),
+            shipping_address="123 Main St",
         )
 
     def test_order_item_quantity_defaults_to_one(self):
@@ -239,7 +237,9 @@ class CartViewTests(OrdersTestBase):
 
     def test_get_clamps_item_quantity_to_available_stock(self):
         self.login()
-        item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=999)
+        item = CartItem.objects.create(
+            cart=self.cart, product=self.product, quantity=999
+        )
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         item.refresh_from_db()
@@ -257,9 +257,7 @@ class CartViewTests(OrdersTestBase):
     def test_post_updates_item_quantity(self):
         self.login()
         item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=1)
-        response = self.client.post(
-            self.url, data={"item_id": item.id, "quantity": 4}
-        )
+        response = self.client.post(self.url, data={"item_id": item.id, "quantity": 4})
         item.refresh_from_db()
         self.assertEqual(item.quantity, 4)
         self.assertRedirects(response, self.url, fetch_redirect_response=False)

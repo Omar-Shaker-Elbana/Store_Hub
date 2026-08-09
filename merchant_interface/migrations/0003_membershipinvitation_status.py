@@ -6,13 +6,24 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('merchant_interface', '0002_alter_membership_role_alter_membership_wage_type_and_more'),
+        (
+            "merchant_interface",
+            "0002_alter_membership_role_alter_membership_wage_type_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='membershipinvitation',
-            name='status',
-            field=models.CharField(choices=[('Accepted', 'accepted'), ('Rejected', 'rejected'), ('Pending', 'pending')], default='Pending', max_length=10),
+            model_name="membershipinvitation",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("Accepted", "accepted"),
+                    ("Rejected", "rejected"),
+                    ("Pending", "pending"),
+                ],
+                default="Pending",
+                max_length=10,
+            ),
         ),
     ]

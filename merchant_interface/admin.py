@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Store, Membership, Niche
+
+from .models import Membership, Niche, Store
 
 # Register your models here.
 

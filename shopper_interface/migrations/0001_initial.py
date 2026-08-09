@@ -10,36 +10,100 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('merchant_interface', '0002_alter_membership_role_alter_membership_wage_type_and_more'),
-        ('products', '0005_alter_category_options_and_more'),
+        (
+            "merchant_interface",
+            "0002_alter_membership_role_alter_membership_wage_type_and_more",
+        ),
+        ("products", "0005_alter_category_options_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='RecentlyViewed',
+            name="RecentlyViewed",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('viewed_at', models.DateTimeField(auto_now=True, null=True)),
-                ('product', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='viewed_by', to='products.product')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='recently_viewed', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("viewed_at", models.DateTimeField(auto_now=True, null=True)),
+                (
+                    "product",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="viewed_by",
+                        to="products.product",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="recently_viewed",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-viewed_at'],
-                'constraints': [models.UniqueConstraint(fields=('user', 'product'), name='unique_recently_viewed_per_user_product')],
+                "ordering": ["-viewed_at"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("user", "product"),
+                        name="unique_recently_viewed_per_user_product",
+                    )
+                ],
             },
         ),
         migrations.CreateModel(
-            name='StoreFollow',
+            name="StoreFollow",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('followed_at', models.DateTimeField(auto_now_add=True, null=True)),
-                ('store', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='followers', to='merchant_interface.store')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='followed_stores', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("followed_at", models.DateTimeField(auto_now_add=True, null=True)),
+                (
+                    "store",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="followers",
+                        to="merchant_interface.store",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="followed_stores",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-followed_at'],
-                'constraints': [models.UniqueConstraint(fields=('user', 'store'), name='unique_follow_per_user_store')],
+                "ordering": ["-followed_at"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("user", "store"), name="unique_follow_per_user_store"
+                    )
+                ],
             },
         ),
     ]

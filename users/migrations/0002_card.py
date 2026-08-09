@@ -8,20 +8,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0001_initial'),
+        ("users", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Card',
+            name="Card",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('card_num', models.IntegerField(blank=True, max_length=16, null=True)),
-                ('card_name', models.CharField(blank=True, max_length=50, null=True)),
-                ('expiration_date', models.DateField(blank=True, null=True)),
-                ('OTP', models.IntegerField(blank=True, max_length=3, null=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("card_num", models.IntegerField(blank=True, max_length=16, null=True)),
+                ("card_name", models.CharField(blank=True, max_length=50, null=True)),
+                ("expiration_date", models.DateField(blank=True, null=True)),
+                ("OTP", models.IntegerField(blank=True, max_length=3, null=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]
