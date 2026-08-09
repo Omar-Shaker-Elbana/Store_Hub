@@ -3,13 +3,12 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import Profile, UserSettings
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm
 
-# from django.contrib.auth.forms import AuthenticationForm
-
-# class UserRegisterForm(UserCreationForm):
-#     class Meta:
-#         model = User
-#         fields = ['username', 'email']
+class UserRegisterForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ['username', 'email']
 
 
 class UserForm(UserCreationForm):
