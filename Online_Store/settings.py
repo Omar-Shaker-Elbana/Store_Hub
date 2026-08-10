@@ -164,7 +164,7 @@ ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = (
-    "optional"  # switch to 'mandatory' once real email sending is configured
+    "none" 
 )
 
 LOGIN_REDIRECT_URL = "/"

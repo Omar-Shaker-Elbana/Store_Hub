@@ -12,7 +12,10 @@ class CustomSignupForm(SignupForm):
         required=False, widget=forms.DateInput(attrs={"type": "date"})
     )
     picture = forms.ImageField(required=False)
-    gender = forms.ChoiceField(choices=Profile.GENDER_CHOICES, required=False)
+    gender = forms.ChoiceField(
+    choices=[("", "— Select —")] + list(Profile.GENDER_CHOICES),
+    required=False,
+)
     country = forms.CharField(max_length=100, required=False)
 
     def save(self, request):
