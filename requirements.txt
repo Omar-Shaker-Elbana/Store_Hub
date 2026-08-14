@@ -3,6 +3,6 @@ asgiref==3.11.1
 sqlparse==0.5.5
 tzdata==2025.3
 Pillow
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 django-allauth[socialaccount]>=65.13.1
 channels>=4.1.0
