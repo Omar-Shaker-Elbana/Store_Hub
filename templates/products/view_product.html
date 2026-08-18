@@ -1,0 +1,764 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ product.name }} | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:110px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:34px 24px 0}
+
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .back-link:hover{text-decoration:underline}
+
+  /* ---------- product hero ---------- */
+  .product-hero{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:28px;margin-bottom:22px;animation:slideInUp .5s ease;
+  }
+
+  /* ---------- image carousel ---------- */
+  .carousel-card{padding:26px 0 30px}
+  .carousel-card .card-head{padding:0 28px}
+  .image-carousel{
+    display:flex;align-items:center;gap:26px;overflow-x:auto;scroll-snap-type:x mandatory;
+    padding:10px 26%;scrollbar-width:none;-ms-overflow-style:none;
+  }
+  .image-carousel::-webkit-scrollbar{display:none}
+  .carousel-slide{
+    flex:0 0 auto;width:440px;height:440px;scroll-snap-align:center;cursor:pointer;
+    opacity:.4;transform:scale(.8);transition:opacity .3s ease, transform .3s ease;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .carousel-slide img{
+    max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;
+    border-radius:var(--radius);box-shadow:var(--shadow);
+  }
+  .carousel-slide.active{opacity:1;transform:scale(1)}
+  .carousel-slide .no-image{color:var(--muted);font-size:13px}
+  @media(max-width:600px){
+    .image-carousel{padding:10px 10%}
+    .carousel-slide{width:280px;height:280px}
+  }
+
+  /* ---------- lightbox ---------- */
+  .lightbox-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,23,42,.88);z-index:9999;
+    align-items:center;justify-content:center;padding:40px;
+    animation:fadeIn .2s ease;
+  }
+  .lightbox-overlay.open{display:flex}
+  .lightbox-overlay img{max-width:100%;max-height:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg)}
+  .lightbox-close{
+    position:absolute;top:24px;right:28px;width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,0.12);border:none;color:#fff;display:flex;align-items:center;justify-content:center;
+    transition:background .2s;
+  }
+  .lightbox-close:hover{background:rgba(255,255,255,0.24)}
+
+  .lightbox-nav{
+    position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;
+    background:rgba(255,255,255,0.12);border:none;color:#fff;display:flex;align-items:center;justify-content:center;
+    transition:background .2s;
+  }
+  .lightbox-nav:hover{background:rgba(255,255,255,0.24)}
+  .lightbox-nav:disabled{opacity:.3;cursor:not-allowed}
+  .lightbox-nav:disabled:hover{background:rgba(255,255,255,0.12)}
+  .lightbox-prev{left:24px}
+  .lightbox-next{right:24px}
+  @media(max-width:600px){
+    .lightbox-nav{width:40px;height:40px}
+    .lightbox-prev{left:8px}
+    .lightbox-next{right:8px}
+  }
+
+  /* ---------- sticky purchase bar ---------- */
+  .purchase-bar{
+    position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--border);
+    box-shadow:0 -10px 30px rgba(30,41,59,0.08);padding:14px 24px;z-index:200;
+    display:flex;justify-content:center;
+  }
+  .purchase-bar-inner{max-width:1040px;width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .purchase-bar-price{display:flex;align-items:baseline;gap:8px}
+  .purchase-bar-price .price-now{font-size:20px}
+  .purchase-bar-actions{display:flex;gap:12px;flex-wrap:wrap}
+  @media(max-width:600px){
+    .purchase-bar-inner{justify-content:center}
+    .purchase-bar-actions{width:100%}
+    .purchase-bar-actions form{flex:1}
+    .purchase-bar-actions button{width:100%}
+  }
+
+  .product-info{display:flex;flex-direction:column;min-width:0}
+  .category-badge{
+    align-self:flex-start;font-size:11.5px;font-weight:700;color:var(--accent);
+    background:var(--accent-light);padding:4px 12px;border-radius:999px;margin-bottom:12px;
+  }
+  .product-info h1{font-size:24px;line-height:1.3;margin-bottom:6px}
+  .store-line{color:var(--muted);font-size:13.5px;margin-bottom:16px}
+  .store-line a{color:var(--accent);font-weight:600}
+
+  .price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .price-now{font-size:26px;font-weight:700;color:var(--text);font-family:'Poppins',sans-serif}
+  .price-was{font-size:15px;color:var(--muted);text-decoration:line-through}
+  .offer-badge{
+    font-size:11.5px;font-weight:700;color:#fff;background:var(--orange);
+    padding:3px 10px;border-radius:999px;
+  }
+
+  .stock-badge{
+    display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;
+    margin-bottom:22px;
+  }
+  .stock-dot{width:7px;height:7px;border-radius:50%}
+  .stock-badge.in-stock{color:var(--success)}
+  .stock-badge.in-stock .stock-dot{background:var(--success)}
+  .stock-badge.low-stock{color:var(--orange)}
+  .stock-badge.low-stock .stock-dot{background:var(--orange)}
+  .stock-badge.out-stock{color:var(--danger)}
+  .stock-badge.out-stock .stock-dot{background:var(--danger)}
+
+  .action-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:auto}
+
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:13px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+
+  .btn-ghost{
+    background:var(--accent-light);color:var(--accent);border:none;padding:13px 22px;border-radius:999px;
+    font-weight:600;font-size:14.5px;display:inline-flex;align-items:center;gap:8px;transition:background .2s;
+  }
+  .btn-ghost:hover{background:#dfe9fb}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px 28px;margin-bottom:20px;animation:slideInUp .5s ease both;
+  }
+  .card:nth-of-type(2){animation-delay:.05s}
+  .card:nth-of-type(3){animation-delay:.1s}
+
+  .card-head{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .card-head .icon{
+    width:34px;height:34px;border-radius:10px;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .card-head h3{font-size:16px}
+
+  .description-text{font-size:14.5px;line-height:1.7;color:var(--text);white-space:pre-wrap}
+  .empty-hint{color:var(--muted);font-size:13.5px;text-align:center;padding:14px 0}
+
+  .spec-list{display:flex;flex-direction:column;gap:10px}
+  .spec-row-view{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);
+  }
+  .spec-row-view .spec-name{font-weight:600;font-size:13.5px;color:var(--muted)}
+  .spec-row-view .spec-value{font-weight:500;font-size:14px}
+
+  /* ---------- related products ---------- */
+  .related-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;
+  }
+  .related-tile{
+    border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--bg);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .related-tile:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+  .related-tile .related-img{width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--surface);display:block}
+  .related-tile .related-body{padding:10px 12px}
+  .related-tile .related-name{font-size:13px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .related-tile .related-price{font-size:13.5px;font-weight:700;color:var(--accent)}
+
+  /* ---------- reviews ---------- */
+  .review-summary{display:flex;align-items:center;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+  .review-count-text{color:var(--muted);font-size:13.5px;font-weight:600}
+
+  .review-list{display:flex;flex-direction:column;gap:14px;margin-bottom:26px}
+  .review-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;background:var(--bg);animation:slideInUp .4s ease both}
+  .review-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .review-author{font-weight:600;font-size:14px}
+  .review-date{color:var(--muted);font-size:12.5px}
+  .review-comment{font-size:13.5px;line-height:1.6;color:var(--text);margin-top:6px}
+
+  .stars-display{display:inline-flex;gap:2px}
+  .stars-display svg{width:15px;height:15px}
+  .stars-display svg.filled{fill:var(--orange);stroke:var(--orange)}
+  .stars-display svg.empty{fill:none;stroke:var(--border)}
+
+  .no-reviews{color:var(--muted);font-size:13.5px;text-align:center;padding:24px 0}
+
+  .review-gate{
+    display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px dashed var(--border);
+    border-radius:var(--radius-sm);background:var(--bg);color:var(--muted);font-size:13.5px;
+  }
+  .review-gate .icon{
+    width:36px;height:36px;border-radius:10px;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .review-gate a{color:var(--accent);font-weight:600}
+
+  .review-form-box{border-top:1px solid var(--border);padding-top:20px}
+  .review-form-box h4{font-size:14.5px;margin-bottom:14px}
+
+  .star-picker{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:4px;margin-bottom:18px;width:fit-content}
+  .star-picker input{position:absolute;opacity:0;pointer-events:none}
+  .star-picker label{cursor:pointer;color:var(--border);transition:color .15s ease, transform .15s ease}
+  .star-picker label svg{width:30px;height:30px;display:block}
+  .star-picker input:checked ~ label{color:var(--orange)}
+  .star-picker label:hover,.star-picker label:hover ~ label{color:var(--orange);transform:scale(1.08)}
+
+  .review-textarea{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;
+    font-family:inherit;font-size:14px;resize:vertical;min-height:90px;transition:border-color .2s,box-shadow .2s;margin-bottom:16px;
+  }
+  .review-textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+
+  .nav-btn{
+    padding:8px 18px;border-radius:999px;font-weight:600;font-size:13.5px;
+    display:inline-flex;align-items:center;transition:all .2s ease;
+  }
+  .nav-btn-ghost{color:var(--accent);background:var(--accent-light)}
+  .nav-btn-ghost:hover{background:#dfe9fb}
+  .nav-btn-primary{color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent-2));box-shadow:0 4px 12px rgba(26,73,170,.22)}
+  .nav-btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(26,73,170,.3)}
+
+  .btn-primary.auth-gated,.btn-ghost.auth-gated{opacity:.55}
+  .btn-primary.auth-gated:hover,.btn-ghost.auth-gated:hover{transform:none;box-shadow:none}
+
+  .auth-modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9999;
+    align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease;
+  }
+  .auth-modal-overlay.open{display:flex}
+  .auth-modal{
+    background:var(--surface);border-radius:var(--radius);padding:30px 28px;max-width:340px;width:100%;
+    text-align:center;box-shadow:var(--shadow-lg);animation:slideInUp .3s ease;
+  }
+  .auth-modal .icon{
+    width:48px;height:48px;border-radius:50%;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+  }
+  .auth-modal h4{font-size:16.5px;margin-bottom:8px}
+  .auth-modal p{font-size:13.5px;color:var(--muted);line-height:1.6;margin-bottom:22px}
+  .auth-modal-actions{display:flex;flex-direction:column;gap:10px}
+  .auth-modal-actions .btn-primary{width:100%}
+  .auth-modal-cancel{
+    background:none;border:none;color:var(--muted);font-size:13.5px;font-weight:600;
+    padding:10px;border-radius:999px;transition:background .2s ease, color .2s ease;
+  }
+  .auth-modal-cancel:hover{background:var(--accent-light);color:var(--accent)}
+
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .product-hero{padding:20px}
+    .action-row{flex-direction:column}
+    .action-row button, .action-row form{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'wishlist' %}">Wishlist</a>
+    <a href="{% url 'mycart' %}">Cart</a>
+    {% if request.user.is_authenticated %}
+      <a href="{% url 'profile' %}">Profile</a>
+    {% else %}
+      <a href="/accounts/login/" class="nav-btn nav-btn-ghost">Log In</a>
+      <a href="/accounts/signup/" class="nav-btn nav-btn-primary">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+
+  <a href="{% url 'home' %}" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to shopping
+  </a>
+
+  <div class="card carousel-card">
+    <div class="card-head">
+      <span class="icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </span>
+      <h3>Photos</h3>
+    </div>
+    <div class="image-carousel" id="image-carousel">
+      {% for img in product.images.all %}
+        <div class="carousel-slide" data-index="{{ forloop.counter0 }}">
+          <img src="{{ img.image.url }}" alt="{{ product.name }}">
+        </div>
+      {% empty %}
+        <div class="carousel-slide active">
+          <span class="no-image">No images available</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="product-hero">
+    <div class="product-info">
+      {% if product.category %}
+        <span class="category-badge">{{ product.category.name }}</span>
+      {% endif %}
+      <h1>{{ product.name }}</h1>
+       <div class="store-line">Sold by <strong>{{ product.store.name }}</strong></div>
+
+      <div class="price-row">
+        {% if product.offer %}
+          <span class="price-now">${{ product.discounted_price|floatformat:2 }}</span>
+          <span class="price-was">${{ product.selling_price }}</span>
+          <span class="offer-badge">-{{ product.offer }}%</span>
+        {% else %}
+          <span class="price-now">${{ product.selling_price }}</span>
+        {% endif %}
+      </div>
+
+      {% if product.current_stock <= 0 %}
+        <span class="stock-badge out-stock"><span class="stock-dot"></span> Out of stock</span>
+      {% elif product.current_stock <= 5 %}
+        <span class="stock-badge low-stock"><span class="stock-dot"></span> Only {{ product.current_stock }} left</span>
+      {% else %}
+        <span class="stock-badge in-stock"><span class="stock-dot"></span> In stock</span>
+      {% endif %}
+
+      <div class="action-row">
+        <form method="POST">
+          {% csrf_token %}
+          <button type="submit" name="add_to_cart_btn" class="btn-primary {% if not request.user.is_authenticated %}auth-gated{% endif %}" {% if product.current_stock <= 0 %}disabled{% endif %}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+            Add to Cart
+          </button>
+        </form>
+        <form method="POST">
+          {% csrf_token %}
+          <button type="submit" name="add_to_wishlist_btn" class="btn-ghost {% if not request.user.is_authenticated %}auth-gated{% endif %}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+            Wishlist
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      </span>
+      <h3>Description</h3>
+    </div>
+    {% if product.description %}
+      <div class="description-text">{{ product.description }}</div>
+    {% else %}
+      <div class="empty-hint">No description provided.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/></svg>
+      </span>
+      <h3>Specifications</h3>
+    </div>
+    {% if specs %}
+      <div class="spec-list">
+        {% for spec in specs %}
+          <div class="spec-row-view">
+            <span class="spec-name">{{ spec.spec_type.name|default:"—" }}</span>
+            <span class="spec-value">{{ spec.value|default:"—" }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-hint">No specifications listed for this product.</div>
+    {% endif %}
+  </div>
+
+  {% if related_products %}
+  <div class="card">
+    <div class="card-head">
+      <span class="icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </span>
+      <h3>You might also like</h3>
+    </div>
+    <div class="related-grid">
+      {% for rp in related_products %}
+        <a href="{% url 'view_product' rp.id %}" class="related-tile">
+          {% if rp.image %}
+            <img class="related-img" src="{{ rp.image.url }}" alt="{{ rp.name }}">
+          {% else %}
+            <div class="related-img" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">No image</div>
+          {% endif %}
+          <div class="related-body">
+            <div class="related-name">{{ rp.name }}</div>
+            <div class="related-price">${{ rp.selling_price }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card" id="reviews">
+    <div class="card-head">
+      <span class="icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </span>
+      <h3>Customer Reviews</h3>
+    </div>
+
+    <div class="review-summary">
+      <span class="review-count-text">{{ reviews.count }} review{{ reviews.count|pluralize }}</span>
+    </div>
+
+    <div class="review-list">
+      {% for review in reviews %}
+        <div class="review-card">
+          <div class="review-card-head">
+            <span class="review-author">{{ review.user.get_full_name|default:review.user.username }}</span>
+            <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+          </div>
+          <span class="stars-display">
+            {% for i in "12345" %}
+              {% if forloop.counter <= review.stars %}
+                <svg viewBox="0 0 24 24" class="filled"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              {% else %}
+                <svg viewBox="0 0 24 24" class="empty" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              {% endif %}
+            {% endfor %}
+          </span>
+          {% if review.comment %}
+            <p class="review-comment">{{ review.comment }}</p>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="no-reviews">No reviews yet. Be the first to share your experience.</div>
+      {% endfor %}
+    </div>
+
+    <div class="review-form-box">
+      {% if request.user.is_authenticated %}
+        {% if has_purchased %}
+          <h4>{% if review_form.instance.pk %}Update your review{% else %}Write a review{% endif %}</h4>
+          <form method="POST">
+            {% csrf_token %}
+            <div class="star-picker">
+              <input type="radio" name="stars" id="star5" value="5" {% if review_form.instance.stars == 5 %}checked{% endif %}>
+              <label for="star5" title="5 stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></label>
+              <input type="radio" name="stars" id="star4" value="4" {% if review_form.instance.stars == 4 %}checked{% endif %}>
+              <label for="star4" title="4 stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></label>
+              <input type="radio" name="stars" id="star3" value="3" {% if review_form.instance.stars == 3 %}checked{% endif %}>
+              <label for="star3" title="3 stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></label>
+              <input type="radio" name="stars" id="star2" value="2" {% if review_form.instance.stars == 2 %}checked{% endif %}>
+              <label for="star2" title="2 stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></label>
+              <input type="radio" name="stars" id="star1" value="1" {% if review_form.instance.stars == 1 %}checked{% endif %}>
+              <label for="star1" title="1 star"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></label>
+            </div>
+            <textarea class="review-textarea" name="comment" placeholder="Share details about your experience with this product...">{{ review_form.instance.comment|default:"" }}</textarea>
+            <button type="submit" name="submit_review_btn" class="btn-primary">
+              {% if review_form.instance.pk %}Update Review{% else %}Submit Review{% endif %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+          </form>
+        {% else %}
+          <div class="review-gate">
+            <span class="icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+            </span>
+            <span>You can write a review once your order for this product has been delivered.</span>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="review-gate">
+          <span class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+          </span>
+          <span><a href="/accounts/login/">Log in</a> to write a review.</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="purchase-bar">
+  <div class="purchase-bar-inner">
+    <div class="purchase-bar-price">
+      {% if product.offer %}
+        <span class="price-now">${{ product.discounted_price|floatformat:2 }}</span>
+        <span class="price-was">${{ product.selling_price }}</span>
+      {% else %}
+        <span class="price-now">${{ product.selling_price }}</span>
+      {% endif %}
+    </div>
+    <div class="purchase-bar-actions">
+      <form method="POST">
+        {% csrf_token %}
+        <button type="submit" name="add_to_wishlist_btn" class="btn-ghost {% if not request.user.is_authenticated %}auth-gated{% endif %}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+          Wishlist
+        </button>
+      </form>
+      <form method="POST">
+        {% csrf_token %}
+        <button type="submit" name="add_to_cart_btn" class="btn-primary {% if not request.user.is_authenticated %}auth-gated{% endif %}" {% if product.current_stock <= 0 %}disabled{% endif %}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+          Add to Cart
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox-overlay" id="lightbox-overlay">
+  <button type="button" class="lightbox-close" id="lightbox-close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <button type="button" class="lightbox-nav lightbox-prev" id="lightbox-prev">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <img id="lightbox-image" src="" alt="">
+  <button type="button" class="lightbox-nav lightbox-next" id="lightbox-next">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+
+<div class="auth-modal-overlay" id="auth-modal-overlay">
+  <div class="auth-modal">
+    <span class="icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+    </span>
+    <h4>Create an account to continue</h4>
+    <p>You'll need an account to add items to your cart or wishlist. It only takes a minute.</p>
+    <div class="auth-modal-actions">
+      <a href="/accounts/signup/" class="btn-primary">Sign Up</a>
+      <button type="button" class="auth-modal-cancel" id="auth-modal-cancel">Maybe later</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+
+  const carousel = document.getElementById('image-carousel');
+  if (carousel) {
+    const slides = Array.from(carousel.querySelectorAll('.carousel-slide'));
+
+    function updateActiveSlide() {
+      const carouselCenter = carousel.scrollLeft + carousel.clientWidth / 2;
+      let closest = null;
+      let closestDist = Infinity;
+
+      slides.forEach(slide => {
+        const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+        const dist = Math.abs(slideCenter - carouselCenter);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = slide;
+        }
+      });
+
+      slides.forEach(slide => slide.classList.toggle('active', slide === closest));
+    }
+
+    let scrollTimeout;
+    carousel.addEventListener('scroll', function () {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(updateActiveSlide, 30);
+    });
+
+    const lightboxOverlay = document.getElementById('lightbox-overlay');
+    const lightboxImage = document.getElementById('lightbox-image');
+    const lightboxClose = document.getElementById('lightbox-close');
+    const lightboxPrev = document.getElementById('lightbox-prev');
+    const lightboxNext = document.getElementById('lightbox-next');
+    const slideImages = slides.map(slide => slide.querySelector('img')).filter(Boolean);
+    let lightboxIndex = 0;
+
+    function updateLightboxNavState() {
+      if (lightboxPrev) lightboxPrev.disabled = slideImages.length <= 1;
+      if (lightboxNext) lightboxNext.disabled = slideImages.length <= 1;
+    }
+
+    function showLightboxSlide(index) {
+      if (!slideImages.length) return;
+      lightboxIndex = (index + slideImages.length) % slideImages.length;
+      const img = slideImages[lightboxIndex];
+      lightboxImage.src = img.src;
+      lightboxImage.alt = img.alt;
+    }
+
+    function openLightbox(index) {
+      if (!lightboxOverlay) return;
+      showLightboxSlide(index);
+      lightboxOverlay.classList.add('open');
+    }
+
+    function closeLightbox() {
+      if (!lightboxOverlay) return;
+      lightboxOverlay.classList.remove('open');
+      lightboxImage.src = '';
+    }
+
+    slides.forEach((slide, index) => {
+      slide.addEventListener('click', function () {
+        if (slide.classList.contains('active')) {
+          openLightbox(index);
+        } else {
+          slide.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+        }
+      });
+    });
+
+    if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+    if (lightboxPrev) lightboxPrev.addEventListener('click', () => showLightboxSlide(lightboxIndex - 1));
+    if (lightboxNext) lightboxNext.addEventListener('click', () => showLightboxSlide(lightboxIndex + 1));
+    if (lightboxOverlay) {
+      lightboxOverlay.addEventListener('click', function (e) {
+        if (e.target === lightboxOverlay) closeLightbox();
+      });
+    }
+    document.addEventListener('keydown', function (e) {
+      if (!lightboxOverlay.classList.contains('open')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') showLightboxSlide(lightboxIndex - 1);
+      if (e.key === 'ArrowRight') showLightboxSlide(lightboxIndex + 1);
+    });
+
+    updateLightboxNavState();
+    updateActiveSlide();
+  }
+
+  const authModalOverlay = document.getElementById('auth-modal-overlay');
+  const authModalCancel = document.getElementById('auth-modal-cancel');
+
+  function openAuthModal() {
+    if (authModalOverlay) authModalOverlay.classList.add('open');
+  }
+  function closeAuthModal() {
+    if (authModalOverlay) authModalOverlay.classList.remove('open');
+  }
+
+  document.querySelectorAll('.auth-gated').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openAuthModal();
+    });
+  });
+
+  if (authModalCancel) authModalCancel.addEventListener('click', closeAuthModal);
+  if (authModalOverlay) {
+    authModalOverlay.addEventListener('click', function (e) {
+      if (e.target === authModalOverlay) closeAuthModal();
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (authModalOverlay && authModalOverlay.classList.contains('open') && e.key === 'Escape') {
+      closeAuthModal();
+    }
+  });
+});
+</script>
+
+</body>
+</html>

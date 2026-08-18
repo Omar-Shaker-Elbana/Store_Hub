@@ -3,233 +3,449 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Create Product</title>
+<title>Add Product | StoreHub</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
 
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
 
-body {
-    min-height: 100vh;
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 40px 20px;
-}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
 
-.container {
-    width: 100%;
-    max-width: 1000px;
-    backdrop-filter: blur(20px);
-    background: rgba(255,255,255,0.05);
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: 0 0 50px rgba(0,255,255,0.15);
-    animation: fadeIn 0.8s ease-in-out;
-}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
-h1 {
-    font-family: 'Orbitron', sans-serif;
-    text-align: center;
-    margin-bottom: 40px;
-    color: #00ffff;
-    letter-spacing: 2px;
-}
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
 
-.form-grid {
-    display: grid;
-    gap: 20px;
-}
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
 
-label {
-    font-size: 14px;
-    opacity: 0.8;
-}
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
 
-input, textarea, select {
-    width: 100%;
-    padding: 12px 15px;
-    border-radius: 12px;
-    border: none;
-    outline: none;
-    background: rgba(255,255,255,0.08);
-    color: white;
-    transition: 0.3s;
-}
+  .wrap{max-width:760px;margin:0 auto;padding:34px 24px 0}
 
-textarea {
-    resize: none;
-    min-height: 100px;
-}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .back-link:hover{text-decoration:underline}
 
-input:focus, textarea:focus, select:focus {
-    background: rgba(0,255,255,0.1);
-    box-shadow: 0 0 10px #00ffff;
-}
+  .page-head{margin-bottom:24px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:26px;margin-bottom:6px}
+  .page-head p{color:var(--muted);font-size:14.5px}
 
-.image-preview {
-    margin-top: 10px;
-    display: flex;
-    gap: 15px;
-}
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px;animation:slideInUp .5s ease .05s both;
+  }
+  .panel + .panel{margin-top:18px}
 
-.image-preview img {
-    width: 90px;
-    height: 90px;
-    object-fit: cover;
-    border-radius: 12px;
-    border: 2px solid rgba(0,255,255,0.4);
-    display: none;
-}
+  .panel h3{font-size:16px;margin-bottom:16px}
 
-.btn {
-    width: 100%;
-    padding: 14px;
-    margin-top: 20px;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    letter-spacing: 1px;
-    background: linear-gradient(90deg, #00ffff, #00b3ff);
-    color: black;
-    transition: 0.3s;
-}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field input[type="text"],
+  .field input[type="number"],
+  .field select,
+  .field textarea{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    padding:11px 13px;font-family:inherit;font-size:14px;background:#fff;color:var(--text);
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .field textarea{resize:vertical;min-height:80px}
+  .field input:focus,.field select:focus,.field textarea:focus{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);
+  }
+  .field-errors{color:var(--danger);font-size:12px;margin-top:5px}
 
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px #00ffff;
-}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){.field-row{grid-template-columns:1fr}}
 
-.message {
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-    text-align: center;
-    font-size: 14px;
-}
+  .price-input-wrap{position:relative}
+  .price-input-wrap::before{
+    content:'$';position:absolute;left:14px;top:50%;transform:translateY(-50%);
+    color:var(--muted);font-size:14px;pointer-events:none;
+  }
+  .field .price-input-wrap input[type="number"]{padding-left:28px !important}
 
-.success {
-    background: rgba(0,255,0,0.2);
-    color: #00ff88;
-}
+  .hint{font-size:12px;color:var(--muted);margin-top:5px}
 
-.error {
-    background: rgba(255,0,0,0.2);
-    color: #ff4d4d;
-}
+  .category-row{display:flex;gap:10px;align-items:center}
+  .category-row .field{flex:1;margin-bottom:0}
+  .suggest-link-btn{
+    flex-shrink:0;background:var(--accent-light);color:var(--accent);border:none;
+    padding:11px 16px;border-radius:var(--radius-sm);font-weight:600;font-size:13px;
+    white-space:nowrap;transition:background .2s;
+  }
+  .suggest-link-btn:hover{background:#dfe9fb}
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+  .category-combobox{position:relative}
+  .category-select-hidden{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
+  .category-search-input{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    padding:11px 13px;font-family:inherit;font-size:14px;background:#fff;color:var(--text);
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .category-search-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+  .category-dropdown{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;max-height:220px;overflow-y:auto;
+    background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-lg);z-index:50;
+  }
+  .category-dropdown.open{display:block}
+  .category-option{padding:10px 13px;font-size:14px;cursor:pointer;transition:background .15s}
+  .category-option:hover,.category-option.highlighted{background:var(--accent-light);color:var(--accent)}
+  .category-dropdown .no-match{padding:10px 13px;font-size:13px;color:var(--muted)}
 
-@media(max-width: 768px) {
-    .container {
-        padding: 25px;
-    }
-}
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:13px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+    width:100%;
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-primary.is-submitting{opacity:.55;cursor:not-allowed;pointer-events:none}
+  .btn-ghost{
+    background:var(--accent-light);color:var(--accent);border:none;padding:10px 18px;border-radius:999px;
+    font-weight:600;font-size:13.5px;transition:background .2s;
+  }
+  .btn-ghost:hover{background:#dfe9fb}
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9997;
+    align-items:center;justify-content:center;padding:20px;
+    animation:fadeIn .2s ease;
+  }
+  .modal-overlay.open{display:flex}
+  .modal-box{
+    background:var(--surface);border-radius:var(--radius);padding:26px;max-width:400px;width:100%;
+    animation:scaleIn .25s ease;box-shadow:var(--shadow-lg);
+  }
+  .modal-box h3{font-size:17px;margin-bottom:6px}
+  .modal-box p{color:var(--muted);font-size:13.5px;margin-bottom:16px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+
+  .modal-actions .btn-ghost{padding:10px 18px}
+  .modal-actions .btn-primary{width:auto;padding:10px 22px}
+
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .category-row{flex-direction:column}
+    .suggest-link-btn{margin-top:0;width:100%}
+  }
 </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>CREATE PRODUCT</h1>
+<div id="topbar"></div>
 
-    <!-- Messages -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+  </div>
+</nav>
 
-    <form method="POST" enctype="multipart/form-data" class="form-grid">
-        {% csrf_token %}
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
 
-        {{ product_form.name.label_tag }}
+<div class="wrap">
+
+  <a href="{% url 'home' %}" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to dashboard
+  </a>
+
+  <div class="page-head">
+    <h1>Add a New Product</h1>
+    <p>Fill in the basics now — you can attach specs and images right after.</p>
+  </div>
+
+  <div class="panel">
+    <form method="POST" enctype="multipart/form-data" id="create-product-form">
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="{{ product_form.name.id_for_label }}">Product name</label>
         {{ product_form.name }}
+        {% if product_form.name.errors %}<div class="field-errors">{{ product_form.name.errors|striptags }}</div>{% endif %}
+      </div>
 
-        {{ product_form.description.label_tag }}
+      <div class="field">
+        <label for="{{ product_form.description.id_for_label }}">Description</label>
         {{ product_form.description }}
+        {% if product_form.description.errors %}<div class="field-errors">{{ product_form.description.errors|striptags }}</div>{% endif %}
+      </div>
 
-        {{ product_form.category.label_tag }}
-        {{ product_form.category }}
-
-        {{ product_form.manufacturing_price.label_tag }}
-        {{ product_form.manufacturing_price }}
-
-        {{ product_form.selling_price.label_tag }}
-        {{ product_form.selling_price }}
-
-        {{ product_form.current_stock.label_tag }}
-        {{ product_form.current_stock }}
-
-        {{ product_form.offer.label_tag }}
-        {{ product_form.offer }}
-
-        <label>Images</label>
-        {{ product_form.image1 }}
-        {{ product_form.image2 }}
-        {{ product_form.image3 }}
-
-        <div class="image-preview">
-            <img id="preview1">
-            <img id="preview2">
-            <img id="preview3">
+      <div class="field">
+        <label for="category-search-input">Category</label>
+        <div class="category-row">
+          <div class="field category-combobox" id="category-combobox">
+            <input type="text" id="category-search-input" class="category-search-input" autocomplete="off" placeholder="Type to search categories...">
+            <div class="category-dropdown" id="category-dropdown"></div>
+            <div class="category-select-hidden">{{ product_form.category }}</div>
+            {% if product_form.category.errors %}<div class="field-errors">{{ product_form.category.errors|striptags }}</div>{% endif %}
+          </div>
+          <button type="button" class="suggest-link-btn" id="open-suggest-modal">
+            Can't find it? Suggest one
+          </button>
         </div>
+      </div>
 
-        <button type="submit" name="Create_Product_btn" class="btn">
-            Create Product
-        </button>
+      <div class="field-row">
+        <div class="field">
+          <label for="{{ product_form.manufacturing_price.id_for_label }}">Manufacturing price</label>
+          <div class="price-input-wrap">
+            {{ product_form.manufacturing_price }}
+          </div>
+          {% if product_form.manufacturing_price.errors %}<div class="field-errors">{{ product_form.manufacturing_price.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="{{ product_form.selling_price.id_for_label }}">Selling price</label>
+          <div class="price-input-wrap">
+            {{ product_form.selling_price }}
+          </div>
+          {% if product_form.selling_price.errors %}<div class="field-errors">{{ product_form.selling_price.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+      {% if product_form.non_field_errors %}
+        <div class="field-errors">{{ product_form.non_field_errors|striptags }}</div>
+      {% endif %}
+
+      <div class="field-row">
+        <div class="field">
+          <label for="{{ product_form.current_stock.id_for_label }}">Starting stock</label>
+          {{ product_form.current_stock }}
+          {% if product_form.current_stock.errors %}<div class="field-errors">{{ product_form.current_stock.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="{{ product_form.offer.id_for_label }}">Discount offer (%)</label>
+          {{ product_form.offer }}
+          <div class="hint">Leave blank if there's no active discount.</div>
+          {% if product_form.offer.errors %}<div class="field-errors">{{ product_form.offer.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+
+      <button type="submit" name="Create_Product_btn" class="btn-primary" id="create-product-btn">
+        Create Product
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
     </form>
+  </div>
+
+</div>
+
+<!-- Suggest a category modal -->
+<div class="modal-overlay" id="suggest-modal-overlay" {% if suggest_category_form.errors %}data-reopen="true"{% endif %}>
+  <div class="modal-box">
+    <h3>Suggest a category</h3>
+    <p>Don't see the right category? Suggest one and we'll review it.</p>
+
+    <form method="POST" id="suggest-category-form">
+      {% csrf_token %}
+      <div class="field">
+        <label for="{{ suggest_category_form.category_name.id_for_label }}">Category name</label>
+        {{ suggest_category_form.category_name }}
+        {% if suggest_category_form.category_name.errors %}
+          <div class="field-errors">{{ suggest_category_form.category_name.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="close-suggest-modal">Cancel</button>
+        <button type="submit" name="Suggest_Category_btn" class="btn-primary">Submit suggestion</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-// Image preview
-function previewImage(inputId, previewId) {
-    const input = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
+document.addEventListener('DOMContentLoaded', function () {
+  const topbar = document.getElementById('topbar');
+  const overlay = document.getElementById('suggest-modal-overlay');
+  const openBtn = document.getElementById('open-suggest-modal');
+  const closeBtn = document.getElementById('close-suggest-modal');
+  const createForm = document.getElementById('create-product-form');
+  const suggestForm = document.getElementById('suggest-category-form');
 
-    input.addEventListener('change', function () {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function () {
-                preview.src = reader.result;
-                preview.style.display = "block";
-            }
-            reader.readAsDataURL(file);
+  const categorySelect = document.getElementById('{{ product_form.category.id_for_label }}');
+  const categorySearchInput = document.getElementById('category-search-input');
+  const categoryDropdown = document.getElementById('category-dropdown');
+
+  if (categorySelect && categorySearchInput && categoryDropdown) {
+    const categoryOptions = Array.from(categorySelect.options)
+      .filter(o => o.value !== '')
+      .map(o => ({ value: o.value, label: o.text }));
+
+    let lastValidLabel = '';
+    const preselected = categoryOptions.find(o => o.value === categorySelect.value);
+    if (preselected) {
+      categorySearchInput.value = preselected.label;
+      lastValidLabel = preselected.label;
+    }
+
+    function renderCategoryDropdown(filterText) {
+      const q = filterText.trim().toLowerCase();
+      const matches = q ? categoryOptions.filter(o => o.label.toLowerCase().includes(q)) : categoryOptions;
+      categoryDropdown.innerHTML = '';
+
+      if (!matches.length) {
+        const empty = document.createElement('div');
+        empty.className = 'no-match';
+        empty.textContent = 'No matching categories';
+        categoryDropdown.appendChild(empty);
+        return;
+      }
+
+      matches.forEach(o => {
+        const item = document.createElement('div');
+        item.className = 'category-option';
+        item.textContent = o.label;
+        item.addEventListener('mousedown', function (e) {
+          e.preventDefault();
+          categorySelect.value = o.value;
+          categorySearchInput.value = o.label;
+          lastValidLabel = o.label;
+          closeCategoryDropdown();
+        });
+        categoryDropdown.appendChild(item);
+      });
+    }
+
+    function openCategoryDropdown() {
+      renderCategoryDropdown(categorySearchInput.value);
+      categoryDropdown.classList.add('open');
+    }
+
+    function closeCategoryDropdown() {
+      categoryDropdown.classList.remove('open');
+    }
+
+    categorySearchInput.addEventListener('focus', openCategoryDropdown);
+
+    categorySearchInput.addEventListener('input', function () {
+      categorySelect.value = '';
+      openCategoryDropdown();
+    });
+
+    categorySearchInput.addEventListener('blur', function () {
+      setTimeout(function () {
+        if (!categorySelect.value) {
+          categorySearchInput.value = '';
+          lastValidLabel = '';
+        } else {
+          categorySearchInput.value = lastValidLabel;
         }
+        closeCategoryDropdown();
+      }, 120);
     });
-}
+  }
 
-document.addEventListener("DOMContentLoaded", function() {
-    previewImage("id_image1", "preview1");
-    previewImage("id_image2", "preview2");
-    previewImage("id_image3", "preview3");
+  function startLoading(){
+    topbar.classList.add('loading');
+  }
+
+  openBtn.addEventListener('click', function () {
+    overlay.classList.add('open');
+  });
+
+  closeBtn.addEventListener('click', function () {
+    overlay.classList.remove('open');
+  });
+
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+
+  createForm.addEventListener('submit', function () {
+    const createBtn = document.getElementById('create-product-btn');
+    createBtn.classList.add('is-submitting');
+    setTimeout(() => { createBtn.disabled = true; }, 0);
+    startLoading();
+  });
+
+  suggestForm.addEventListener('submit', function () {
+    startLoading();
+  });
+
+if (overlay.dataset.reopen === 'true') {
+    overlay.classList.add('open');
+  }
+
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
 });
-
-// Auto-hide messages
-setTimeout(() => {
-    const messages = document.querySelectorAll('.message');
-    messages.forEach(msg => {
-        msg.style.transition = "opacity 0.5s";
-        msg.style.opacity = "0";
-        setTimeout(() => msg.remove(), 500);
-    });
-}, 3000);
 </script>
 
 </body>

@@ -2,290 +2,502 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Update Product</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Edit {{ update_product_form.instance.name|default:"Product" }} | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
 
-        body {
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px 20px;
-        }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:80px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
 
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            backdrop-filter: blur(20px);
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 0 50px rgba(0,255,255,0.15);
-            animation: fadeIn 0.8s ease-in-out;
-        }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes fieldIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            text-align: center;
-            margin-bottom: 40px;
-            color: #00ffff;
-            letter-spacing: 2px;
-        }
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
 
-        .grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 40px;
-        }
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
 
-        .form-section {
-            display: grid;
-            gap: 20px;
-        }
+  .wrap{max-width:880px;margin:0 auto;padding:34px 24px 0}
 
-        label {
-            font-size: 14px;
-            opacity: 0.8;
-        }
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .back-link:hover{text-decoration:underline}
 
-        input, textarea, select {
-            width: 100%;
-            padding: 12px 15px;
-            border-radius: 12px;
-            border: none;
-            outline: none;
-            background: rgba(255,255,255,0.08);
-            color: white;
-            transition: 0.3s;
-        }
+  .page-head{margin-bottom:22px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:28px}
+  .page-head p{color:var(--muted);font-size:14px;margin-top:4px}
 
-        textarea {
-            resize: none;
-            min-height: 100px;
-        }
+  /* ---------- hero ---------- */
+  .hero-card{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    border-radius:var(--radius);padding:26px 32px;display:flex;align-items:center;justify-content:space-between;
+    gap:16px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden;flex-wrap:wrap;
+    box-shadow:var(--shadow-lg);animation:slideInUp .5s ease;
+  }
+  .hero-card::after{
+    content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;
+    background:rgba(255,255,255,0.08);
+  }
+  .hero-info{position:relative;z-index:1;min-width:0;display:flex;align-items:center;gap:14px}
+  .hero-info h2{font-size:21px;margin-bottom:6px;color:#fff}
+  .status-badge{
+    font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;letter-spacing:.3px;
+    background:rgba(255,255,255,0.18);display:inline-flex;align-items:center;gap:6px;
+  }
+  .status-dot{width:7px;height:7px;border-radius:50%;background:#4ade80}
+  .status-badge.inactive .status-dot{background:#f87171}
 
-        input:focus, textarea:focus, select:focus {
-            background: rgba(0,255,255,0.1);
-            box-shadow: 0 0 10px #00ffff;
-        }
+  .hero-thumb{
+    max-width:160px;max-height:80px;border-radius:12px;overflow:hidden;flex-shrink:0;
+    background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;
+  }
+  .hero-thumb img{max-width:160px;max-height:80px;width:auto;height:auto;object-fit:contain;display:block}
+  .hero-thumb-placeholder{font-size:10px;color:rgba(255,255,255,0.7);text-align:center;padding:4px 10px}
 
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-        }
+  .btn-on-hero{
+    background:rgba(255,255,255,0.16);color:#fff;border:1.5px solid rgba(255,255,255,0.4);
+    padding:10px 20px;border-radius:999px;font-weight:600;font-size:14px;position:relative;z-index:1;
+    display:inline-flex;align-items:center;gap:7px;transition:background .2s, transform .2s;
+  }
+  .btn-on-hero:hover{background:rgba(255,255,255,0.28);transform:translateY(-1px)}
 
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            letter-spacing: 1px;
-            transition: 0.3s;
-        }
+  /* ---------- buttons ---------- */
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:12px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
 
-        .update-btn {
-            background: linear-gradient(90deg, #00ffff, #00b3ff);
-            color: black;
-        }
+  .btn-ghost{
+    background:var(--accent-light);color:var(--accent);border:none;padding:11px 22px;border-radius:999px;
+    font-weight:600;font-size:14px;transition:background .2s, transform .2s;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .btn-ghost:hover{background:#dfe9fb;transform:translateY(-1px)}
 
-        .update-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 20px #00ffff;
-        }
+  .btn-danger-ghost{
+    background:var(--danger-light);color:var(--danger);border:none;padding:11px 22px;border-radius:999px;
+    font-weight:600;font-size:14px;transition:background .2s;
+  }
+  .btn-danger-ghost:hover{background:#fde2e2}
 
-        .delete-btn {
-            background: linear-gradient(90deg, #ff4d4d, #ff0000);
-            color: white;
-        }
+  .btn-success-ghost{
+    background:var(--success-light);color:var(--success);border:none;padding:11px 22px;border-radius:999px;
+    font-weight:600;font-size:14px;transition:background .2s;
+  }
+  .btn-success-ghost:hover{background:#dcfce7}
 
-        .delete-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 20px red;
-        }
+  .btn-text{background:none;border:none;color:var(--muted);font-weight:600;font-size:14px;padding:11px 18px;border-radius:999px;transition:background .2s,color .2s}
+  .btn-text:hover{background:var(--border);color:var(--text)}
 
-        .side-panel {
-            background: rgba(255,255,255,0.05);
-            padding: 20px;
-            border-radius: 15px;
-        }
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px 28px;margin-bottom:20px;animation:slideInUp .5s ease both;
+  }
+  .card:nth-of-type(1){animation-delay:.04s}
+  .card:nth-of-type(2){animation-delay:.09s}
+  .card:nth-of-type(3){animation-delay:.14s}
 
-        .spec-item {
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-        }
+  .card-head{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+  .card-head .icon{
+    width:34px;height:34px;border-radius:10px;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .card-head h3{font-size:16px}
 
-        .image-preview {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-        }
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 22px}
+  .field-grid.single{grid-template-columns:1fr}
+  @media(max-width:600px){
+    .field-grid{grid-template-columns:1fr}
+    .hero-card{padding-top:20px}
+  }
 
-        .image-preview img {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 10px;
-            border: 2px solid rgba(0,255,255,0.4);
-        }
+  .field-group{min-width:0}
+  .field-group.span-2{grid-column:1 / -1}
+  .field-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:block}
 
-        .message {
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 14px;
-        }
+  .view-value{
+    font-size:15px;font-weight:500;color:var(--text);padding:2px 0;min-height:22px;
+    transition:opacity .2s ease;white-space:pre-wrap;
+  }
+  .view-value.empty{color:#94a3b8;font-weight:400;font-style:italic}
 
-        .success {
-            background: rgba(0,255,0,0.2);
-            color: #00ff88;
-        }
+  .edit-field{display:none}
+  .editing .view-value{display:none}
+  .editing .edit-field{display:block;animation:fieldIn .3s ease both}
 
-        .error {
-            background: rgba(255,0,0,0.2);
-            color: #ff4d4d;
-        }
+  input[type=text], input[type=number], select, textarea{
+    width:100%;padding:11px 13px;border-radius:var(--radius-sm);border:1.5px solid var(--border);
+    background:var(--bg);color:var(--text);font-family:inherit;font-size:14px;
+    transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  textarea{resize:vertical;min-height:90px}
+  input:focus, select:focus, textarea:focus{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);background:#fff;
+  }
+  .field-errors{color:var(--danger);font-size:12px;margin-top:5px}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+  .price-prefix{position:relative}
+  .price-prefix .edit-field::before{
+    content:'$';position:absolute;left:13px;top:11px;color:var(--muted);font-size:14px;pointer-events:none;
+  }
+  .price-prefix .edit-field input{padding-left:24px}
 
-        @media(max-width: 900px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  /* ---------- specs (read-only) ---------- */
+  .spec-list{display:flex;flex-direction:column;gap:10px}
+  .spec-row-view{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);
+  }
+  .spec-row-view .spec-name{font-weight:600;font-size:13.5px;color:var(--muted)}
+  .spec-row-view .spec-value{font-weight:500;font-size:14px}
+  .empty-hint{color:var(--muted);font-size:13.5px;text-align:center;padding:14px 0}
+
+  /* ---------- danger / status zone ---------- */
+  .zone-card{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+  .zone-card p{color:var(--muted);font-size:13.5px;margin-top:4px}
+
+  /* ---------- sticky action bar ---------- */
+  .action-bar{
+    position:fixed;left:0;right:0;bottom:-100px;background:var(--surface);border-top:1px solid var(--border);
+    box-shadow:0 -10px 30px rgba(30,41,59,0.08);padding:16px 24px;
+    display:flex;justify-content:center;gap:14px;z-index:200;
+    transition:bottom .35s cubic-bezier(.16,.9,.35,1);
+  }
+  .editing .action-bar{bottom:0}
+  .action-bar-inner{max-width:880px;width:100%;display:flex;justify-content:flex-end;gap:12px;align-items:center}
+  .save-note{margin-right:auto;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px}
+
+  .spinner{
+    width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+    animation:spin .7s linear infinite;display:none;
+  }
+  .btn-primary.saving .spinner{display:inline-block}
+  .btn-primary.saving .btn-label{opacity:.85}
+</style>
 </head>
 <body>
 
-<div class="container">
-    <h1>UPDATE PRODUCT</h1>
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+  </div>
+</nav>
 
-    <!-- Messages -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
-                {{ message }}
-            </div>
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap" id="product-root">
+
+  <a href="{% url 'view_product' update_product_form.instance.id %}" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to product
+  </a>
+
+  <div class="page-head">
+    <h1>Edit Product</h1>
+    <p>Update details for this listing. Changes save together.</p>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" id="product-form">
+    {% csrf_token %}
+
+    <div class="hero-card">
+      <div class="hero-info">
+        <div class="hero-thumb">
+          {% if primary_image %}
+            <img src="{{ primary_image.image.url }}" alt="{{ update_product_form.instance.name|default:'Product' }}">
+          {% else %}
+            <span class="hero-thumb-placeholder">No image</span>
+          {% endif %}
+        </div>
+        <span class="status-badge {% if not update_product_form.instance.is_active %}inactive{% endif %}">
+          <span class="status-dot"></span>
+          {% if update_product_form.instance.is_active %}Active{% else %}Inactive{% endif %}
+        </span>
+      </div>
+      <button type="button" class="btn-on-hero" id="edit-toggle-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Edit
+      </button>
+    </div>
+
+    <!-- ---------- basic info ---------- -->
+    <div class="card">
+      <div class="card-head">
+        <span class="icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41 11 3.83a2 2 0 0 0-1.41-.58H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .58 1.41l9.58 9.59a2 2 0 0 0 2.83 0l5.6-5.6a2 2 0 0 0 0-2.83Z"/><circle cx="7.5" cy="7.5" r="1"/></svg>
+        </span>
+        <h3>Basic Information</h3>
+      </div>
+
+      <div class="field-grid">
+        <div class="field-group span-2">
+          <label class="field-label" for="{{ update_product_form.name.id_for_label }}">Product name</label>
+          <div class="view-value {% if not update_product_form.instance.name %}empty{% endif %}">{{ update_product_form.instance.name|default:"Not set" }}</div>
+          <div class="edit-field">
+            {{ update_product_form.name }}
+            {% if update_product_form.name.errors %}<div class="field-errors">{{ update_product_form.name.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="field-group span-2">
+          <label class="field-label" for="{{ update_product_form.description.id_for_label }}">Description</label>
+          <div class="view-value {% if not update_product_form.instance.description %}empty{% endif %}">{{ update_product_form.instance.description|default:"Not set" }}</div>
+          <div class="edit-field">
+            {{ update_product_form.description }}
+            {% if update_product_form.description.errors %}<div class="field-errors">{{ update_product_form.description.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="field-group span-2">
+          <label class="field-label" for="{{ update_product_form.category.id_for_label }}">Category</label>
+          <div class="view-value {% if not update_product_form.instance.category %}empty{% endif %}">{{ update_product_form.instance.category|default:"Not set" }}</div>
+          <div class="edit-field">
+            {{ update_product_form.category }}
+            {% if update_product_form.category.errors %}<div class="field-errors">{{ update_product_form.category.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+      {% if update_product_form.non_field_errors %}
+        <div class="field-errors">{{ update_product_form.non_field_errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <!-- ---------- pricing & stock ---------- -->
+    <div class="card">
+      <div class="card-head">
+        <span class="icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.4-1.34-2.5-3-2.5s-3 1.1-3 2.5 1.34 2.3 3 2.5c1.66.2 3 1.1 3 2.5S13.66 17 12 17s-3-1.1-3-2.5"/></svg>
+        </span>
+        <h3>Pricing &amp; Stock</h3>
+      </div>
+
+      <div class="field-grid">
+        <div class="field-group price-prefix">
+          <label class="field-label" for="{{ update_product_form.manufacturing_price.id_for_label }}">Manufacturing price</label>
+          <div class="view-value {% if update_product_form.instance.manufacturing_price is None %}empty{% endif %}">
+            {% if update_product_form.instance.manufacturing_price is not None %}${{ update_product_form.instance.manufacturing_price }}{% else %}Not set{% endif %}
+          </div>
+          <div class="edit-field">
+            {{ update_product_form.manufacturing_price }}
+            {% if update_product_form.manufacturing_price.errors %}<div class="field-errors">{{ update_product_form.manufacturing_price.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="field-group price-prefix">
+          <label class="field-label" for="{{ update_product_form.selling_price.id_for_label }}">Selling price</label>
+          <div class="view-value {% if update_product_form.instance.selling_price is None %}empty{% endif %}">
+            {% if update_product_form.instance.selling_price is not None %}${{ update_product_form.instance.selling_price }}{% else %}Not set{% endif %}
+          </div>
+          <div class="edit-field">
+            {{ update_product_form.selling_price }}
+            {% if update_product_form.selling_price.errors %}<div class="field-errors">{{ update_product_form.selling_price.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="{{ update_product_form.current_stock.id_for_label }}">Current stock</label>
+          <div class="view-value {% if update_product_form.instance.current_stock is None %}empty{% endif %}">{{ update_product_form.instance.current_stock|default:"Not set" }}</div>
+          <div class="edit-field">
+            {{ update_product_form.current_stock }}
+            {% if update_product_form.current_stock.errors %}<div class="field-errors">{{ update_product_form.current_stock.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="{{ update_product_form.offer.id_for_label }}">Discount offer (%)</label>
+          <div class="view-value {% if not update_product_form.instance.offer %}empty{% endif %}">{{ update_product_form.instance.offer|default:"None" }}</div>
+          <div class="edit-field">
+            {{ update_product_form.offer }}
+            {% if update_product_form.offer.errors %}<div class="field-errors">{{ update_product_form.offer.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar" id="action-bar">
+      <div class="action-bar-inner">
+        <span class="save-note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          You're editing this product
+        </span>
+        <a href="{% url 'manage_product_images' update_product_form.instance.id %}" class="btn-ghost">Manage Images</a>
+        <button type="button" class="btn-text" id="cancel-btn">Cancel</button>
+        <button type="submit" name="Update_Product_btn" class="btn-primary" id="save-btn">
+          <span class="spinner"></span>
+          <span class="btn-label">Save Changes</span>
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- ---------- specifications (read-only, managed on its own page) ---------- -->
+  <div class="card">
+    <div class="card-head">
+      <span class="icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/></svg>
+      </span>
+      <h3>Specifications</h3>
+    </div>
+
+    {% if specs %}
+      <div class="spec-list">
+        {% for spec in specs %}
+          <div class="spec-row-view">
+            <span class="spec-name">{{ spec.spec_type.name|default:"—" }}</span>
+            <span class="spec-value">{{ spec.value|default:"—" }}</span>
+          </div>
         {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-hint">No specifications added yet.</div>
     {% endif %}
 
-    <div class="grid">
-        <!-- LEFT SIDE FORM -->
-        <form method="POST" enctype="multipart/form-data" class="form-section">
-            {% csrf_token %}
-
-            {{ update_product_form.name.label_tag }}
-            {{ update_product_form.name }}
-
-            {{ update_product_form.description.label_tag }}
-            {{ update_product_form.description }}
-
-            {{ update_product_form.category.label_tag }}
-            {{ update_product_form.category }}
-
-            {{ update_product_form.manufacturing_price.label_tag }}
-            {{ update_product_form.manufacturing_price }}
-
-            {{ update_product_form.selling_price.label_tag }}
-            {{ update_product_form.selling_price }}
-
-            {{ update_product_form.current_stock.label_tag }}
-            {{ update_product_form.current_stock }}
-
-            {{ update_product_form.offer.label_tag }}
-            {{ update_product_form.offer }}
-
-            <label>Images</label>
-            {{ update_product_form.image1 }}
-            {{ update_product_form.image2 }}
-            {{ update_product_form.image3 }}
-
-            <div class="image-preview" id="preview"></div>
-
-            <div class="btn-group">
-                <button type="submit" name="Update_Product_btn" class="btn update-btn">
-                    Update
-                </button>
-
-                <button type="submit" name="delete_product_btn" class="btn delete-btn"
-                        onclick="return confirm('Are you sure you want to delete this product?')">
-                    Delete
-                </button>
-            </div>
-        </form>
-
-        <!-- RIGHT SIDE PANEL -->
-        <div class="side-panel">
-            <h3 style="margin-bottom:15px;">Specifications</h3>
-
-            {% for spec in specs %}
-                <div class="spec-item">
-                    <span>{{ spec.name }}</span>
-                    <span>{{ spec.value }}</span>
-                </div>
-            {% empty %}
-                <p style="opacity:0.6;">No specifications yet.</p>
-            {% endfor %}
-        </div>
+    <div style="margin-top:18px">
+      <a href="{% url 'manage_specs' update_product_form.instance.id %}">
+        <button type="button" class="btn-ghost">Edit Specifications</button>
+      </a>
     </div>
+  </div>
+
+  <!-- ---------- status zone ---------- -->
+  <div class="card zone-card">
+    <div>
+      <h3 style="font-size:16px">Product Status</h3>
+      {% if update_product_form.instance.is_active %}
+        <p>Deactivating hides this product from your storefront without deleting it.</p>
+      {% else %}
+        <p>This product is currently hidden from your storefront.</p>
+      {% endif %}
+    </div>
+    {% if update_product_form.instance.is_active %}
+      <form method="POST" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" name="delete_product_btn" class="btn-danger-ghost">Deactivate Product</button>
+      </form>
+    {% else %}
+      <form method="POST" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" name="reactivate_product_btn" class="btn-success-ghost">Reactivate Product</button>
+      </form>
+    {% endif %}
+  </div>
+
 </div>
 
 <script>
-    // Image preview
-    const inputs = document.querySelectorAll('input[type="file"]');
-    const preview = document.getElementById('preview');
+document.addEventListener('DOMContentLoaded', function () {
+  const root = document.getElementById('product-root');
+  const editBtn = document.getElementById('edit-toggle-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const form = document.getElementById('product-form');
+  const saveBtn = document.getElementById('save-btn');
 
-    inputs.forEach(input => {
-        input.addEventListener('change', function() {
-            preview.innerHTML = "";
-            inputs.forEach(i => {
-                if (i.files && i.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement("img");
-                        img.src = e.target.result;
-                        preview.appendChild(img);
-                    }
-                    reader.readAsDataURL(i.files[0]);
-                }
-            });
-        });
-    });
-
-    // Auto-hide messages
+  function enterEdit(){
+    root.classList.add('editing');
+    editBtn.style.display = 'none';
     setTimeout(() => {
-        const messages = document.querySelectorAll('.message');
-        messages.forEach(msg => {
-            msg.style.transition = "opacity 0.5s";
-            msg.style.opacity = "0";
-            setTimeout(() => msg.remove(), 500);
-        });
-    }, 3000);
+      root.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 80);
+  }
+
+  function exitEdit(){
+    root.classList.remove('editing');
+    editBtn.style.display = '';
+  }
+
+  editBtn.addEventListener('click', enterEdit);
+
+  cancelBtn.addEventListener('click', function(){
+    form.reset();
+    exitEdit();
+  });
+
+  form.addEventListener('submit', function(){
+    saveBtn.classList.add('saving');
+    setTimeout(() => { saveBtn.disabled = true; }, 0);
+  });
+
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
 </script>
 
 </body>

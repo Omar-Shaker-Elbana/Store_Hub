@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('orders', '0008_remove_order_card'),
+        ("orders", "0008_remove_order_card"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='order',
-            name='payment_type',
-            field=models.CharField(blank=True, choices=[('cash', 'Cash')], max_length=4, null=True),
+            model_name="order",
+            name="payment_type",
+            field=models.CharField(
+                blank=True, choices=[("cash", "Cash")], max_length=4, null=True
+            ),
         ),
     ]

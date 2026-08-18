@@ -1,12 +1,18 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+# from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
 from merchant_interface.models import Membership, Store
-from orders.models import Cart, CartItem, Wishlist, WishlistItem
+from orders.models import Cart, CartItem, OrderItem, Wishlist, WishlistItem
+from shopper_interface.models import RecentlyViewed
+from shopper_interface.recommendations import get_related_products
 
-from .forms import ProductForm, SpecForm, Suggest_Category_Form
-from .models import Category, Product, Spec, SuggestedCategory
+from .forms import (ProductForm, ProductImageFormSet, Review_Form, SpecFormSet,
+                    Suggest_Category_Form)
+from .models import (Category, Product, Review, Spec, SpecType,
+                     SuggestedCategory)
 
 # Create your views here.
 
@@ -23,72 +29,86 @@ def Create_Product(request, current_store_id):
         return redirect("/")
 
     if request.method == "POST":
-        product_form = ProductForm(request.POST, request.FILES)
+        if "Suggest_Category_btn" in request.POST:
+            suggest_category_form = Suggest_Category_Form(request.POST)
+            product_form = ProductForm()
 
-        if "Create_Product_btn" in request.POST:
-            if product_form.is_valid():
-                new_product = product_form.save(commit=False)
-                new_product.store = current_store
-                new_product.save()
-                messages.success(
-                    request,
-                    "Product added successfuly, now lets add some specifications to it!",
+            if suggest_category_form.is_valid():
+                SuggestedCategory.objects.create(
+                    name=suggest_category_form.cleaned_data["category_name"],
+                    suggester=request.user,
                 )
-                return redirect(f"/products/create_spec/{new_product.id}/")
+                messages.success(request, "Category suggested successfully!")
+                return redirect(f"/products/create_product/{current_store_id}/")
 
-            else:
-                messages.error(request, "Invalid form!")
+            messages.error(request, "Please enter a valid category name!")
+
+        else:
+            product_form = ProductForm(request.POST, request.FILES)
+            suggest_category_form = Suggest_Category_Form()
+
+            if "Create_Product_btn" in request.POST:
+                if product_form.is_valid():
+                    new_product = product_form.save(commit=False)
+                    new_product.store = current_store
+                    new_product.save()
+                    messages.success(
+                        request,
+                        "Product added successfuly, now lets add some specifications to it!",
+                    )
+                    return redirect(f"/products/manage_specs/{new_product.id}/")
+
+                else:
+                    messages.error(request, "Invalid form!")
 
     else:
         product_form = ProductForm()
+        suggest_category_form = Suggest_Category_Form()
 
     context = {
         "product_form": product_form,
+        "suggest_category_form": suggest_category_form,
     }
 
     return render(request, "products/create_product.html", context)
 
 
 @login_required
-def Create_Spec(request, product_id):
+def spec_type_search(request):
+    query = request.GET.get("q", "").strip()
+    results = []
+    if query:
+        matches = SpecType.objects.filter(name__icontains=query).order_by("name")[:8]
+        results = [{"id": st.id, "name": st.name} for st in matches]
+    return JsonResponse({"results": results})
+
+
+@login_required
+def Manage_Specs(request, product_id):
     product = Product.objects.filter(id=product_id).first()
     if not product:
         messages.error(request, "Product not found!")
         return redirect("/")
 
-    current_store = product.store
-    if not Membership.objects.filter(store=current_store, user=request.user).exists():
+    if not Membership.objects.filter(store=product.store, user=request.user).exists():
         messages.error(request, "You don't have permission to access this page!")
         return redirect("/")
 
-    specs = Spec.objects.filter(product=product).select_related("spec_type")
-
     if request.method == "POST":
-        spec_form = SpecForm(request.POST)
-
-        if "Save_and_Create_Another_Spec_btn" in request.POST:
-            if spec_form.is_valid():
-                new_spec = spec_form.save(commit=False)
-                new_spec.product_id = product_id
-                new_spec.save()
-                messages.success(request, "Specification added successfuly!")
-                return redirect(f"/products/create_spec/{product_id}/")
-
-            else:
-                messages.error(request, "Invalid form!")
-
+        formset = SpecFormSet(request.POST, instance=product)
+        if formset.is_valid():
+            formset.save()
+            messages.success(
+                request, "Specifications saved! Now let's add some images."
+            )
+            return redirect(f"/products/manage_images/{product_id}/")
         else:
-            return redirect("/")
-
+            messages.error(request, "Please fix the errors below.")
     else:
-        spec_form = SpecForm()
+        formset = SpecFormSet(instance=product)
 
-    context = {
-        "spec_form": spec_form,
-        "specs": specs,
-    }
-
-    return render(request, "products/create_spec.html", context)
+    context = {"formset": formset, "product": product}
+    return render(request, "products/manage_specs.html", context)
 
 
 @login_required
@@ -104,6 +124,7 @@ def Update_Product(request, product_id):
         return redirect("/")
 
     specs = Spec.objects.filter(product=old_product).select_related("spec_type")
+    primary_image = old_product.images.filter(is_primary=True).first()
 
     if request.method == "POST":
         update_product_form = ProductForm(
@@ -120,9 +141,16 @@ def Update_Product(request, product_id):
                 messages.error(request, "Invalid form!")
 
         if "delete_product_btn" in request.POST:
-            old_product.delete()
-            messages.success(request, "Product deleted successfuly!")
-            return redirect("/")
+            old_product.is_active = False
+            old_product.save(update_fields=["is_active"])
+            messages.success(request, "Product deactivated successfully!")
+            return redirect(f"/merchant/store/{current_store.id}/")
+
+        if "reactivate_product_btn" in request.POST:
+            old_product.is_active = True
+            old_product.save(update_fields=["is_active"])
+            messages.success(request, "Product reactivated!")
+            return redirect(f"/products/view_product/{product_id}/")
 
     else:
         update_product_form = ProductForm(instance=old_product)
@@ -130,131 +158,277 @@ def Update_Product(request, product_id):
     context = {
         "update_product_form": update_product_form,
         "specs": specs,
+        "primary_image": primary_image,
     }
 
     return render(request, "products/update_product.html", context)
 
 
-@login_required
-def Update_Spec(request, product_id, spec_name):
-    old_product = Product.objects.filter(id=product_id).first()
-    if not old_product:
-        messages.error(request, "Product not found!")
-        return redirect("/")
+# @login_required
+# def View_Product(request, product_id):
+#     product = (
+#         Product.active.select_related("category", "store").filter(id=product_id).first()
+#     )
+#     if not product:
+#         messages.error(request, "Product not found!")
+#         return redirect("/")
 
-    current_store = old_product.store
-    if not Membership.objects.filter(store=current_store, user=request.user).exists():
-        messages.error(request, "You don't have permission to access this page!")
-        return redirect("/")
+#     if request.user.is_authenticated:
+#         rv, created = RecentlyViewed.objects.get_or_create(
+#             user=request.user, product=product
+#         )
+#         if not created:
+#             rv.save()  # auto_now=True bumps viewed_at + triggers the 'view' Interaction signal
 
-    specs = Spec.objects.filter(product=old_product).select_related("spec_type")
-    spec = Spec.objects.filter(product=old_product, spec_type__name=spec_name).first()
-    if not spec:
-        messages.error(request, "Specification not found!")
-        return redirect(f"/products/view_product/{product_id}/")
+#     specs = Spec.objects.filter(product=product).select_related("spec_type")
 
-    if request.method == "POST":
-        spec_form = SpecForm(request.POST, instance=spec)
+#     primary_image = (
+#         product.images.filter(is_primary=True).first() or product.images.first()
+#     )
 
-        if (
-            "Save_and_Create_Another_Spec_btn" in request.POST
-            or "Save_btn" in request.POST
-        ):
-            if spec_form.is_valid():
-                spec_form.save()
-                messages.success(request, "Specification updated successfuly!")
-                if "Save_and_Create_Another_Spec_btn" in request.POST:
-                    return redirect(f"/products/create_spec/{product_id}/")
+#     has_purchased = False
+#     existing_review = None
+#     review_form = None
+#     if request.user.is_authenticated:
+#         has_purchased = OrderItem.objects.filter(
+#             order__user=request.user,
+#             order__status="Delivered",
+#             product=product,
+#         ).exists()
+#         if has_purchased:
+#             existing_review = Review.objects.filter(
+#                 user=request.user, product=product
+#             ).first()
+#             review_form = Review_Form(instance=existing_review)
 
-                return redirect(f"/products/view_product/{product_id}/")
+#     reviews = (
+#         Review.objects.filter(product=product)
+#         .select_related("user")
+#         .order_by("-creation_date")
+#     )
 
-            else:
-                messages.error(request, "Invalid form!")
+#     context = {
+#         "product": product,
+#         "specs": specs,
+#         "related_products": get_related_products(product, limit=8),
+#         "primary_image": primary_image,
+#         "has_purchased": has_purchased,
+#         "review_form": review_form,
+#         "reviews": reviews,
+#     }
 
-        elif "delete_spec_btn" in request.POST:
-            spec.delete()
-            messages.success(request, "Specification deleted successfuly!")
-            return redirect(f"/products/view_product/{product_id}/")
+#     if request.method == "POST":
+#         if not request.user.is_authenticated:
+#             messages.error(request, "Please log in to do that.")
+#             return redirect("view_product", product_id=product.id)
 
-    else:
-        spec_form = SpecForm(instance=spec)
+#         if "add_to_cart_btn" in request.POST:
+#             with transaction.atomic():
+#                 locked_product = Product.objects.select_for_update().get(id=product.id)
 
-    context = {
-        "update_spec_form": spec_form,
-        "specs": specs,
-    }
+#                 cart, _ = Cart.objects.get_or_create(user=request.user)
+#                 cart_item, created = CartItem.objects.get_or_create(
+#                     cart=cart, product=locked_product
+#                 )
+#                 desired_qty = cart_item.quantity if created else cart_item.quantity + 1
 
-    return render(request, "products/update_spec.html", context)
+#                 if (
+#                     locked_product.current_stock is None
+#                     or desired_qty > locked_product.current_stock
+#                 ):
+#                     stock_display = locked_product.current_stock or 0
+#                     messages.error(request, f"Only {stock_display} left in stock.")
+#                     if created:
+#                         cart_item.delete()  # don't leave a 0/invalid cart row behind
+#                 else:
+#                     cart_item.quantity = desired_qty
+#                     cart_item.save()
+#                     messages.success(request, f"{product.name} added to cart!")
 
+#         elif "add_to_wishlist_btn" in request.POST:
+#             wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+#             WishlistItem.objects.get_or_create(wishlist=wishlist, product=product)
+#             messages.success(request, f"{product.name} added to wishlist!")
 
-from shopper_interface.models import RecentlyViewed
-from shopper_interface.recommendations import get_related_products
+#         elif "submit_review_btn" in request.POST:
+#             if not has_purchased:
+#                 messages.error(
+#                     request, "You can only review products you've purchased."
+#                 )
+#             else:
+#                 review_form = Review_Form(request.POST, instance=existing_review)
+#                 if review_form.is_valid():
+#                     review = review_form.save(commit=False)
+#                     review.user = request.user
+#                     review.product = product
+#                     review.save()
+#                     messages.success(request, "Review saved!")
+#                 else:
+#                     messages.error(request, "Invalid review!")
+
+#         return redirect("view_product", product_id=product.id)
+
+#     return render(request, "products/view_product.html", context)
 
 
 def View_Product(request, product_id):
     product = (
-        Product.objects.select_related("category", "store")
-        .filter(id=product_id)
-        .first()
+        Product.active.select_related("category", "store").filter(id=product_id).first()
     )
     if not product:
         messages.error(request, "Product not found!")
         return redirect("/")
 
     if request.user.is_authenticated:
-        rv, _ = RecentlyViewed.objects.get_or_create(user=request.user, product=product)
-        rv.save()  # bumps viewed_at + triggers the 'view' Interaction signal
+        rv, created = RecentlyViewed.objects.get_or_create(
+            user=request.user, product=product
+        )
+        if not created:
+            rv.save()  # auto_now=True bumps viewed_at + triggers the 'view' Interaction signal
 
     specs = Spec.objects.filter(product=product).select_related("spec_type")
+
+    primary_image = (
+        product.images.filter(is_primary=True).first() or product.images.first()
+    )
+
+    has_purchased = False
+    existing_review = None
+    review_form = None
+    if request.user.is_authenticated:
+        has_purchased = OrderItem.objects.filter(
+            order__user=request.user,
+            order__status="Delivered",
+            product=product,
+        ).exists()
+        if has_purchased:
+            existing_review = Review.objects.filter(
+                user=request.user, product=product
+            ).first()
+            review_form = Review_Form(instance=existing_review)
+
+    reviews = (
+        Review.objects.filter(product=product)
+        .select_related("user")
+        .order_by("-creation_date")
+    )
 
     context = {
         "product": product,
         "specs": specs,
         "related_products": get_related_products(product, limit=8),
+        "primary_image": primary_image,
+        "has_purchased": has_purchased,
+        "review_form": review_form,
+        "reviews": reviews,
     }
 
     if request.method == "POST":
         if not request.user.is_authenticated:
-            messages.error(request, "Please log in first.")
-            return redirect("/accounts/login/")
+            messages.error(request, "Please log in to do that.")
+            return redirect("view_product", product_id=product.id)
 
         if "add_to_cart_btn" in request.POST:
             cart, _ = Cart.objects.get_or_create(user=request.user)
             cart_item, created = CartItem.objects.get_or_create(
                 cart=cart, product=product
             )
-            if not created:
-                cart_item.quantity += 1
+            desired_qty = cart_item.quantity if created else cart_item.quantity + 1
+
+            if product.current_stock is None or desired_qty > product.current_stock:
+                stock_display = product.current_stock or 0
+                messages.error(request, f"Only {stock_display} left in stock.")
+                if created:
+                    cart_item.delete()  # don't leave a 0/invalid cart row behind
+            else:
+                cart_item.quantity = desired_qty
                 cart_item.save()
-            messages.success(request, f"{product.name} added to cart!")
+                messages.success(request, f"{product.name} added to cart!")
 
         elif "add_to_wishlist_btn" in request.POST:
             wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
             WishlistItem.objects.get_or_create(wishlist=wishlist, product=product)
             messages.success(request, f"{product.name} added to wishlist!")
 
+        elif "submit_review_btn" in request.POST:
+            if not has_purchased:
+                messages.error(
+                    request, "You can only review products you've purchased."
+                )
+            else:
+                review_form = Review_Form(request.POST, instance=existing_review)
+                if review_form.is_valid():
+                    review = review_form.save(commit=False)
+                    review.user = request.user
+                    review.product = product
+                    review.save()
+                    messages.success(request, "Review saved!")
+                else:
+                    messages.error(request, "Invalid review!")
+
         return redirect("view_product", product_id=product.id)
 
     return render(request, "products/view_product.html", context)
 
-
 @login_required
-def Suggest_Category(request):
-    if request.method == "POST":
-        form = Suggest_Category_Form(request.POST)
-        if form.is_valid():
-            category_name = form.cleaned_data["category_name"]
-            if not Category.objects.filter(name=category_name).exists():
-                SuggestedCategory.objects.create(
-                    name=category_name, suggester=request.user
-                )
-                messages.success(request, "Category suggested successfully!")
-            else:
-                messages.error(request, "Category already exists!")
-        else:
-            messages.error(request, "Please enter a valid category name!")
+def Manage_Product_Images(request, product_id):
+    product = Product.objects.filter(id=product_id).first()
+    if not product:
+        messages.error(request, "Product not found!")
+        return redirect("/")
+    if not Membership.objects.filter(store=product.store, user=request.user).exists():
+        messages.error(request, "You don't have permission to access this page!")
         return redirect("/")
 
+    if request.method == "POST":
+        formset = ProductImageFormSet(request.POST, request.FILES, instance=product)
+        if formset.is_valid():
+            primary_count = sum(
+                1
+                for f in formset.forms
+                if f.cleaned_data.get("is_primary") and not f.cleaned_data.get("DELETE")
+            )
+            if primary_count > 1:
+                messages.error(request, "Only one image can be primary.")
+            else:
+                formset.save()
+
+                if not product.images.filter(is_primary=True).exists():
+                    first_image = product.images.order_by("order").first()
+                    if first_image:
+                        first_image.is_primary = True
+                        first_image.save(update_fields=["is_primary"])
+
+                messages.success(request, "Images updated!")
+                return redirect(f"/products/view_product/{product_id}/")
+        else:
+            messages.error(request, "Please fix the errors below.")
+    else:
+        formset = ProductImageFormSet(instance=product)
+
     return render(
-        request, "products/suggest_category.html", {"form": Suggest_Category_Form()}
+        request, "products/manage_images.html", {"formset": formset, "product": product}
     )
+
+
+@login_required
+def Review_Suggested_Categories(request):
+    if not request.user.is_staff:
+        messages.error(request, "You don't have permission to access this page!")
+        return redirect("/")
+
+    if request.method == "POST":
+        suggestion = SuggestedCategory.objects.filter(
+            id=request.POST.get("suggestion_id")
+        ).first()
+        if suggestion and "approve_btn" in request.POST:
+            Category.objects.get_or_create(name=suggestion.name)
+            suggestion.status = "approved"
+            suggestion.save(update_fields=["status"])
+        elif suggestion and "reject_btn" in request.POST:
+            suggestion.status = "rejected"
+            suggestion.save(update_fields=["status"])
+        return redirect("review_suggested_categories")
+
+    pending = SuggestedCategory.objects.filter(status="pending")
+    return render(request, "products/review_suggestions.html", {"pending": pending})

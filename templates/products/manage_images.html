@@ -1,0 +1,772 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manage Images | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
+
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  .wrap{max-width:900px;margin:0 auto;padding:34px 24px 0}
+
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .back-link:hover{text-decoration:underline}
+
+  .page-head{margin-bottom:24px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:26px;margin-bottom:6px}
+  .page-head p{color:var(--muted);font-size:14.5px}
+
+  .primary-warning{
+    display:none;align-items:center;gap:8px;background:var(--danger-light);color:var(--danger);
+    border-radius:var(--radius-sm);padding:10px 14px;font-size:13.5px;font-weight:600;margin-bottom:16px;
+  }
+  .primary-warning.show{display:flex}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px;animation:slideInUp .5s ease .05s both;
+  }
+
+  #image-rows{display:flex;flex-direction:column;gap:14px;margin-bottom:16px}
+
+  .image-row{
+    border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);
+    padding:16px;display:flex;gap:18px;position:relative;
+    animation:slideInUp .4s ease both;
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .image-row.marked-delete{opacity:.45}
+  .image-row.removing{opacity:0;transform:scale(.96)}
+  .image-row.is-primary{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+
+  .primary-badge{
+    position:absolute;top:10px;right:10px;background:var(--accent);color:#fff;
+    font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:999px;
+    display:none;text-transform:uppercase;z-index:2;
+  }
+  .image-row.is-primary .primary-badge{display:block}
+
+  .preview-box{
+    width:220px;max-width:40%;flex-shrink:0;border-radius:var(--radius-sm);overflow:hidden;
+    background:#eef1f5;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);
+    cursor:pointer;min-height:130px;align-self:flex-start;
+  }
+  .preview-box img{width:100%;height:auto;display:block}
+  .preview-box .placeholder{color:var(--muted);font-size:12.5px;text-align:center;padding:10px}
+
+  .image-row-controls{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+
+  .img-field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px}
+  .img-field input[type="file"]{display:none}
+  .img-field input[type="number"]{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    padding:8px 10px;font-family:inherit;font-size:13.5px;background:#fff;
+  }
+  .img-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+
+  .file-input-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .file-input-row .btn-ghost{padding:8px 14px;font-size:12.5px}
+
+  .order-control{display:flex;align-items:center;gap:6px;max-width:180px}
+  .order-control input[type="number"]{
+    text-align:center;background:var(--bg);color:var(--muted);cursor:default;
+  }
+  .order-move-btn{
+    width:26px;height:26px;flex-shrink:0;border:1.5px solid var(--border);border-radius:8px;
+    background:#fff;color:var(--muted);display:flex;align-items:center;justify-content:center;
+    transition:background .2s,color .2s,border-color .2s;
+  }
+  .order-move-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
+  .order-move-btn:disabled{opacity:.35;cursor:not-allowed}
+
+  .row-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
+
+  .primary-toggle-wrap{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+  .primary-toggle-wrap input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+  .real-primary-checkbox{display:none}
+
+  .delete-toggle{
+    width:32px;height:32px;border-radius:999px;border:none;background:transparent;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,color .2s,transform .2s;
+  }
+  .delete-toggle:hover{background:var(--danger-light);color:var(--danger);transform:scale(1.08)}
+  .delete-toggle.active{background:var(--danger-light);color:var(--danger)}
+  .real-delete-checkbox{display:none}
+
+  .img-errors{color:var(--danger);font-size:11.5px}
+
+  /* ---------- crop modal ---------- */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9997;
+    align-items:center;justify-content:center;padding:20px;
+    animation:fadeIn .2s ease;
+  }
+  .modal-overlay.open{display:flex}
+  .modal-box{
+    background:var(--surface);border-radius:var(--radius);padding:22px;max-width:560px;width:100%;
+    box-shadow:var(--shadow-lg);
+  }
+  .modal-box h3{font-size:17px;margin-bottom:4px}
+  .modal-box p{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .crop-stage{width:100%;max-height:60vh;overflow:hidden;background:#111;border-radius:var(--radius-sm)}
+  .crop-stage img{display:block;max-width:100%}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+  .modal-actions .btn-ghost{padding:10px 18px}
+  .modal-actions .btn-primary{width:auto;padding:10px 22px}
+
+  .panel-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:4px}
+
+  .btn-ghost{
+    background:var(--accent-light);color:var(--accent);border:none;padding:11px 20px;border-radius:999px;
+    font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;transition:background .2s;
+  }
+  .btn-ghost:hover{background:#dfe9fb}
+
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:12px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .image-row{flex-direction:column}
+    .preview-box{width:100%;max-width:100%}
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar"></div>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'view_product' product.id %}">Back to product</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+
+  <a href="{% url 'view_product' product.id %}" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to {{ product.name|default:"product" }}
+  </a>
+
+  <div class="page-head">
+    <h1>Manage Images</h1>
+    <p>Upload, reorder, or remove images for <strong>{{ product.name|default:"this product" }}</strong>. Pick one as primary.</p>
+  </div>
+
+  <div class="primary-warning" id="primary-warning">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    Only one image can be marked as primary.
+  </div>
+
+  <div class="panel">
+    <form method="POST" enctype="multipart/form-data" id="image-formset-form">
+      {% csrf_token %}
+      {{ formset.management_form }}
+
+      {% if formset.non_form_errors %}
+        <div class="img-errors">{{ formset.non_form_errors }}</div>
+      {% endif %}
+
+      <div id="image-rows">
+        {% for form in formset %}
+          <div class="image-row {% if form.instance.is_primary %}is-primary{% endif %}" data-form-index="{{ forloop.counter0 }}" data-existing="{% if form.instance.pk %}true{% else %}false{% endif %}">
+            {{ form.id }}
+            <span class="primary-badge">Primary</span>
+
+            <div class="preview-box" data-preview-box>
+              {% if form.instance.image %}
+                <img src="{{ form.instance.image.url }}" alt="Product image">
+              {% else %}
+                <span class="placeholder">Click to choose an image</span>
+              {% endif %}
+            </div>
+
+            <div class="image-row-controls">
+              <div class="img-field">
+                <label>Image</label>
+                <div class="file-input-row">
+                  <button type="button" class="btn-ghost btn-choose-image">
+                    {% if form.instance.image %}Replace{% else %}Choose{% endif %} Image
+                  </button>
+                  <button type="button" class="btn-ghost btn-crop-image" data-crop-trigger {% if not form.instance.image %}hidden{% endif %}>
+                    Crop
+                  </button>
+                  {{ form.image }}
+                </div>
+                {% if form.image.errors %}<div class="img-errors">{{ form.image.errors|striptags }}</div>{% endif %}
+              </div>
+
+              <div class="img-field">
+                <label for="{{ form.order.id_for_label }}">Order</label>
+                <div class="order-control">
+                  {{ form.order }}
+                  <button type="button" class="order-move-btn" data-move="up" title="Move earlier">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                  </button>
+                  <button type="button" class="order-move-btn" data-move="down" title="Move later">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                  </button>
+                </div>
+                {% if form.order.errors %}<div class="img-errors">{{ form.order.errors|striptags }}</div>{% endif %}
+              </div>
+
+              <div class="row-bottom">
+                <label class="primary-toggle-wrap">
+                  <span class="real-primary-checkbox">{{ form.is_primary }}</span>
+                  <input type="checkbox" class="primary-toggle-ui" {% if form.instance.is_primary %}checked{% endif %}>
+                  Primary
+                </label>
+
+                <span class="real-delete-checkbox">{{ form.DELETE }}</span>
+                <button type="button" class="delete-toggle" data-delete-toggle title="Remove this image">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16z"/></svg>
+                </button>
+              </div>
+
+              {% if form.is_primary.errors %}<div class="img-errors">{{ form.is_primary.errors|striptags }}</div>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="panel-actions">
+        <button type="button" class="btn-ghost" id="add-image-row">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Add another image
+        </button>
+        <button type="submit" class="btn-primary" id="save-images-btn">
+          Save All
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="crop-modal-overlay">
+  <div class="modal-box">
+    <h3>Crop Image</h3>
+    <p>Drag to adjust the crop area, then apply.</p>
+    <div class="crop-stage">
+      <img id="crop-target-image" src="" alt="Image to crop">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="crop-cancel-btn">Cancel</button>
+      <button type="button" class="btn-primary" id="crop-apply-btn">Apply Crop</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="notice-modal-overlay">
+  <div class="modal-box">
+    <h3>Can't remove this image</h3>
+    <p id="notice-modal-message"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn-primary" id="notice-modal-ok-btn">Got it</button>
+    </div>
+  </div>
+</div>
+
+<template id="empty-image-form-template">
+  <div class="image-row" data-form-index="__prefix__" data-existing="false">
+    <span class="primary-badge">Primary</span>
+
+    <div class="preview-box" data-preview-box><span class="placeholder">Click to choose an image</span></div>
+
+    <div class="image-row-controls">
+      <div class="img-field">
+        <label>Image</label>
+        <div class="file-input-row">
+          <button type="button" class="btn-ghost btn-choose-image">Choose Image</button>
+          <button type="button" class="btn-ghost btn-crop-image" data-crop-trigger hidden>Crop</button>
+          {{ formset.empty_form.image }}
+        </div>
+      </div>
+
+      <div class="img-field">
+        <label>Order</label>
+        <div class="order-control">
+          {{ formset.empty_form.order }}
+          <button type="button" class="order-move-btn" data-move="up" title="Move earlier">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </button>
+          <button type="button" class="order-move-btn" data-move="down" title="Move later">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="row-bottom">
+        <label class="primary-toggle-wrap">
+          <span class="real-primary-checkbox">{{ formset.empty_form.is_primary }}</span>
+          <input type="checkbox" class="primary-toggle-ui">
+          Primary
+        </label>
+
+        <button type="button" class="delete-toggle" data-delete-toggle title="Remove this image">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const topbar = document.getElementById('topbar');
+  const totalForms = document.getElementById('id_images-TOTAL_FORMS');
+  const rowsWrap = document.getElementById('image-rows');
+  const addBtn = document.getElementById('add-image-row');
+  const form = document.getElementById('image-formset-form');
+  const primaryWarning = document.getElementById('primary-warning');
+
+  const cropOverlay = document.getElementById('crop-modal-overlay');
+  const cropTargetImage = document.getElementById('crop-target-image');
+  const cropApplyBtn = document.getElementById('crop-apply-btn');
+  const cropCancelBtn = document.getElementById('crop-cancel-btn');
+
+  const noticeOverlay = document.getElementById('notice-modal-overlay');
+  const noticeMessage = document.getElementById('notice-modal-message');
+  const noticeOkBtn = document.getElementById('notice-modal-ok-btn');
+
+  function showNotice(message) {
+    noticeMessage.textContent = message;
+    noticeOverlay.classList.add('open');
+  }
+
+  function closeNotice() {
+    noticeOverlay.classList.remove('open');
+  }
+
+  noticeOkBtn.addEventListener('click', closeNotice);
+  noticeOverlay.addEventListener('click', function (e) {
+    if (e.target === noticeOverlay) closeNotice();
+  });
+
+  const MAX_ROWS = 20;
+  let cropper = null;
+  let cropRow = null; // the .image-row currently being cropped
+
+  function startLoading(){
+    topbar.classList.add('loading');
+  }
+
+  function primaryCount() {
+    return rowsWrap.querySelectorAll('.real-primary-checkbox input[type="checkbox"]:checked').length;
+  }
+
+  function survivingImageCount() {
+    let count = 0;
+    rowsWrap.querySelectorAll('.image-row').forEach(row => {
+      const deleteBox = row.querySelector('.real-delete-checkbox input[type="checkbox"]');
+      if (deleteBox && deleteBox.checked) return;
+
+      const fileInput = row.querySelector('input[type="file"]');
+      const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
+      const hasExistingImage = row.dataset.existing === 'true' && row.querySelector('[data-preview-box] img');
+
+      if (hasNewFile || hasExistingImage) count++;
+    });
+    return count;
+  }
+
+  function refreshPrimaryWarning() {
+    primaryWarning.classList.toggle('show', primaryCount() > 1);
+  }
+
+  function setOrderInputsReadonly() {
+    rowsWrap.querySelectorAll('input[name$="-order"]').forEach(input => {
+      input.readOnly = true;
+      input.tabIndex = -1;
+    });
+  }
+
+  // Same "does this row actually have an image" check used by survivingImageCount().
+  function rowHasImage(row) {
+    const fileInput = row.querySelector('input[type="file"]');
+    const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
+    const hasExistingImage = row.dataset.existing === 'true' && row.querySelector('[data-preview-box] img');
+    return !!(hasNewFile || hasExistingImage);
+  }
+
+  function renumberOrders() {
+    const rows = Array.from(rowsWrap.querySelectorAll('.image-row'));
+    let position = 1;
+    rows.forEach(row => {
+      const orderInput = row.querySelector('input[name$="-order"]');
+      if (!orderInput) return;
+      const checkbox = row.querySelector('.real-delete-checkbox input[type="checkbox"]');
+      if (checkbox && checkbox.checked) return; // rows marked for deletion keep their old value, they're leaving anyway
+      // Leave empty new rows completely untouched (order field stays blank,
+      // matching its initial value) so Django's has_changed()/empty_permitted
+      // logic treats them as blank and silently drops them instead of
+      // raising "this field is required" on the image field.
+      if (!rowHasImage(row)) return;
+      orderInput.value = position;
+      position++;
+    });
+  }
+
+  // Only needed for rows removed straight out of the DOM (new, unsaved
+  // rows). Existing rows never get removed from the DOM — they're kept
+  // and soft-marked via the DELETE checkbox — so their indices never
+  // need to change. Without this, TOTAL_FORMS and the remaining rows'
+  // field indices drift out of sync whenever an unsaved row is dropped,
+  // which makes the formset fail validation silently on submit.
+  function reindexImageRows() {
+    const rows = rowsWrap.querySelectorAll('.image-row');
+    rows.forEach(function (row, index) {
+      row.dataset.formIndex = index;
+      row.querySelectorAll('[name], [id], label[for]').forEach(function (el) {
+        if (el.name) el.name = el.name.replace(/images-(\d+|__prefix__)-/, 'images-' + index + '-');
+        if (el.id) el.id = el.id.replace(/id_images-(\d+|__prefix__)-/, 'id_images-' + index + '-');
+        if (el.htmlFor) el.htmlFor = el.htmlFor.replace(/id_images-(\d+|__prefix__)-/, 'id_images-' + index + '-');
+      });
+    });
+    totalForms.value = rows.length;
+  }
+
+  // Django's formset always renders every existing image PLUS however many
+  // blank "extra" forms the formset factory defines (that's where the 3
+  // empty cards came from). We only want one empty slot visible when there
+  // are no images yet, and none at all once real images exist — "Add
+  // another image" covers the rest on demand. Trimmed rows are dropped from
+  // TOTAL_FORMS too so the formset doesn't try to process ghost forms.
+  function trimInitialExtraRows() {
+    const rows = Array.from(rowsWrap.querySelectorAll('.image-row'));
+    const existingRows = rows.filter(r => r.dataset.existing === 'true');
+    const blankRows = rows.filter(r => r.dataset.existing === 'false');
+
+    const keepBlankCount = existingRows.length === 0 ? 1 : 0;
+    blankRows.slice(keepBlankCount).forEach(row => row.remove());
+
+    reindexImageRows();
+  }
+
+  function updateRowAfterFileChosen(row, previewSrc) {
+    const previewBox = row.querySelector('[data-preview-box]');
+    if (previewBox) previewBox.innerHTML = `<img src="${previewSrc}" alt="Product image">`;
+
+    const chooseBtn = row.querySelector('.btn-choose-image');
+    if (chooseBtn) chooseBtn.textContent = 'Replace Image';
+
+    const cropBtn = row.querySelector('[data-crop-trigger]');
+    if (cropBtn) cropBtn.hidden = false;
+  }
+
+  // "Choose Image" / "Replace Image", or clicking the preview box itself,
+  // proxies a click to the real (hidden) file input for that row, so the
+  // OS file picker opens.
+  rowsWrap.addEventListener('click', function (e) {
+    const trigger = e.target.closest('.btn-choose-image, [data-preview-box]');
+    if (!trigger) return;
+    const row = trigger.closest('.image-row');
+    const fileInput = row.querySelector('input[type="file"]');
+    if (fileInput) fileInput.click();
+  });
+
+  // Live preview: when a file is picked (new row or replacing an existing
+  // image), swap the preview-box contents immediately instead of waiting
+  // for a save + page reload.
+  rowsWrap.addEventListener('change', function (e) {
+    const fileInput = e.target.closest('input[type="file"]');
+    if (!fileInput) return;
+
+    const row = fileInput.closest('.image-row');
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+
+    const objectUrl = URL.createObjectURL(file);
+    updateRowAfterFileChosen(row, objectUrl);
+  });
+
+  addBtn.addEventListener('click', function () {
+    const formIdx = parseInt(totalForms.value, 10);
+    if (formIdx >= MAX_ROWS) return;
+
+    const templateHtml = document.getElementById('empty-image-form-template').innerHTML;
+    const newRowHtml = templateHtml.replace(/__prefix__/g, formIdx);
+
+    rowsWrap.insertAdjacentHTML('beforeend', newRowHtml);
+    totalForms.value = formIdx + 1;
+
+    const newRow = rowsWrap.lastElementChild;
+    newRow.style.animation = 'slideInUp .35s ease both';
+
+    setOrderInputsReadonly();
+    renumberOrders();
+
+    // Prompt the user for a file immediately instead of leaving an empty row.
+    const fileInput = newRow.querySelector('input[type="file"]');
+    if (fileInput) fileInput.click();
+  });
+
+  // Primary checkbox: keep the visible UI checkbox in sync with the real hidden
+  // form checkbox, and enforce single-primary by unchecking every other row.
+  rowsWrap.addEventListener('change', function (e) {
+    const uiBox = e.target.closest('.primary-toggle-ui');
+    if (!uiBox) return;
+
+    const row = uiBox.closest('.image-row');
+    const realBox = row.querySelector('.real-primary-checkbox input[type="checkbox"]');
+    if (!realBox) return;
+
+    realBox.checked = uiBox.checked;
+    row.classList.toggle('is-primary', uiBox.checked);
+
+    if (uiBox.checked) {
+      rowsWrap.querySelectorAll('.image-row').forEach(other => {
+        if (other === row) return;
+        const otherUi = other.querySelector('.primary-toggle-ui');
+        const otherReal = other.querySelector('.real-primary-checkbox input[type="checkbox"]');
+        if (otherUi) otherUi.checked = false;
+        if (otherReal) otherReal.checked = false;
+        other.classList.remove('is-primary');
+      });
+    }
+
+    refreshPrimaryWarning();
+  });
+
+  // Delete: existing (already-saved) images are soft-marked via the real
+  // hidden DELETE checkbox, same pattern as manage_specs.html. Rows added
+  // in this session but never saved don't need that — just drop them.
+  rowsWrap.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-delete-toggle]');
+    if (!btn) return;
+
+    const row = btn.closest('.image-row');
+
+    if (row.dataset.existing === 'true') {
+      const checkbox = row.querySelector('.real-delete-checkbox input[type="checkbox"]');
+      if (!checkbox) return;
+
+      const aboutToCheck = !checkbox.checked;
+      if (aboutToCheck && survivingImageCount() <= 1) {
+        showNotice("A product must have at least one image — add a replacement before removing this one.");
+        return;
+      }
+
+      checkbox.checked = aboutToCheck;
+      btn.classList.toggle('active', checkbox.checked);
+      row.classList.toggle('marked-delete', checkbox.checked);
+
+      if (checkbox.checked) {
+        const uiBox = row.querySelector('.primary-toggle-ui');
+        if (uiBox) uiBox.checked = false;
+        const realBox = row.querySelector('.real-primary-checkbox input[type="checkbox"]');
+        if (realBox) realBox.checked = false;
+        row.classList.remove('is-primary');
+      }
+
+      refreshPrimaryWarning();
+      renumberOrders();
+      return;
+    }
+
+    // New, unsaved row: drop it entirely, then reindex so TOTAL_FORMS
+    // and every remaining row's field names/ids stay consecutive —
+    // otherwise the formset can fail validation with no visible cause.
+    row.classList.add('removing');
+    setTimeout(() => {
+      row.remove();
+      reindexImageRows();
+      refreshPrimaryWarning();
+      renumberOrders();
+    }, 250);
+  });
+
+  // Move-up / move-down: reorders the row in the DOM, then renumbers everyone.
+  rowsWrap.addEventListener('click', function (e) {
+    const moveBtn = e.target.closest('.order-move-btn');
+    if (!moveBtn) return;
+
+    const row = moveBtn.closest('.image-row');
+    const direction = moveBtn.dataset.move;
+
+    if (direction === 'up') {
+      const prev = row.previousElementSibling;
+      if (prev) rowsWrap.insertBefore(row, prev);
+    } else {
+      const next = row.nextElementSibling;
+      if (next) rowsWrap.insertBefore(next, row);
+    }
+
+    renumberOrders();
+  });
+
+  // ---- Crop modal (free-form aspect ratio via Cropper.js) ----
+  function openCropModal(row) {
+    const previewImg = row.querySelector('[data-preview-box] img');
+    if (!previewImg) return;
+
+    cropRow = row;
+    cropTargetImage.src = previewImg.src;
+    cropOverlay.classList.add('open');
+
+    const start = () => {
+      if (cropper) cropper.destroy();
+      cropper = new Cropper(cropTargetImage, {
+        viewMode: 1,
+        autoCropArea: 1,
+        aspectRatio: NaN, // free-form — any ratio the user drags
+        background: false,
+        responsive: true,
+      });
+    };
+    if (cropTargetImage.complete) start();
+    else cropTargetImage.onload = start;
+  }
+
+  function closeCropModal() {
+    if (cropper) { cropper.destroy(); cropper = null; }
+    cropOverlay.classList.remove('open');
+    cropRow = null;
+  }
+
+  rowsWrap.addEventListener('click', function (e) {
+    const cropBtn = e.target.closest('[data-crop-trigger]');
+    if (!cropBtn || cropBtn.hidden) return;
+    openCropModal(cropBtn.closest('.image-row'));
+  });
+
+  cropCancelBtn.addEventListener('click', closeCropModal);
+  cropOverlay.addEventListener('click', function (e) {
+    if (e.target === cropOverlay) closeCropModal();
+  });
+
+  cropApplyBtn.addEventListener('click', function () {
+    if (!cropper || !cropRow) return;
+
+    cropper.getCroppedCanvas().toBlob(function (blob) {
+      if (!blob) { closeCropModal(); return; }
+
+      const fileInput = cropRow.querySelector('input[type="file"]');
+      const originalName = (fileInput.files && fileInput.files[0] && fileInput.files[0].name) || 'cropped.png';
+
+      const croppedFile = new File([blob], originalName, { type: blob.type || 'image/png' });
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(croppedFile);
+      fileInput.files = dataTransfer.files;
+
+      updateRowAfterFileChosen(cropRow, URL.createObjectURL(croppedFile));
+      closeCropModal();
+    }, 'image/png');
+  });
+
+  form.addEventListener('submit', function () {
+    document.getElementById('save-images-btn').disabled = true;
+    startLoading();
+  });
+
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+
+  trimInitialExtraRows();
+  setOrderInputsReadonly();
+  renumberOrders();
+  refreshPrimaryWarning();
+});
+</script>
+
+</body>
+</html>
