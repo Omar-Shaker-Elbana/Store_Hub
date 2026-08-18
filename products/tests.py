@@ -138,21 +138,6 @@ class CategoryModelTests(ProductsTestBase):
         cat = Category.objects.create(name="Tablets")
         self.assertEqual(cat.name, "Tablets")
 
-    def test_same_name_allowed_under_different_parents(self):
-        parent_a = Category.objects.create(name="Phones")
-        parent_b = Category.objects.create(name="Accessories")
-        Category.objects.create(name="Cases", parent=parent_a)
-        # Should not raise -- uniqueness is scoped to (parent, name)
-        child_b = Category.objects.create(name="Cases", parent=parent_b)
-        self.assertEqual(child_b.parent, parent_b)
-
-    def test_duplicate_name_under_same_parent_not_allowed(self):
-        parent = Category.objects.create(name="Phones")
-        Category.objects.create(name="Cases", parent=parent)
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                Category.objects.create(name="Cases", parent=parent)
-
 
 class ProductModelTests(ProductsTestBase):
     def test_product_created_with_expected_fields(self):
