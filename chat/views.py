@@ -172,7 +172,7 @@ def store_announcements(request, store_id):
     context = {
         "store": store,
         "announcement_list": announcement_list,
-        "can_post": membership.role in ("Owner", "Manager"),
+        "can_post": membership.role in ("owner", "manager"),
     }
     return render(request, "chat/announcements.html", context)
 
@@ -182,7 +182,7 @@ def store_announcements(request, store_id):
 def post_announcement(request, store_id):
     store = get_object_or_404(Store, pk=store_id)
     membership = _membership_for(request.user, store)
-    if not membership or membership.role not in ("Owner", "Manager"):
+    if not membership or membership.role not in ("owner", "manager"):
         return HttpResponseForbidden("Only owners and managers can post announcements.")
 
     content = (request.POST.get("content") or "").strip()

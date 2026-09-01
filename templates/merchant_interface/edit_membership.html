@@ -1,0 +1,321 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Edit Membership | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
+
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  .wrap{max-width:760px;margin:0 auto;padding:34px 24px 0}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .back-link:hover{text-decoration:underline}
+
+  .page-head{margin-bottom:24px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:26px;margin-bottom:6px}
+  .page-head p{color:var(--muted);font-size:14.5px}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px;margin-bottom:20px;animation:slideInUp .5s ease both;
+  }
+  .card h3{font-size:16px;margin-bottom:16px}
+
+  .member-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .avatar{
+    width:48px;height:48px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;
+  }
+  .member-name{font-size:16px;font-weight:600}
+  .member-email{color:var(--muted);font-size:13.5px}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
+    padding:3px 10px;border-radius:999px;background:var(--accent-light);color:var(--accent);
+    text-transform:capitalize;
+  }
+  .badge.role-owner{background:#fff7ed;color:var(--orange)}
+  .badge.role-manager{background:var(--accent-light);color:var(--accent)}
+  .badge.role-helper{background:var(--success-light);color:var(--success)}
+
+  .meta-row{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-size:13.5px;color:var(--muted)}
+  .meta-row strong{color:var(--text);font-weight:600}
+
+  .field-group{margin-bottom:18px}
+  .field-label{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block}
+  .field-hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .field-error{font-size:12.5px;color:var(--danger);margin-top:6px;font-weight:500}
+
+  select, input[type="number"]{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;
+    font-family:inherit;font-size:14px;background:#fff;color:var(--text);
+    transition:border-color .2s,box-shadow .2s;
+  }
+  select:focus, input[type="number"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:13px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+
+  .btn-danger{
+    background:var(--danger-light);color:var(--danger);border:none;
+    padding:12px 22px;border-radius:999px;font-weight:600;font-size:14px;
+    display:inline-flex;align-items:center;gap:8px;transition:background .2s;
+  }
+  .btn-danger:hover{background:#fde3e3}
+
+  .danger-card{border-color:var(--danger-light)}
+  .danger-card h3{color:var(--danger)}
+  .danger-card p{color:var(--muted);font-size:13.5px;margin-bottom:16px}
+
+  .analytics-empty{
+    border:1px dashed var(--border);border-radius:var(--radius-sm);
+    padding:28px;text-align:center;color:var(--muted);font-size:13.5px;
+  }
+
+  .row-spinner{
+    width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+    animation:spin .7s linear infinite;display:none;
+  }
+  .btn-primary.loading .row-spinner{display:inline-block}
+  .btn-primary.loading .btn-label{opacity:.85}
+
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .nav-links{gap:14px}
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar"></div>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'all_my_stores' %}">My Stores</a>
+    <a href="{% url 'my_job_invitations' %}">Invitations</a>
+    <a href="{% url 'my_promotion_history' %}">Promotion History</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+
+  <a href="{% url 'manage_store_invitations' membership.store.id %}" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to members
+  </a>
+
+  <div class="page-head">
+    <h1>Edit Membership</h1>
+    <p>{{ membership.store.name|default:"This store" }}</p>
+  </div>
+
+  <div class="card">
+    <div class="member-head">
+      <div class="avatar">{{ membership.user.get_full_name|default:membership.user.email|slice:":1"|upper }}</div>
+      <div>
+        <div class="member-name">{{ membership.user.get_full_name|default:membership.user }}</div>
+        <div class="member-email">{{ membership.user.email }}</div>
+      </div>
+    </div>
+    <span class="badge role-{{ membership.role }}">{{ membership.get_role_display }}</span>
+    <div class="meta-row">
+      <span>Joined: <strong>{{ membership.join_date|default:"—" }}</strong></span>
+      <span>Wage type: <strong>{{ membership.get_wage_type_display }}</strong></span>
+      <span>Current wage: <strong>{% if membership.wage is not None %}{{ membership.wage }}{% if membership.wage_type == "percentage" %}%{% endif %}{% else %}—{% endif %}</strong></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Analytics</h3>
+    <div class="analytics-empty">No analytics available yet.</div>
+  </div>
+
+  <div class="card">
+    <h3>Propose Changes</h3>
+    {{ form.non_field_errors }}
+    <form method="post" id="edit-membership-form">
+      {% csrf_token %}
+
+      <div class="field-group">
+        <label class="field-label" for="id_role">Role</label>
+        <select name="role" id="id_role">
+          <option value="helper" {% if form.role.value == "helper" %}selected{% endif %}>Helper</option>
+          <option value="manager" {% if form.role.value == "manager" %}selected{% endif %}>Manager</option>
+          {% if user_membership.role == "owner" %}
+            <option value="owner" {% if form.role.value == "owner" %}selected{% endif %}>Owner</option>
+          {% endif %}
+        </select>
+        {% for error in form.role.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="id_wage_type">Wage type</label>
+        <select name="wage_type" id="id_wage_type">
+          <option value="salary" {% if form.wage_type.value == "salary" %}selected{% endif %}>Salary</option>
+          <option value="percentage" {% if form.wage_type.value == "percentage" %}selected{% endif %}>Percentage</option>
+        </select>
+        {% for error in form.wage_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="id_wage">Wage</label>
+        <input type="number" step="0.01" min="0" name="wage" id="id_wage"
+               value="{{ form.wage.value|default_if_none:'' }}">
+        <div class="field-hint">If wage type is Percentage, this must be between 0 and 100.</div>
+        {% for error in form.wage.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+
+      <button type="submit" class="btn-primary" id="submit-btn">
+        <span class="row-spinner"></span>
+        <span class="btn-label">Submit change request</span>
+      </button>
+    </form>
+  </div>
+
+  {% if can_remove %}
+  <div class="card danger-card">
+    <h3>Remove from store</h3>
+    <p>This immediately removes {{ membership.user.get_full_name|default:membership.user }} from {{ membership.store.name|default:"this store" }}. This cannot be undone.</p>
+    <form method="post" action="{% url 'remove_membership' membership.id %}" id="remove-membership-form">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16z"/></svg>
+        Remove member
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const topbar = document.getElementById('topbar');
+
+  const editForm = document.getElementById('edit-membership-form');
+  if (editForm) {
+    editForm.addEventListener('submit', function () {
+      const btn = document.getElementById('submit-btn');
+      btn.classList.add('loading');
+      btn.disabled = true;
+      topbar.classList.add('loading');
+    });
+  }
+
+  const removeForm = document.getElementById('remove-membership-form');
+  if (removeForm) {
+    removeForm.addEventListener('submit', function (e) {
+      const ok = window.confirm('Remove this member from the store? This cannot be undone.');
+      if (!ok) {
+        e.preventDefault();
+        return;
+      }
+      topbar.classList.add('loading');
+    });
+  }
+
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
+</script>
+
+</body>
+</html>

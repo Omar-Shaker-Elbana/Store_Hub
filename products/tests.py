@@ -72,11 +72,15 @@ class ProductsTestBase(TestCase):
             email="staff@example.com",
             is_staff=True,
         )
+        cls.helper_user = User.objects.create_user(
+            username="helper", password="strongpass123", email="helper@example.com"
+        )
 
         # --- Store / membership ---
         cls.niche = Niche.objects.create(name="Electronics")
         cls.store = Store.objects.create(name="Owner's Store", niche=cls.niche)
-        Membership.objects.create(user=cls.owner, store=cls.store, role="Owner")
+        Membership.objects.create(user=cls.owner, store=cls.store, role="owner")
+        Membership.objects.create(user=cls.helper_user, store=cls.store, role="helper")
 
         # A second store the owner has NO membership in, to test permission checks
         cls.other_store = Store.objects.create(
@@ -107,6 +111,9 @@ class ProductsTestBase(TestCase):
 
     def login_outsider(self):
         self.client.login(username="outsider", password="strongpass123")
+
+    def login_helper(self):
+        self.client.login(username="helper", password="strongpass123")
 
     def login_shopper(self):
         self.client.login(username="shopper", password="strongpass123")
@@ -510,6 +517,13 @@ class CreateProductViewTests(ProductsTestBase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("permission" in str(m) for m in messages))
 
+    def test_helper_is_redirected_with_error(self):
+        self.login_helper()
+        response = self.client.get(self.url, follow=True)
+        self.assertRedirects(response, "/shopper/")
+        messages = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("permission" in str(m) for m in messages))
+
     def test_nonexistent_store_redirects_home(self):
         self.login_owner()
         response = self.client.get(
@@ -604,10 +618,15 @@ class ManageSpecsViewTests(ProductsTestBase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
-        def test_non_member_is_redirected_with_error(self):
-            self.login_outsider()
-            response = self.client.get(self.url, follow=True)
-            self.assertRedirects(response, "/shopper/")
+    def test_non_member_is_redirected_with_error(self):
+        self.login_outsider()
+        response = self.client.get(self.url, follow=True)
+        self.assertRedirects(response, "/shopper/")
+
+    def test_helper_is_redirected_with_error(self):
+        self.login_helper()
+        response = self.client.get(self.url, follow=True)
+        self.assertRedirects(response, "/shopper/")
 
     def test_member_can_load_manage_specs_page(self):
         self.login_owner()
@@ -651,6 +670,11 @@ class UpdateProductViewTests(ProductsTestBase):
 
     def test_non_member_is_redirected_with_error(self):
         self.login_outsider()
+        response = self.client.get(self.url, follow=True)
+        self.assertRedirects(response, "/shopper/")
+
+    def test_helper_is_redirected_with_error(self):
+        self.login_helper()
         response = self.client.get(self.url, follow=True)
         self.assertRedirects(response, "/shopper/")
 
@@ -849,6 +873,11 @@ class ManageProductImagesViewTests(ProductsTestBase):
 
     def test_non_member_is_redirected_with_error(self):
         self.login_outsider()
+        response = self.client.get(self.url, follow=True)
+        self.assertRedirects(response, "/shopper/")
+
+    def test_helper_is_redirected_with_error(self):
+        self.login_helper()
         response = self.client.get(self.url, follow=True)
         self.assertRedirects(response, "/shopper/")
 

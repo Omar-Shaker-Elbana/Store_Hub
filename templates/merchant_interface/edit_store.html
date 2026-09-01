@@ -2,162 +2,977 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Edit {{ store.name }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Edit {{ store.name|default:"Your Store" }} | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
 
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+<!-- Cropper.js: fixed-ratio image cropping -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 
-        .card {
-            background: white;
-            width: 95%;
-            max-width: 600px;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-            animation: fadeIn 0.5s ease-in-out;
-        }
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
 
-        h2 {
-            margin-top: 0;
-            margin-bottom: 30px;
-            font-weight: 600;
-            text-align: center;
-            color: #333;
-        }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:70px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
 
-        label {
-            font-weight: 500;
-            display: block;
-            margin-bottom: 8px;
-            color: #444;
-        }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes floatIcon{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-9px) rotate(3deg)}}
+  @keyframes shake{
+    10%,90%{transform:translateX(-1px)}
+    20%,80%{transform:translateX(2px)}
+    30%,50%,70%{transform:translateX(-4px)}
+    40%,60%{transform:translateX(4px)}
+  }
+  @keyframes checkPop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.25) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
+  @keyframes glowPulse{0%,100%{box-shadow:0 0 0 0 rgba(26,73,170,.16)}50%{box-shadow:0 0 0 8px rgba(26,73,170,0)}}
 
-        input, select {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            margin-bottom: 20px;
-            font-size: 14px;
-            transition: 0.3s;
-        }
+  /* ---------- top progress bar ---------- */
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
 
-        input:focus, select:focus {
-            border-color: #667eea;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
-        }
+  /* ---------- nav ---------- */
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-links a.active{color:var(--accent)}
 
-        .image-preview {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+  /* ---------- toasts ---------- */
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast svg{flex-shrink:0}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
 
-        .image-preview img {
-            width: 140px;
-            height: 140px;
-            object-fit: cover;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-        }
+  /* ---------- layout ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
 
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+  /* ---------- hero ---------- */
+  .hero{
+    text-align:center;padding:48px 24px 38px;animation:slideInUp .55s ease;
+  }
+  .hero .icon-badge{
+    width:64px;height:64px;border-radius:18px;margin:0 auto 18px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    box-shadow:var(--shadow-lg);animation:floatIcon 3.4s ease-in-out infinite;
+  }
+  .hero h1{font-size:32px;margin-bottom:10px}
+  .hero p{color:var(--muted);font-size:15px;max-width:480px;margin:0 auto}
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
+  /* ---------- grid ---------- */
+  .store-grid{display:grid;grid-template-columns:1fr 380px;gap:30px;align-items:flex-start;padding-bottom:20px}
+  @media(max-width:920px){.store-grid{grid-template-columns:1fr}}
 
-        .messages {
-            margin-bottom: 20px;
-        }
+  /* ---------- form card ---------- */
+  .form-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:30px;box-shadow:var(--shadow);animation:slideInUp .5s ease both;
+  }
+  .form-card h3{font-size:18px;margin-bottom:4px}
+  .form-card .subtext{color:var(--muted);font-size:13.5px;margin-bottom:22px}
 
-        .messages div {
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
+  .non-field-errors{
+    background:var(--danger-light);color:var(--danger);border-radius:var(--radius-sm);
+    padding:12px 14px;font-size:13.5px;font-weight:600;margin-bottom:18px;
+    animation:shake .5s ease;
+  }
 
-        .success { background: #e6f9f0; color: #2e7d32; }
-        .error { background: #fdecea; color: #c62828; }
+  .form-group{margin-bottom:20px;animation:slideInUp .45s ease both}
+  #edit-store-form .form-group:nth-child(1){animation-delay:.03s}
+  #edit-store-form .form-group:nth-child(2){animation-delay:.08s}
+  #edit-store-form .form-group:nth-child(3){animation-delay:.13s}
+  #edit-store-form .form-group:nth-child(4){animation-delay:.18s}
+  #edit-store-form .form-group:nth-child(5){animation-delay:.23s}
+  #edit-store-form .form-group:nth-child(n+6){animation-delay:.27s}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+  .form-group.has-error{animation:shake .5s ease}
+  .form-group label{
+    display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px;
+  }
+  .form-group .field-help{display:block;color:var(--muted);font-size:12px;margin-top:5px}
+  .form-group .field-error{
+    display:flex;align-items:center;gap:5px;color:var(--danger);font-size:12.5px;font-weight:600;margin-top:6px;
+  }
+
+  /* ---------- crop modal ---------- */
+  .crop-overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,.65);display:none;
+    align-items:center;justify-content:center;z-index:2000;padding:20px;
+    animation:fadeIn .2s ease;
+  }
+  .crop-overlay.show{display:flex}
+  .crop-card{
+    background:var(--surface);border-radius:var(--radius);width:100%;max-width:480px;
+    overflow:hidden;box-shadow:var(--shadow-lg);animation:scaleIn .25s ease;
+  }
+  .crop-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .crop-header h4{font-size:15px}
+  .crop-header span{font-size:12.5px;color:var(--muted)}
+  .crop-body{background:#0f172a;max-height:60vh;overflow:hidden}
+  .crop-body img{display:block;max-width:100%}
+  .crop-footer{display:flex;gap:10px;padding:16px 20px}
+  .crop-footer button{flex:1;padding:11px 16px;border-radius:999px;font-weight:600;font-size:13.5px;border:none}
+  .crop-cancel{background:var(--accent-light);color:var(--accent)}
+  .crop-confirm{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff}
+
+  /* generic input styling for whatever fields the ModelForm renders */
+  .form-group input[type="text"],
+  .form-group input[type="email"],
+  .form-group input[type="number"],
+  .form-group input[type="url"],
+  .form-group input[type="tel"],
+  .form-group input[type="password"],
+  .form-group select,
+  .form-group textarea{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    padding:12px 14px;font-family:inherit;font-size:14.5px;color:var(--text);
+    background:#fff;transition:border-color .2s ease,box-shadow .2s ease,transform .15s ease;
+  }
+  .form-group textarea{resize:vertical;min-height:90px}
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-light);
+  }
+  .form-group.has-error input,
+  .form-group.has-error select,
+  .form-group.has-error textarea{border-color:var(--danger)}
+
+  /* ---------- file / image dropzone ---------- */
+  .dropzone{
+    position:relative;border:1.5px dashed var(--border);border-radius:var(--radius-sm);
+    padding:22px;text-align:center;background:var(--accent-light);cursor:pointer;
+    transition:border-color .2s ease,background .2s ease,transform .15s ease;
+    overflow:hidden;
+  }
+  .dropzone:hover{border-color:var(--accent-2);transform:translateY(-1px)}
+  .dropzone.dragover{border-color:var(--accent);background:#e2ecfd;animation:glowPulse 1.4s infinite}
+ 
+  .dropzone input[type="file"]{
+    position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;
+  }
+  .dropzone .dz-icon{color:var(--accent);margin-bottom:8px}
+  .dropzone .dz-text{font-size:13.5px;font-weight:600;color:var(--accent)}
+  .dropzone .dz-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+   /* ---------- Facebook-style cover + logo header ---------- */
+  .fb-header{position:relative;margin-bottom:52px}
+  .fb-cover{
+    position:relative;width:100%;aspect-ratio:3.2/1;border-radius:var(--radius);overflow:hidden;
+    background:var(--accent-light);border:1.5px dashed var(--border);cursor:pointer;transition:border-color .2s ease;
+  }
+  .fb-cover:hover{border-color:var(--accent-2)}
+  .fb-cover input[type="file"],
+  .fb-avatar input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:1}
+  .fb-placeholder{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;color:var(--accent);font-size:13px;font-weight:600;pointer-events:none;
+  }
+  .fb-thumb{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .fb-cover.has-image .fb-placeholder,
+  .fb-avatar.has-image .fb-placeholder{display:none}
+  .fb-cover.has-image .fb-thumb,
+  .fb-avatar.has-image .fb-thumb{display:block}
+  .fb-avatar{
+    position:absolute;left:24px;bottom:-38px;width:92px;height:92px;border-radius:50%;
+    border:4px solid var(--surface);overflow:hidden;background:var(--accent-light);
+    box-shadow:var(--shadow-lg);cursor:pointer;z-index:2;
+  }
+  .fb-edit-btn{
+    position:absolute;border:none;background:rgba(15,23,42,.65);color:#fff;display:flex;
+    align-items:center;justify-content:center;border-radius:999px;transition:transform .15s ease;z-index:3;
+  }
+  .fb-edit-btn:hover{transform:scale(1.1);background:rgba(15,23,42,.85)}
+  .fb-cover-edit-btn{top:10px;right:10px;width:28px;height:28px}
+  .fb-avatar-edit-btn{bottom:2px;right:2px;width:20px;height:20px}
+  .fb-cover:not(.has-image) .fb-cover-edit-btn,
+  .fb-avatar:not(.has-image) .fb-avatar-edit-btn{display:none}
+
+  /* ---------- country dropdown ---------- */
+  .country-select{position:relative}
+  .country-select select{
+    position:absolute;opacity:0;pointer-events:none;width:100%;height:100%;top:0;left:0;
+  }
+  .country-select-trigger{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:12px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);
+    background:#fff;color:var(--text);font-family:inherit;font-size:14.5px;text-align:left;
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .country-select-trigger:focus,.country-select.open .country-select-trigger{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-light);
+  }
+  .country-select-label.placeholder{color:#94a3b8}
+  .country-select-trigger svg{flex-shrink:0;color:var(--muted);transition:transform .2s}
+  .country-select.open .country-select-trigger svg{transform:rotate(180deg)}
+  .form-group.has-error .country-select-trigger{border-color:var(--danger)}
+  .country-select-panel{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;
+    background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-lg);overflow:hidden;
+  }
+  .country-select.open .country-select-panel{display:block;animation:scaleIn .15s ease}
+  .country-select-search{
+    width:100%;border:none;border-bottom:1.5px solid var(--border);padding:11px 14px;
+    font-family:inherit;font-size:14px;background:#fff;box-sizing:border-box;
+  }
+  .country-select-search:focus{outline:none;background:var(--accent-light)}
+  .country-select-list{list-style:none;margin:0;padding:6px;max-height:220px;overflow-y:auto}
+  .country-select-list li{padding:9px 11px;border-radius:8px;font-size:14px;cursor:pointer;transition:background .15s}
+  .country-select-list li:hover,.country-select-list li.highlighted{background:var(--accent-light);color:var(--accent)}
+  .country-select-list li.no-results{color:var(--muted);font-style:italic;cursor:default}
+  .country-select-list li.no-results:hover{background:none}
+
+  /* ---------- buttons ---------- */
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:14px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+    width:100%;margin-top:6px;
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:active{transform:translateY(0)}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-spinner{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite;display:none}
+  .btn-primary.loading .btn-spinner{display:inline-block}
+  .btn-primary.loading .btn-text::after{content:"Saving..."}
+  .btn-primary.loading .btn-text{font-size:0}
+  .btn-primary.loading .btn-text::after{font-size:14.5px}
+
+  .btn-secondary{
+    background:var(--accent-light);color:var(--accent);border:none;padding:14px 26px;
+    border-radius:999px;font-weight:600;font-size:14.5px;width:100%;margin-top:10px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .2s,transform .2s;
+  }
+  .btn-secondary:hover{background:#dfe9fb;transform:translateY(-1px)}
+
+  /* ---------- danger zone ---------- */
+  .danger-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow);animation:slideInUp .5s ease .2s both;
+  }
+  .danger-card h4{font-size:14.5px;margin-bottom:8px;color:var(--danger);display:flex;align-items:center;gap:7px}
+  .danger-card p{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.5}
+  .btn-danger-outline{
+    background:var(--danger-light);color:var(--danger);border:none;padding:12px 20px;
+    border-radius:999px;font-weight:600;font-size:13.5px;width:100%;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .2s,transform .2s;
+  }
+  .btn-danger-outline:hover{background:#fde2e2;transform:translateY(-1px)}
+  .btn-danger-outline.btn-reopen{background:var(--success-light);color:var(--success)}
+  .btn-danger-outline.btn-reopen:hover{background:#dcfce7}
+
+  /* ---------- confirm modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9997;
+    display:none;align-items:center;justify-content:center;padding:20px;
+    animation:fadeIn .2s ease;
+  }
+  .modal-overlay.open{display:flex}
+  .modal-box{
+    background:var(--surface);border-radius:var(--radius);padding:26px;
+    max-width:380px;width:100%;box-shadow:var(--shadow-lg);animation:scaleIn .25s ease;
+  }
+  .modal-icon{
+    width:46px;height:46px;border-radius:50%;background:var(--danger-light);color:var(--danger);
+    display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+  }
+  .modal-box h3{font-size:17px;margin-bottom:8px}
+  .modal-box p{color:var(--muted);font-size:13.5px;margin:0 0 20px;line-height:1.5}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+
+  /* ---------- sidebar ---------- */
+  .sidebar{display:flex;flex-direction:column;gap:20px;position:sticky;top:86px}
+
+  .store-summary-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    overflow:hidden;box-shadow:var(--shadow);animation:slideInUp .5s ease .1s both;
+  }
+  .store-summary-cover{width:100%;height:100px;object-fit:cover;background:var(--accent-light);display:block}
+  .store-summary-body{padding:18px 20px}
+  .store-summary-body h4{font-size:15.5px;margin-bottom:4px}
+  .store-summary-body .subtext{color:var(--muted);font-size:12.5px}
+  .store-summary-badge{
+    display:inline-flex;align-items:center;gap:6px;background:var(--accent-light);color:var(--accent);
+    font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;margin-top:10px;
+    text-transform:uppercase;letter-spacing:.03em;
+  }
+
+  .tips-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow);animation:slideInUp .5s ease .16s both;
+  }
+  .tips-card h4{font-size:14.5px;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+  .tips-card ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+  .tips-card li{display:flex;gap:9px;font-size:13px;color:var(--muted);line-height:1.4}
+  .tips-card li svg{flex-shrink:0;color:var(--success);margin-top:1px}
+
+  @media(max-width:600px){
+    .wrap{padding:0 16px}
+    nav{padding:12px 18px}
+    .nav-links{gap:14px}
+    .form-card{padding:22px}
+    .hero{padding:34px 16px 28px}
+    .fb-avatar{width:74px;height:74px;left:16px;bottom:-30px}
+    .fb-header{margin-bottom:44px}
+  }
+</style>
 </head>
 <body>
 
-<div class="card">
+<div id="topbar"></div>
 
-    <h2>Edit Store</h2>
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'all_my_stores' %}" class="active">My Stores</a>
+    <a href="{% url 'profile' %}">Profile</a>
+  </div>
+</nav>
 
-    <!-- Messages -->
-    {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <!-- Current Image -->
-    {% if store.picture %}
-        <div class="image-preview">
-            <img src="{{ store.picture.url }}" alt="{{ store.name }}">
-        </div>
-    {% endif %}
-
-    <!-- Form -->
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        <label>Name</label>
-        {{ form.name }}
-
-        <label>Niche</label>
-        {{ form.niche }}
-
-        <label>Nationality</label>
-        {{ form.nationality }}
-
-        <label>Store Picture</label>
-        {{ form.picture }}
-
-        <button type="submit" class="btn">
-            Update Store
-        </button>
-    </form>
-
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
 </div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="icon-badge">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+    </div>
+    <h1>Edit {{ store.name|default:"Your Store" }}</h1>
+    <p>Update your storefront details below. Changes are visible to customers as soon as you save.</p>
+  </div>
+
+  <div class="store-grid">
+
+    <div class="form-card">
+      <h3>Store details</h3>
+      <p class="subtext">Fields marked required must be filled in before your store goes live.</p>
+
+      {% if form.non_field_errors %}
+        <div class="non-field-errors">
+          {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="POST" enctype="multipart/form-data" id="edit-store-form" novalidate>
+        {% csrf_token %}
+        {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+
+                {% for field in form.visible_fields %}
+          {% if field.name != "main_picture" %}
+          <div class="form-group {% if field.errors or field.name == 'cover_picture' and form.main_picture.errors %}has-error{% endif %}">
+
+            {% if field.name == "cover_picture" %}
+              <label>Store photos</label>
+              <div class="fb-header">
+                <div class="fb-cover {% if field.value %}has-image{% endif %}" data-dropzone data-crop-ratio="3.2" data-crop-label="Horizontal crop — 1600 × 500px">
+                  {{ field }}
+                  <div class="fb-placeholder">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    <span>Add cover photo</span>
+                  </div>
+                  <img class="fb-thumb" data-dz-thumb alt="" {% if field.value %}src="{{ field.value.url }}"{% endif %}>
+                  <button type="button" class="fb-edit-btn fb-cover-edit-btn" data-dz-clear title="Remove cover photo">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+
+                <div class="fb-avatar {% if form.main_picture.value %}has-image{% endif %}" data-dropzone data-crop-ratio="1" data-crop-label="Square crop — 500 × 500px">
+                  {{ form.main_picture }}
+                  <div class="fb-placeholder">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l1.5-5h15L21 9M3 9v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M3 9h18"/></svg>
+                  </div>
+                  <img class="fb-thumb" data-dz-thumb alt="" {% if form.main_picture.value %}src="{{ form.main_picture.value.url }}"{% endif %}>
+                  <button type="button" class="fb-edit-btn fb-avatar-edit-btn" data-dz-clear title="Remove logo">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </div>
+              {% if field.help_text %}<span class="field-help">Cover: {{ field.help_text }}</span>{% endif %}
+              {% if form.main_picture.help_text %}<span class="field-help">Logo: {{ form.main_picture.help_text }}</span>{% endif %}
+              {% for error in field.errors %}
+                <span class="field-error">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  {{ error }}
+                </span>
+              {% endfor %}
+              {% for error in form.main_picture.errors %}
+                <span class="field-error">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  {{ error }}
+                </span>
+              {% endfor %}
+
+            {% elif field.field.widget.input_type == "checkbox" %}
+              <div class="checkbox-row">
+                {{ field }}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              </div>
+              {% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}
+              {% for error in field.errors %}
+                <span class="field-error">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  {{ error }}
+                </span>
+              {% endfor %}
+
+            {% elif field.name == "nationality" or field.name == "country" %}
+              <label for="{{ field.id_for_label }}-trigger">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+              <div class="country-select" data-country-select>
+                <input type="hidden" name="{{ field.html_name }}" id="{{ field.id_for_label }}" value="{{ field.value|default:'' }}">
+                <button type="button" class="country-select-trigger" id="{{ field.id_for_label }}-trigger" data-cs-trigger>
+                  <span class="country-select-label {% if not field.value %}placeholder{% endif %}" data-cs-label>{{ field.value|default:"Select a country…" }}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="country-select-panel" data-cs-panel>
+                  <input type="text" class="country-select-search" placeholder="Search countries..." autocomplete="off" data-cs-search>
+                  <ul class="country-select-list" data-cs-list></ul>
+                </div>
+              </div>
+              {% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}
+              {% for error in field.errors %}
+                <span class="field-error">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  {{ error }}
+                </span>
+              {% endfor %}
+
+            {% elif field.name == "niche" %}
+              <label for="{{ field.id_for_label }}-trigger">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+              <div class="country-select" data-niche-select>
+                <input type="hidden" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+                       value="{{ field.value|default:'' }}" {% if field.field.required %}required{% endif %}>
+                <button type="button" class="country-select-trigger" id="{{ field.id_for_label }}-trigger" data-cs-trigger>
+                  <span class="country-select-label{% if not field.value %} placeholder{% endif %}" data-cs-label>
+                    {% for choice_value, choice_label in field.field.choices %}{% if choice_value and choice_value|stringformat:"s" == field.value|stringformat:"s" %}{{ choice_label }}{% endif %}{% endfor %}{% if not field.value %}Select a niche…{% endif %}
+                  </span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="country-select-panel" data-cs-panel>
+                  <input type="text" class="country-select-search" placeholder="Search niches..." autocomplete="off" data-cs-search>
+                  <ul class="country-select-list" data-cs-list>
+                    {% for choice_value, choice_label in field.field.choices %}
+                      {% if choice_value %}
+                        <li data-value="{{ choice_value }}"{% if choice_value|stringformat:"s" == field.value|stringformat:"s" %} class="highlighted"{% endif %}>{{ choice_label }}</li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+              {% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}
+              {% for error in field.errors %}
+                <span class="field-error">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  {{ error }}
+                </span>
+              {% endfor %}
+
+            {% else %}
+              <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+              {{ field }}
+              {% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}
+              {% for error in field.errors %}
+                <span class="field-error">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  {{ error }}
+                </span>
+              {% endfor %}
+            {% endif %}
+
+          </div>
+          {% endif %}
+        {% endfor %}
+        
+        <button type="submit" class="btn-primary" id="edit-store-btn">
+          <span class="btn-spinner"></span>
+          <span class="btn-text">Save Changes</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+
+        <a href="{% url 'manage_store_invitations' store_id=store.id %}" class="btn-secondary">
+          Cancel
+        </a>
+      </form>
+    </div>
+
+    <div class="crop-overlay" id="crop-modal-overlay">
+      <div class="crop-card">
+        <div class="crop-header">
+          <h4>Adjust your image</h4>
+          <span id="crop-ratio-label"></span>
+        </div>
+        <div class="crop-body">
+          <img id="crop-image" src="" alt="Crop preview">
+        </div>
+        <div class="crop-footer">
+          <button type="button" class="crop-cancel" id="crop-cancel-btn">Cancel</button>
+          <button type="button" class="crop-confirm" id="crop-confirm-btn">Use this crop</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+
+      <div class="store-summary-card">
+        {% if store.cover_picture %}
+          <img class="store-summary-cover" src="{{ store.cover_picture.url }}" alt="{{ store.name }} cover">
+        {% endif %}
+        <div class="store-summary-body">
+          <h4>{{ store.name|default:"Unnamed store" }}</h4>
+          <p class="subtext">{{ store.niche.name|default:"No niche set" }}</p>
+          <span class="store-summary-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            Editing
+          </span>
+        </div>
+      </div>
+
+      <div class="tips-card">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Tips for editing
+        </h4>
+        <ul>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            Leave an image field alone to keep the current picture.
+          </li>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            Click an existing image to swap it for a new one.
+          </li>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            Changes are visible immediately after saving.
+          </li>
+        </ul>
+      </div>
+
+      <div class="danger-card">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+          Danger zone
+        </h4>
+        {% if store.enabled %}
+          <p>Closing your store hides it from customers. Nothing is deleted, and you can reopen it any time.</p>
+          <form method="POST" id="store-status-form">
+            {% csrf_token %}
+            <input type="hidden" name="store_status_action" value="close">
+            <button type="submit" class="btn-danger-outline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Close Store
+            </button>
+          </form>
+        {% else %}
+          <p>Your store is currently closed and hidden from customers.</p>
+          <form method="POST" id="store-status-form">
+            {% csrf_token %}
+            <input type="hidden" name="store_status_action" value="reopen">
+            <button type="submit" class="btn-danger-outline btn-reopen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              Reopen Store
+            </button>
+          </form>
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+    </div>
+    <h3 id="confirm-modal-title">Close store?</h3>
+    <p id="confirm-modal-text">Customers won't be able to see or order from this store until you reopen it.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" id="confirm-modal-cancel" style="width:auto;margin:0">Cancel</button>
+      <button type="button" class="btn-primary" id="confirm-modal-confirm" style="width:auto;margin:0;background:linear-gradient(90deg,var(--danger),#f87171);box-shadow:none">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const topbar = document.getElementById('topbar');
+
+  function startLoading(){ topbar.classList.add('loading'); }
+
+  /* ---------- clear intro-animation transforms once they finish, so they
+     stop creating stacking contexts that trap dropdown panels ---------- */
+  document.querySelectorAll('.form-group, .form-card').forEach(function (el) {
+    el.addEventListener('animationend', function () {
+      el.style.animation = 'none';
+    }, { once: true });
+  });
+
+  /* ---------- submit loading state ---------- */
+  const editForm = document.getElementById('edit-store-form');
+  const editBtn = document.getElementById('edit-store-btn');
+  if (editForm){
+    editForm.addEventListener('submit', function(){
+      editBtn.classList.add('loading');
+      startLoading();
+      setTimeout(function(){ editBtn.disabled = true; }, 0);
+    });
+  }
+
+  /* ---------- country dropdown (searchable, backed by hidden input) ---------- */
+  const COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo (Congo-Brazzaville)","Costa Rica","Croatia","Cuba","Cyprus","Czechia","Democratic Republic of the Congo","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States of America","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+
+  document.querySelectorAll('[data-country-select]').forEach(function(wrap){
+    const hidden = wrap.querySelector('input[type="hidden"]');
+    const trigger = wrap.querySelector('[data-cs-trigger]');
+    const label = wrap.querySelector('[data-cs-label]');
+    const search = wrap.querySelector('[data-cs-search]');
+    const list = wrap.querySelector('[data-cs-list]');
+    if (!hidden) return;
+
+    function renderList(term){
+      const q = (term || '').trim().toLowerCase();
+      const matches = COUNTRIES.filter(c => c.toLowerCase().includes(q));
+      list.innerHTML = '';
+      if (!matches.length){
+        const li = document.createElement('li');
+        li.className = 'no-results';
+        li.textContent = 'No matching country';
+        list.appendChild(li);
+        return;
+      }
+      matches.forEach(function(c){
+        const li = document.createElement('li');
+        li.textContent = c;
+        if (c === hidden.value) li.classList.add('highlighted');
+        li.addEventListener('click', function(){
+          hidden.value = c;
+          label.textContent = c;
+          label.classList.remove('placeholder');
+          closePanel();
+        });
+        list.appendChild(li);
+      });
+    }
+
+    function openPanel(){
+      wrap.classList.add('open');
+      search.value = '';
+      renderList('');
+      setTimeout(() => search.focus(), 30);
+    }
+    function closePanel(){ wrap.classList.remove('open'); }
+
+    trigger.addEventListener('click', function(e){
+      e.stopPropagation();
+      wrap.classList.contains('open') ? closePanel() : openPanel();
+    });
+    search.addEventListener('input', function(){ renderList(search.value); });
+    search.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') closePanel();
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        const first = list.querySelector('li:not(.no-results)');
+        if (first) first.click();
+      }
+    });
+    document.addEventListener('click', function(e){
+      if (!wrap.contains(e.target)) closePanel();
+    });
+  });
+
+  /* ---------- niche dropdown (searchable, options from the server-rendered list) ---------- */
+  document.querySelectorAll('[data-niche-select]').forEach(function(wrap){
+    const hidden = wrap.querySelector('input[type="hidden"]');
+    const trigger = wrap.querySelector('[data-cs-trigger]');
+    const label = wrap.querySelector('[data-cs-label]');
+    const search = wrap.querySelector('[data-cs-search]');
+    const list = wrap.querySelector('[data-cs-list]');
+    if (!hidden || !list) return;
+
+    const allItems = Array.from(list.querySelectorAll('li')).map(function(li){
+      return { value: li.dataset.value, label: li.textContent.trim() };
+    });
+
+    function renderList(term){
+      const q = (term || '').trim().toLowerCase();
+      const matches = allItems.filter(item => item.label.toLowerCase().includes(q));
+      list.innerHTML = '';
+      if (!matches.length){
+        const li = document.createElement('li');
+        li.className = 'no-results';
+        li.textContent = 'No matching niche';
+        list.appendChild(li);
+        return;
+      }
+      matches.forEach(function(item){
+        const li = document.createElement('li');
+        li.textContent = item.label;
+        li.dataset.value = item.value;
+        if (item.value === hidden.value) li.classList.add('highlighted');
+        li.addEventListener('click', function(){
+          hidden.value = item.value;
+          label.textContent = item.label;
+          label.classList.remove('placeholder');
+          closePanel();
+        });
+        list.appendChild(li);
+      });
+    }
+
+    function openPanel(){
+      wrap.classList.add('open');
+      search.value = '';
+      renderList('');
+      setTimeout(() => search.focus(), 30);
+    }
+    function closePanel(){ wrap.classList.remove('open'); }
+
+    trigger.addEventListener('click', function(e){
+      e.stopPropagation();
+      wrap.classList.contains('open') ? closePanel() : openPanel();
+    });
+    search.addEventListener('input', function(){ renderList(search.value); });
+    search.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') closePanel();
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        const first = list.querySelector('li:not(.no-results)');
+        if (first) first.click();
+      }
+    });
+    document.addEventListener('click', function(e){
+      if (!wrap.contains(e.target)) closePanel();
+    });
+  });
+
+  /* ---------- crop modal state ---------- */
+  const cropOverlay = document.getElementById('crop-modal-overlay');
+  const cropImage = document.getElementById('crop-image');
+  const cropRatioLabel = document.getElementById('crop-ratio-label');
+  const cropCancelBtn = document.getElementById('crop-cancel-btn');
+  const cropConfirmBtn = document.getElementById('crop-confirm-btn');
+  let cropperInstance = null;
+  let activeCropContext = null; // { input, thumb, zone, fileName }
+
+  function openCropper(dataUrl, ratio, label, ctx){
+    activeCropContext = ctx;
+    cropRatioLabel.textContent = label || '';
+    cropImage.src = dataUrl;
+    cropOverlay.classList.add('show');
+    if (cropperInstance) cropperInstance.destroy();
+    cropperInstance = new Cropper(cropImage, {
+      aspectRatio: ratio,
+      viewMode: 1,
+      autoCropArea: 1,
+      background: false
+    });
+  }
+
+  function closeCropper(){
+    cropOverlay.classList.remove('show');
+    if (cropperInstance){ cropperInstance.destroy(); cropperInstance = null; }
+    activeCropContext = null;
+  }
+
+  cropCancelBtn.addEventListener('click', function(){
+    if (activeCropContext) activeCropContext.input.value = '';
+    closeCropper();
+  });
+
+  cropConfirmBtn.addEventListener('click', function(){
+    if (!cropperInstance || !activeCropContext) return;
+    cropperInstance.getCroppedCanvas().toBlob(function(blob){
+      const ctx = activeCropContext;
+      const croppedFile = new File([blob], ctx.fileName, { type: blob.type || 'image/png' });
+      const dt = new DataTransfer();
+      dt.items.add(croppedFile);
+      ctx.input.files = dt.files;
+
+      ctx.thumb.src = URL.createObjectURL(blob);
+      ctx.zone.classList.add('has-image');
+
+      closeCropper();
+    }, 'image/png');
+  });
+
+  /* ---------- file dropzones (image preview + drag & drop + crop) ---------- */
+  document.querySelectorAll('[data-dropzone]').forEach(function(zone){
+    const input = zone.querySelector('input[type="file"]');
+    const thumb = zone.querySelector('[data-dz-thumb]');
+    const clearBtn = zone.querySelector('[data-dz-clear]');
+    if (!input) return;
+
+    const cropRatio = zone.dataset.cropRatio ? parseFloat(zone.dataset.cropRatio) : null;
+    const cropLabel = zone.dataset.cropLabel || '';
+
+    function showFile(file){
+      if (!file) return;
+      if (cropRatio && file.type && file.type.startsWith('image/')){
+        const reader = new FileReader();
+        reader.onload = e => {
+          openCropper(e.target.result, cropRatio, cropLabel, { input, thumb, zone, fileName: file.name });
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      if (file.type && file.type.startsWith('image/')){
+        const reader = new FileReader();
+        reader.onload = e => {
+          thumb.src = e.target.result;
+          zone.classList.add('has-image');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    input.addEventListener('change', function(){
+      if (input.files && input.files[0]) showFile(input.files[0]);
+    });
+
+    ['dragenter','dragover'].forEach(evt => {
+      zone.addEventListener(evt, function(e){
+        e.preventDefault(); e.stopPropagation();
+        zone.classList.add('dragover');
+      });
+    });
+    ['dragleave','drop'].forEach(evt => {
+      zone.addEventListener(evt, function(e){
+        e.preventDefault(); e.stopPropagation();
+        zone.classList.remove('dragover');
+      });
+    });
+    zone.addEventListener('drop', function(e){
+      const files = e.dataTransfer.files;
+      if (files && files[0]){
+        input.files = files;
+        showFile(files[0]);
+      }
+    });
+
+    if (clearBtn){
+      clearBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        input.value = '';
+        thumb.src = '';
+        zone.classList.remove('has-image');
+      });
+    }
+  });
+
+  /* ---------- close/reopen confirmation modal ---------- */
+  const statusForm = document.getElementById('store-status-form');
+  const confirmModal = document.getElementById('confirm-modal');
+  const confirmModalTitle = document.getElementById('confirm-modal-title');
+  const confirmModalText = document.getElementById('confirm-modal-text');
+  const confirmModalCancel = document.getElementById('confirm-modal-cancel');
+  const confirmModalConfirm = document.getElementById('confirm-modal-confirm');
+
+  if (statusForm){
+    statusForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      const isClosing = statusForm.querySelector('input[name="store_status_action"]').value === 'close';
+      confirmModalTitle.textContent = isClosing ? 'Close store?' : 'Reopen store?';
+      confirmModalText.textContent = isClosing
+        ? "Customers won't be able to see or order from this store until you reopen it."
+        : 'Your store will become visible to customers again.';
+      confirmModal.classList.add('open');
+    });
+  }
+
+  confirmModalCancel.addEventListener('click', function(){
+    confirmModal.classList.remove('open');
+  });
+  confirmModal.addEventListener('click', function(e){
+    if (e.target === confirmModal) confirmModal.classList.remove('open');
+  });
+  confirmModalConfirm.addEventListener('click', function(){
+    confirmModal.classList.remove('open');
+    startLoading();
+    statusForm.submit();
+  });
+
+  /* ---------- toasts: auto-dismiss ---------- */
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
+</script>
 
 </body>
 </html>

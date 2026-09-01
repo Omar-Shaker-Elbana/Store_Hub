@@ -1,0 +1,25 @@
+<div id="product-grid" data-next-page="{% if store_products.has_next %}{{ store_products.next_page_number }}{% endif %}">
+  {% if store_products %}
+    {% for product in store_products %}
+      <div class="product-card">
+        <div class="product-card-img">
+          {% if product.picture %}
+            <img src="{{ product.picture.url }}" alt="{{ product.name }}">
+          {% else %}
+            <svg class="no-image" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          {% endif %}
+        </div>
+        <div class="product-card-body">
+          <h4>{{ product.name }}</h4>
+          <span class="product-card-price">${{ product.price }}</span>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l1.5-5h15L21 9M3 9v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M3 9h18M9 21v-6h6v6"/></svg>
+      <h3>No products yet</h3>
+      <p>This store hasn't listed any products.</p>
+    </div>
+  {% endif %}
+</div>

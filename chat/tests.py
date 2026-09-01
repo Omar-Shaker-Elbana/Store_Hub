@@ -88,9 +88,8 @@ class AnnouncementTests(TestCase):
         self.owner = make_merchant("owner@example.com")
         self.manager = make_merchant("manager@example.com")
         self.helper = make_merchant("helper@example.com")
-        Membership.objects.create(user=self.owner, store=self.store, role="Owner")
-        Membership.objects.create(user=self.manager, store=self.store, role="Manager")
-        Membership.objects.create(user=self.helper, store=self.store, role="Helper")
+        Membership.objects.create(user=self.manager, store=self.store, role="manager")
+        Membership.objects.create(user=self.helper, store=self.store, role="helper")
 
     def test_owner_and_manager_can_post_helper_cannot(self):
         client = Client()

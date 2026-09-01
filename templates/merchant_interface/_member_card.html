@@ -1,0 +1,42 @@
+<div class="member-card">
+  <div class="member-card-row">
+    <div class="member-info">
+      <div class="member-avatar">{{ membership.user|stringformat:"s"|first|upper }}</div>
+      <div class="member-name-block">
+        <div class="member-name">{{ membership.user }}</div>
+        {% if membership.user.email %}<div class="member-sub">{{ membership.user.email }}</div>{% endif %}
+      </div>
+    </div>
+    <div class="member-meta">
+      <span class="member-wage">
+        {% if membership.wage_type == "percentage" %}
+          {{ membership.wage|default:"0" }}% commission
+        {% else %}
+          ${{ membership.wage|default:"0" }} salary
+        {% endif %}
+      </span>
+      {% if membership.join_date %}
+        <span class="member-wage">since {{ membership.join_date|date:"M Y" }}</span>
+      {% endif %}
+       {% if can_manage and membership.user_id != request.user.id %}
+        <div class="member-actions">
+          {% if user_membership.role == "manager" and membership.role != "helper" %}
+            <button type="button" class="btn-ghost btn-sm" disabled title="Managers can only edit helpers">Edit</button>
+          {% else %}
+            <a href="{% url 'edit_membership' membership.id %}" class="btn-ghost btn-sm">Edit</a>
+          {% endif %}
+          {% if user_membership.role == "owner" %}
+            <form method="POST" action="{% url 'remove_membership' membership.id %}" class="remove-member-form">
+              {% csrf_token %}
+              <button type="submit" class="btn-icon-danger" data-member-name="{{ membership.user }}" title="Remove member">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+ 
+</div>

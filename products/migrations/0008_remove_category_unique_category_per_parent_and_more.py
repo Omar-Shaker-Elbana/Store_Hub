@@ -6,25 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('products', '0007_alter_product_image_options_product_is_active_and_more'),
+        ("products", "0007_alter_product_image_options_product_is_active_and_more"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='category',
-            name='unique_category_per_parent',
+            model_name="category",
+            name="unique_category_per_parent",
         ),
         migrations.RemoveConstraint(
-            model_name='category',
-            name='unique_root_category_name',
+            model_name="category",
+            name="unique_root_category_name",
         ),
         migrations.AlterField(
-            model_name='category',
-            name='name',
+            model_name="category",
+            name="name",
             field=models.CharField(max_length=100, unique=True),
         ),
         migrations.RemoveField(
-            model_name='category',
-            name='parent',
+            model_name="category",
+            name="parent",
         ),
     ]

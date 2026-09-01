@@ -1,0 +1,320 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Inventory | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;padding-bottom:60px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
+
+  nav{
+    background:var(--surface);display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 24px 0}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .back-link:hover{text-decoration:underline}
+
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:12px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:26px}
+  .page-head .count{color:var(--muted);font-size:14.5px;font-weight:500}
+
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:12px 22px;border-radius:999px;font-weight:600;font-size:14px;
+    display:inline-flex;align-items:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease;box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-ghost{
+    background:var(--accent-light);color:var(--accent);border:none;padding:12px 24px;border-radius:999px;
+    font-weight:600;font-size:14px;transition:background .2s;display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn-ghost:hover{background:#dfe9fb}
+
+  .product-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;
+  }
+
+  .product-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    overflow:hidden;display:flex;flex-direction:column;
+    animation:slideInUp .5s ease both;
+    transition:box-shadow .25s ease, transform .25s ease;
+  }
+  .product-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px)}
+  .product-grid .product-card:nth-child(1){animation-delay:.02s}
+  .product-grid .product-card:nth-child(2){animation-delay:.06s}
+  .product-grid .product-card:nth-child(3){animation-delay:.1s}
+  .product-grid .product-card:nth-child(4){animation-delay:.14s}
+  .product-grid .product-card:nth-child(n+5){animation-delay:.18s}
+
+  .product-thumb{
+    width:100%;height:150px;background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;
+  }
+  .product-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .3s ease}
+  .product-card:hover .product-thumb img{transform:scale(1.06)}
+  .product-thumb svg{color:var(--accent);opacity:.5}
+
+  .inactive-flag{
+    position:absolute;top:10px;left:10px;background:var(--danger);color:#fff;
+    font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;
+  }
+  .offer-flag{
+    position:absolute;top:10px;right:10px;background:var(--orange);color:#fff;
+    font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;
+  }
+
+  .product-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .product-category{color:var(--muted);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+  .product-name{font-size:15px;font-weight:600;line-height:1.3;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+
+  .price-row{display:flex;align-items:baseline;gap:8px;margin-top:2px}
+  .price-current{font-size:16px;font-weight:700;color:var(--accent)}
+  .price-original{font-size:12.5px;color:var(--muted);text-decoration:line-through}
+
+  .stat-row{display:flex;justify-content:space-between;gap:8px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border)}
+  .stat{display:flex;flex-direction:column;gap:2px}
+  .stat-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+  .stat-value{font-size:13px;font-weight:700}
+
+  .stock-tag{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+    padding:2px 8px;border-radius:999px;background:var(--success-light);color:var(--success);width:fit-content;
+  }
+  .stock-tag.low{background:#fff7ed;color:var(--orange)}
+  .stock-tag.out{background:var(--danger-light);color:var(--danger);animation:pulseWarn 1.8s infinite}
+
+  .empty-state{
+    background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);
+    padding:70px 30px;text-align:center;animation:scaleIn .5s ease;
+  }
+  .empty-state svg{color:var(--accent);opacity:.6;margin-bottom:14px}
+  .empty-state h2{font-size:21px;margin-bottom:8px}
+  .empty-state p{color:var(--muted);font-size:14.5px;margin-bottom:22px}
+
+  .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:34px}
+  .page-link{
+    padding:9px 15px;border-radius:999px;background:var(--surface);border:1px solid var(--border);
+    font-size:13.5px;font-weight:600;color:var(--text);transition:background .2s,border-color .2s;
+  }
+  .page-link:hover{background:var(--accent-light);border-color:var(--accent-light)}
+  .page-link.current{background:var(--accent);border-color:var(--accent);color:#fff}
+  .page-link.disabled{opacity:.4;pointer-events:none}
+
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .nav-links{gap:14px}
+    .product-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar"></div>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'manage_store_invitations' store.id %}">Members</a>
+    <a href="{% url 'edit_store' store.id %}">Store Settings</a>
+    <a href="{% url 'manage_store_inventory' store.id %}" class="active">Inventory</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+
+  <a href="{% url 'manage_store_invitations' store.id %}" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to store
+  </a>
+
+  <div class="page-head">
+    <div>
+      <h1>Inventory</h1>
+      <span class="count">{{ store.name|default:"Your store" }} &middot; {{ store_products.paginator.count }} product{{ store_products.paginator.count|pluralize }}</span>
+    </div>
+    <a href="{% url 'create_product' store.id %}" class="btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add Product
+    </a>
+  </div>
+
+  {% if store_products %}
+  <div class="product-grid">
+    {% for product in store_products %}
+      {% with stock=product.current_stock|default_if_none:0 img=product.images.first %}
+      <a href="{% url 'update_product' product.id %}" class="product-card">
+        <div class="product-thumb">
+          {% if not product.is_active %}<span class="inactive-flag">Inactive</span>{% endif %}
+          {% if product.offer %}<span class="offer-flag">-{{ product.offer|floatformat:0 }}%</span>{% endif %}
+          {% if img %}
+            <img src="{{ img.image.url }}" alt="{{ product.name }}">
+          {% else %}
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          {% endif %}
+        </div>
+
+        <div class="product-body">
+          <span class="product-category">{{ product.category.name }}</span>
+          <div class="product-name">{{ product.name|default:"Unnamed product" }}</div>
+
+          <div class="price-row">
+            {% if product.selling_price %}
+              <span class="price-current">${{ product.discounted_price|floatformat:2 }}</span>
+              {% if product.offer %}<span class="price-original">${{ product.selling_price|floatformat:2 }}</span>{% endif %}
+            {% else %}
+              <span class="price-current">Price unset</span>
+            {% endif %}
+          </div>
+
+          {% if stock <= 0 %}
+            <span class="stock-tag out">Out of stock</span>
+          {% elif stock <= 5 %}
+            <span class="stock-tag low">Only {{ stock }} left</span>
+          {% else %}
+            <span class="stock-tag">In stock</span>
+          {% endif %}
+
+          <div class="stat-row">
+            <div class="stat">
+              <span class="stat-label">Remaining</span>
+              <span class="stat-value">{{ stock }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Sold</span>
+              <span class="stat-value">{{ product.sold|default_if_none:0 }}</span>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endwith %}
+    {% endfor %}
+  </div>
+
+  {% if store_products.paginator.num_pages > 1 %}
+  <div class="pagination">
+    {% if store_products.has_previous %}
+      <a href="?page={{ store_products.previous_page_number }}" class="page-link">&larr; Prev</a>
+    {% else %}
+      <span class="page-link disabled">&larr; Prev</span>
+    {% endif %}
+
+    {% for num in store_products.paginator.page_range %}
+      <a href="?page={{ num }}" class="page-link {% if store_products.number == num %}current{% endif %}">{{ num }}</a>
+    {% endfor %}
+
+    {% if store_products.has_next %}
+      <a href="?page={{ store_products.next_page_number }}" class="page-link">Next &rarr;</a>
+    {% else %}
+      <span class="page-link disabled">Next &rarr;</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+    <div class="empty-state">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      <h2>No products yet</h2>
+      <p>Add your first product to start selling in {{ store.name|default:"your store" }}.</p>
+      <a href="{% url 'create_product' store.id %}" class="btn-ghost">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add Product
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
+</script>
+
+</body>
+</html>

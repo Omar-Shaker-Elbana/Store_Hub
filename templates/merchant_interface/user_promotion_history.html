@@ -1,0 +1,287 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ history_user }}'s Career Timeline | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:70px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes popDot{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  @keyframes growLine{from{height:0}to{height:100%}}
+
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-links a.active{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px}
+
+  .hero{text-align:center;padding:44px 24px 34px;animation:slideInUp .5s ease}
+  .hero .avatar-badge{
+    width:72px;height:72px;border-radius:50%;margin:0 auto 18px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:'Poppins',sans-serif;font-weight:700;font-size:26px;
+    box-shadow:var(--shadow-lg);
+  }
+  .hero h1{font-size:26px;margin-bottom:8px}
+  .hero p{color:var(--muted);font-size:14.5px;max-width:480px;margin:0 auto}
+
+  .visibility-note{
+    display:flex;align-items:center;gap:10px;background:var(--accent-light);color:var(--accent);
+    border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;font-weight:500;margin-bottom:30px;
+    animation:slideInUp .5s ease .05s both;
+  }
+  .visibility-note svg{flex-shrink:0}
+
+  /* ---------- timeline ---------- */
+  .timeline{position:relative;padding-left:6px}
+  .timeline-track{
+    position:absolute;left:23px;top:6px;bottom:6px;width:2px;background:var(--border);
+  }
+  .timeline-track-fill{
+    position:absolute;left:0;top:0;width:100%;background:linear-gradient(var(--accent),var(--accent-2));
+    animation:growLine .8s ease both;
+  }
+
+  .timeline-item{
+    position:relative;display:flex;gap:20px;padding-bottom:28px;animation:slideInUp .45s ease both;
+  }
+  .timeline-item:last-child{padding-bottom:0}
+
+  .timeline-dot-col{position:relative;width:48px;flex-shrink:0;display:flex;justify-content:center}
+  .timeline-dot{
+    width:48px;height:48px;border-radius:50%;background:var(--surface);border:2px solid var(--accent-light);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--accent);
+    font-family:'Poppins',sans-serif;z-index:2;box-shadow:var(--shadow);
+    animation:popDot .4s ease both;
+  }
+  .timeline-dot.joined{border-color:var(--success);color:var(--success)}
+  .event-badge{
+    display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--success);background:var(--success-light);padding:3px 9px;border-radius:999px;margin-bottom:6px;
+  }
+
+  .timeline-card{
+    flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;box-shadow:var(--shadow);transition:border-color .2s ease;
+  }
+  .timeline-card:hover{border-color:var(--accent-2)}
+
+  .timeline-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .promotion-title{font-size:15px;font-weight:700;line-height:1.4}
+  .promotion-title .store-name{color:var(--accent)}
+  .role-transition{
+    display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;
+  }
+  .role-chip{
+    font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:999px;background:var(--bg);
+    border:1px solid var(--border);color:var(--text);
+  }
+  .role-chip.new{background:var(--accent-light);color:var(--accent);border-color:transparent}
+  .role-transition .arrow{color:var(--muted);flex-shrink:0}
+
+  .promotion-meta{font-size:12.5px;color:var(--muted);margin-top:9px}
+
+  .empty-state{
+    background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);
+    padding:60px 24px;text-align:center;color:var(--muted);
+  }
+  .empty-state svg{color:var(--accent);opacity:.5;margin-bottom:12px}
+  .empty-state h3{color:var(--text);font-size:16px;margin-bottom:6px}
+  .empty-state p{font-size:13.5px}
+
+  @media(max-width:600px){
+    .wrap{padding:0 16px}
+    nav{padding:12px 18px}
+    .nav-links{gap:14px}
+    .hero{padding:32px 16px 26px}
+    .timeline-dot-col{width:38px}
+    .timeline-dot{width:38px;height:38px;font-size:13px}
+    .timeline-track{left:18px}
+    .timeline-card-top{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'all_my_stores' %}">My Stores</a>
+    <a href="{% url 'profile' %}">Profile</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="avatar-badge">{{ history_user.username|default:history_user|first|upper }}</div>
+    <h1>{{ history_user }}'s Career Timeline</h1>
+    <p>Every role change {{ history_user }} has made across stores on StoreHub, starting from the day they joined.</p>
+  </div>
+
+  {% if timeline_events %}
+    <div class="visibility-note">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Showing only the entries {{ history_user }} has chosen to make visible.</span>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-track">
+        <div class="timeline-track-fill"></div>
+      </div>
+
+      {% for event in timeline_events %}
+        {% if event.type == "joined" %}
+          <div class="timeline-item">
+            <div class="timeline-dot-col">
+              <div class="timeline-dot joined">{{ event.store.name|default:"?"|first|upper }}</div>
+            </div>
+
+            <div class="timeline-card">
+              <div class="timeline-card-top">
+                <div>
+                  <span class="event-badge">Joined</span>
+                  <div class="promotion-title">
+                    Joined <span class="store-name">{{ event.store.name|default:"a store" }}</span>
+                  </div>
+                  <div class="role-transition">
+                    <span class="role-chip new">{{ event.role|default:"—" }}</span>
+                  </div>
+                  <div class="promotion-meta">
+                    {{ event.date|date:"F j, Y" }} · start of employment
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="timeline-item" id="promotion-{{ event.promotion.id }}">
+            <div class="timeline-dot-col">
+              <div class="timeline-dot">{{ event.promotion.store.name|default:"?"|first|upper }}</div>
+            </div>
+
+            <div class="timeline-card">
+              <div class="timeline-card-top">
+                <div>
+                  <div class="promotion-title">
+                    Role change at <span class="store-name">{{ event.promotion.store.name|default:"a store" }}</span>
+                  </div>
+
+                  <div class="role-transition">
+                    {% if event.promotion.old_position %}
+                      <span class="role-chip">{{ event.promotion.old_position }}</span>
+                      <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                    {% endif %}
+                    <span class="role-chip new">{{ event.promotion.new_position|default:"—" }}</span>
+                  </div>
+
+                  <div class="promotion-meta">
+                    {{ event.promotion.date|date:"F j, Y" }} · updated by {{ event.promotion.Giver }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+      <h3>No history yet</h3>
+      <p>{{ history_user }} doesn't have any visible history yet.</p>
+    </div>
+  {% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
+</script>
+
+</body>
+</html>
