@@ -1,0 +1,250 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Checkout | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;padding-bottom:60px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+  nav{
+    background:var(--surface);display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+
+  .wrap{max-width:920px;margin:0 auto;padding:34px 24px 0}
+
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .back-link:hover{text-decoration:underline}
+
+  .page-head{margin-bottom:26px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:26px}
+  .page-head p{color:var(--muted);font-size:14px;margin-top:4px}
+
+  .checkout-grid{display:grid;grid-template-columns:1fr 340px;gap:26px;align-items:flex-start}
+  @media(max-width:800px){.checkout-grid{grid-template-columns:1fr}}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px;animation:slideInUp .5s ease both;
+  }
+  .card h3{font-size:16px;margin-bottom:16px}
+
+  .messages{margin-bottom:18px}
+  .message{
+    padding:13px 16px;border-radius:10px;margin-bottom:10px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;
+  }
+  .message.success{background:var(--success-light);color:var(--success);border:1px solid #a7f3d0}
+  .message.error{background:var(--danger-light);color:var(--danger);border:1px solid #fecaca}
+
+  .field-label{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block}
+  textarea.address-input{
+    width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;
+    font-family:inherit;font-size:14px;resize:none;min-height:80px;transition:border-color .2s,box-shadow .2s;margin-bottom:18px;
+  }
+  textarea.address-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+
+  .payment-options{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+  .payment-option{
+    display:flex;align-items:center;gap:10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    padding:12px 14px;cursor:pointer;transition:border-color .2s,background .2s;
+  }
+  .payment-option:has(input:checked){border-color:var(--accent);background:var(--accent-light)}
+  .payment-option input{accent-color:var(--accent)}
+  .payment-option span{font-size:14px;font-weight:600}
+
+  .field-errors{color:var(--danger);font-size:12.5px;margin:-12px 0 14px}
+
+  .order-items{display:flex;flex-direction:column;gap:14px;margin-bottom:18px}
+  .order-item{display:flex;gap:12px;align-items:center}
+  .order-item-thumb{
+    width:52px;height:52px;border-radius:10px;flex-shrink:0;overflow:hidden;
+    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .order-item-thumb img{width:100%;height:100%;object-fit:cover}
+  .order-item-thumb svg{color:var(--accent);opacity:.55}
+  .order-item-info{flex:1;min-width:0}
+  .order-item-info h4{font-size:13.5px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .order-item-info span{color:var(--muted);font-size:12.5px}
+  .order-item-price{font-size:13.5px;font-weight:700;color:var(--accent);white-space:nowrap}
+
+  .summary-row{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:12px}
+  .summary-row span:last-child{color:var(--text);font-weight:600}
+  .summary-divider{height:1px;background:var(--border);margin:14px 0}
+  .summary-total{display:flex;justify-content:space-between;font-size:18px;font-weight:700;margin-bottom:20px}
+  .summary-total span:last-child{color:var(--accent)}
+
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:13px 26px;border-radius:999px;font-weight:600;font-size:14.5px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+
+  .secure-note{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin-top:14px;justify-content:center}
+
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'shopper_interface:cart' %}">Cart</a>
+    <a href="{% url 'profile' %}">Profile</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <a href="{% url 'shopper_interface:cart' %}" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to cart
+  </a>
+
+  <div class="page-head">
+    <h1>Checkout</h1>
+    <p>Confirm your shipping and payment details to place your order.</p>
+  </div>
+
+  {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+        <div class="message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="checkout-grid">
+
+    <form method="POST" action="{% url 'place_order' %}" id="checkout-form">
+      {% csrf_token %}
+      <div class="card">
+        <h3>Shipping address</h3>
+        <textarea class="address-input" id="shipping_address" name="shipping_address" placeholder="Street, city, postal code..." required>{{ order_form.shipping_address.value|default:"" }}</textarea>
+        {% if order_form.shipping_address.errors %}
+          <div class="field-errors">{{ order_form.shipping_address.errors.0 }}</div>
+        {% endif %}
+
+        <h3>Payment method</h3>
+        <div class="payment-options">
+          {% for choice in order_form.payment_type %}
+            <label class="payment-option">
+              {{ choice.tag }}
+              <span>{{ choice.choice_label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+        {% if order_form.payment_type.errors %}
+          <div class="field-errors">{{ order_form.payment_type.errors.0 }}</div>
+        {% endif %}
+      </div>
+    </form>
+
+    <div class="card">
+      <h3>Order summary</h3>
+      <div class="order-items">
+        {% for item in items %}
+          <div class="order-item">
+            <div class="order-item-thumb">
+              {% if item.product.primary_image %}
+                <img src="{{ item.product.primary_image.image.url }}" alt="{{ item.product.name }}">
+              {% else %}
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              {% endif %}
+            </div>
+            <div class="order-item-info">
+              <h4>{{ item.product.name|default:"Unnamed product" }}</h4>
+              <span>Qty {{ item.quantity }}</span>
+            </div>
+            <div class="order-item-price">
+              ${{ item.product.discounted_price|default:item.product.selling_price|floatformat:2 }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="summary-divider"></div>
+      <div class="summary-row"><span>Subtotal</span><span>${{ subtotal|floatformat:2 }}</span></div>
+      <div class="summary-row"><span>Shipping</span><span>Free</span></div>
+      <div class="summary-divider"></div>
+      <div class="summary-total"><span>Total</span><span>${{ subtotal|floatformat:2 }}</span></div>
+
+      <button type="submit" form="checkout-form" class="btn-primary" id="place-order-btn">
+        Place Order
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+
+      <div class="secure-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Your order will be split by store automatically
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.getElementById('checkout-form').addEventListener('submit', function(){
+  const btn = document.getElementById('place-order-btn');
+  btn.disabled = true;
+});
+</script>
+
+</body>
+</html>

@@ -117,3 +117,68 @@ class SearchTrend(models.Model):
 
     class Meta:
         ordering = ["-hit_count"]
+
+
+class AbstractProductCollection(models.Model):
+    """Shared shape for Cart and Wishlist: one per user."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f"{self.user}'s {self._meta.verbose_name}"
+
+
+class AbstractCollectionItem(models.Model):
+    """Shared shape for CartItem and WishlistItem: a product reference + timestamp."""
+
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, null=True, blank=True
+    )
+    added_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class Cart(AbstractProductCollection):
+    total_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00, null=True, blank=True
+    )
+
+
+class CartItem(AbstractCollectionItem):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=1, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cart", "product"], name="unique_product_per_cart"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product} ({self.cart.user})"
+
+
+class Wishlist(AbstractProductCollection):
+    pass
+
+
+class WishlistItem(AbstractCollectionItem):
+    wishlist = models.ForeignKey(
+        Wishlist, on_delete=models.CASCADE, null=True, blank=True
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["wishlist", "product"], name="unique_product_per_wishlist"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.product} ({self.wishlist.user})"

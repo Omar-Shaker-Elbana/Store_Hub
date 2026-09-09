@@ -1,7 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from orders.models import CartItem, OrderItem, WishlistItem
+from shopper_interface.models import CartItem, WishlistItem
+from orders.models import OrderItem
 
 from .models import Interaction, RecentlyViewed
 
@@ -24,7 +25,7 @@ def log_view(sender, instance, **kwargs):
 
 @receiver(post_save, sender=CartItem)
 def log_cart_add(sender, instance, created, **kwargs):
-    if created:
+    if created and instance.cart_id and instance.product_id:
         Interaction.objects.create(
             user=instance.cart.user,
             product=instance.product,
@@ -35,7 +36,7 @@ def log_cart_add(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=WishlistItem)
 def log_wishlist_add(sender, instance, created, **kwargs):
-    if created:
+    if created and instance.wishlist_id and instance.product_id:
         Interaction.objects.create(
             user=instance.wishlist.user,
             product=instance.product,
@@ -48,7 +49,7 @@ def log_wishlist_add(sender, instance, created, **kwargs):
 def log_purchase(sender, instance, created, **kwargs):
     if created:
         Interaction.objects.create(
-            user=instance.order.user,
+            user=instance.store_order.order.user,
             product=instance.product,
             action="purchase",
             weight=PURCHASE_WEIGHT * instance.quantity,

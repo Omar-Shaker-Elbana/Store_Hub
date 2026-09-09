@@ -80,6 +80,10 @@ class Product(models.Model):
         discount = (self.selling_price * self.offer) / 100
         return self.selling_price - discount
 
+    @property
+    def primary_image(self):
+        return self.images.filter(is_primary=True).first() or self.images.first()
+
 
 class Product_Image(models.Model):
     image = models.ImageField(upload_to="products_pics/")

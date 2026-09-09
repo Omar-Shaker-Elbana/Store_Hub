@@ -3,10 +3,13 @@ from django.contrib import admin
 from .models import (Membership, MembershipChangeRequest, MembershipInvitation,
                      Niche, Promotion, Store, SuggestedNiche)
 
-# Register your models here.
+
+@admin.register(Store)
+class StoreAdmin(admin.ModelAdmin):
+    search_fields = ("name",)
+
 
 admin.site.register(Membership)
-admin.site.register(Store)
 admin.site.register(Niche)
 admin.site.register(MembershipChangeRequest)
 admin.site.register(SuggestedNiche)

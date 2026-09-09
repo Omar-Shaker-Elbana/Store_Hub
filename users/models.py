@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from orders.models import Cart
+from shopper_interface.models import Cart
 
 # Create your models here.
 

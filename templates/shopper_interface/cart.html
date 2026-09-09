@@ -69,6 +69,27 @@
   }
   .brand{display:flex;align-items:center;gap:10px}
   .brand img{width:120px;height:auto;display:block}
+
+  .search-form{
+    display:flex;align-items:center;gap:8px;
+    background:var(--bg);border:1px solid var(--border);border-radius:999px;
+    padding:8px 14px;flex:1;max-width:420px;margin:0 24px;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .search-form:focus-within{border-color:var(--accent-2);box-shadow:0 0 0 3px var(--accent-light)}
+  .search-form svg{color:var(--muted);flex-shrink:0}
+  .search-input{
+    border:none;background:transparent;outline:none;flex:1;
+    font-family:inherit;font-size:14px;color:var(--text);
+  }
+  .search-input::placeholder{color:var(--muted)}
+  .search-submit{
+    display:none; /* icon+enter is enough; shown on wider screens if you want a visible button */
+    background:var(--accent);color:#fff;border:none;padding:6px 14px;
+    border-radius:999px;font-size:13px;font-weight:600;
+  }
+  @media(min-width:860px){ .search-submit{display:inline-block} }
+
   .nav-links{display:flex;align-items:center;gap:26px}
   .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;transition:color .2s}
   .nav-links a:hover{color:var(--accent)}
@@ -258,14 +279,25 @@
   <a href="{% url 'home' %}" class="brand">
     <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
   </a>
+  <form class="search-form" action="{% url 'shopper_interface:search' %}" method="get" role="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input
+      type="text"
+      name="q"
+      class="search-input"
+      placeholder="Search products, stores..."
+      value="{{ request.GET.q|default:'' }}"
+      autocomplete="off"
+    >
+    <button type="submit" class="search-submit">Search</button>
+  </form>
   <div class="nav-links">
     <a href="{% url 'home' %}">Home</a>
-    <a href="{% url 'wishlist' %}" class="nav-icon-link">
+     <a href="{% url 'shopper_interface:wishlist' %}" class="nav-icon-link">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
       Wishlist
     </a>
-    <a href="{% url 'mycart' %}" class="nav-icon-link active">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+    <a href="{% url 'shopper_interface:cart' %}" class="nav-icon-link active">      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
       Cart
       {% if items %}<span class="nav-badge">{{ items|length }}</span>{% endif %}
     </a>
@@ -308,13 +340,13 @@
         {% with stock=item.product.current_stock|default_if_none:0 %}
         <div class="item-card"
              id="row-{{ item.id }}"
-             data-price="{{ item.product.selling_price|default_if_none:0 }}"
+             data-price="{{ item.product.discounted_price|default:item.product.selling_price|default_if_none:0 }}"
              data-quantity="{{ item.quantity }}">
 
           <div class="item-thumb">
-            {% if item.product.image1 %}
+            {% if item.product.primary_image %}
               <a href="{% url 'view_product' item.product.id %}">
-                <img src="{{ item.product.image1.url }}" alt="{{ item.product.name }}">
+                <img src="{{ item.product.primary_image.image.url }}" alt="{{ item.product.name }}">
               </a>
             {% else %}
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -378,15 +410,10 @@
       <div class="summary-divider"></div>
       <div class="summary-total"><span>Estimated total</span><span id="summary-total">$0.00</span></div>
 
-      <form method="POST" action="{% url 'place_order' %}" id="checkout-form">
-        {% csrf_token %}
-        <label class="field-label" for="shipping_address">Shipping address</label>
-        <textarea class="address-input" id="shipping_address" name="shipping_address" placeholder="Street, city, postal code..." required></textarea>
-        <button type="submit" class="btn-primary" id="checkout-btn">
-          Place Order
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-        </button>
-      </form>
+      <a href="{% url 'checkout' %}" class="btn-primary" id="checkout-btn">
+        Proceed to Checkout
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
 
       <div class="secure-note">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -414,8 +441,8 @@
         {% for p in suggestions %}
           <a href="{% url 'view_product' p.id %}" class="sugg-card">
             <div class="sugg-thumb">
-              {% if p.image1 %}
-                <img src="{{ p.image1.url }}" alt="{{ p.name }}">
+              {% if p.primary_image %}
+                <img src="{{ p.primary_image.image.url }}" alt="{{ p.name }}">
               {% else %}
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
               {% endif %}
@@ -439,17 +466,39 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function fmt(n){ return '$' + n.toFixed(2); }
 
+  function getCookie(name){
+    const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+
+  function showToast(message, isError){
+    const stack = document.getElementById('toast-stack');
+    if (!stack) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast' + (isError ? ' error' : '');
+    toast.innerHTML = (isError
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>'
+    ) + '<span></span>';
+    toast.querySelector('span').textContent = message;
+    stack.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 3200);
+  }
+
   function recalcRow(row){
     const price = parseFloat(row.dataset.price) || 0;
     const qtyInput = row.querySelector('.qty-input');
     const qty = qtyInput ? (parseInt(qtyInput.value, 10) || 0) : (parseInt(row.dataset.quantity, 10) || 0);
-    const subtotalEl = row.querySelector('.line-subtotal');
     const lineTotal = price * qty;
+    const subtotalEl = row.querySelector('.line-subtotal');
     if (subtotalEl) subtotalEl.textContent = fmt(lineTotal);
     return lineTotal;
   }
 
-  function recalcAll(){
+  function recalcAllOptimistic(){
     let grand = 0;
     rows.forEach(row => { grand += recalcRow(row); });
     const subtotalEl = document.getElementById('summary-subtotal');
@@ -458,16 +507,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (totalEl) totalEl.textContent = fmt(grand);
   }
 
-  function startLoading(){
-    topbar.classList.add('loading');
+  function applyServerTotals(cartSubtotal, itemCount){
+    const subtotalEl = document.getElementById('summary-subtotal');
+    const totalEl = document.getElementById('summary-total');
+    if (subtotalEl) subtotalEl.textContent = fmt(cartSubtotal);
+    if (totalEl) totalEl.textContent = fmt(cartSubtotal);
+    const countEl = document.querySelector('.page-head .count');
+    if (countEl) countEl.textContent = itemCount + (itemCount === 1 ? ' item' : ' items');
   }
 
-  function submitRow(row){
-    const form = document.getElementById('form-' + row.id.replace('row-', ''));
-    if (!form) return;
-    row.classList.add('saving');
-    startLoading();
-    form.submit();
+  function pulseTopbar(){
+    topbar.classList.add('loading');
+    setTimeout(() => topbar.classList.remove('loading'), 500);
   }
 
   let debounceTimers = {};
@@ -478,11 +529,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const minusBtn = row.querySelector('.qty-btn.minus');
     const plusBtn = row.querySelector('.qty-btn.plus');
     const removeBtn = row.querySelector('[data-remove-for="' + id + '"]');
+    const subtotalEl = row.querySelector('.line-subtotal');
     const max = qtyInput ? (parseInt(qtyInput.max, 10) || 0) : 0;
 
     function clamp(val){
-      val = Math.max(1, Math.min(max, val));
-      return val;
+      return Math.max(1, Math.min(max, val));
     }
 
     function refreshButtons(){
@@ -491,10 +542,44 @@ document.addEventListener('DOMContentLoaded', function () {
       plusBtn.disabled = val >= max || max <= 0;
     }
 
-    function scheduleSubmit(){
-      recalcAll();
+    function sendUpdate(){
+      const quantity = parseInt(qtyInput.value, 10) || 1;
+      row.classList.add('saving');
+      pulseTopbar();
+
+      fetch(`/shopper/cart/item/${id}/update/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `quantity=${quantity}`,
+      })
+        .then(r => r.json())
+        .then(data => {
+          row.classList.remove('saving');
+          if (data.success){
+            if (subtotalEl) subtotalEl.textContent = fmt(data.line_subtotal);
+            applyServerTotals(data.cart_subtotal, data.item_count);
+          } else {
+            showToast(data.error || 'Could not update quantity.', true);
+            if (data.max_quantity !== undefined){
+              qtyInput.value = data.max_quantity;
+              refreshButtons();
+              recalcAllOptimistic();
+            }
+          }
+        })
+        .catch(() => {
+          row.classList.remove('saving');
+          showToast('Something went wrong updating your cart.', true);
+        });
+    }
+
+    function scheduleUpdate(){
+      recalcAllOptimistic();
       clearTimeout(debounceTimers[id]);
-      debounceTimers[id] = setTimeout(() => submitRow(row), 550);
+      debounceTimers[id] = setTimeout(sendUpdate, 500);
     }
 
     if (minusBtn){
@@ -502,7 +587,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (max <= 0) return;
         qtyInput.value = clamp((parseInt(qtyInput.value, 10) || 1) - 1);
         refreshButtons();
-        scheduleSubmit();
+        scheduleUpdate();
       });
     }
 
@@ -511,19 +596,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (max <= 0) return;
         qtyInput.value = clamp((parseInt(qtyInput.value, 10) || 1) + 1);
         refreshButtons();
-        scheduleSubmit();
+        scheduleUpdate();
       });
     }
 
     if (qtyInput){
       qtyInput.addEventListener('input', function(){
-        recalcAll();
+        recalcAllOptimistic();
       });
       qtyInput.addEventListener('change', function(){
         if (max <= 0) return;
         qtyInput.value = clamp(parseInt(qtyInput.value, 10) || 1);
         refreshButtons();
-        scheduleSubmit();
+        scheduleUpdate();
       });
     }
 
@@ -531,31 +616,37 @@ document.addEventListener('DOMContentLoaded', function () {
       removeBtn.addEventListener('click', function(){
         clearTimeout(debounceTimers[id]);
         row.classList.add('removing');
-        startLoading();
-        setTimeout(() => {
-          const form = document.getElementById('form-' + id);
-          const hidden = document.createElement('input');
-          hidden.type = 'hidden';
-          hidden.name = 'remove_btn';
-          hidden.value = '1';
-          form.appendChild(hidden);
-          form.submit();
-        }, 320);
+        pulseTopbar();
+
+        fetch(`/shopper/cart/item/${id}/remove/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success){
+              setTimeout(() => {
+                row.remove();
+                applyServerTotals(data.cart_subtotal, data.item_count);
+                if (data.item_count === 0){
+                  window.location.reload();
+                }
+              }, 320);
+            } else {
+              row.classList.remove('removing');
+              showToast(data.error || 'Could not remove item.', true);
+            }
+          })
+          .catch(() => {
+            row.classList.remove('removing');
+            showToast('Something went wrong removing this item.', true);
+          });
       });
     }
   });
 
-  const checkoutForm = document.getElementById('checkout-form');
-  if (checkoutForm){
-    checkoutForm.addEventListener('submit', function(){
-      document.getElementById('checkout-btn').disabled = true;
-      startLoading();
-    });
-  }
+  recalcAllOptimistic();
 
-  recalcAll();
-
-  // Toasts: auto-dismiss
   document.querySelectorAll('.toast').forEach((toast, i) => {
     setTimeout(() => {
       toast.classList.add('hide');

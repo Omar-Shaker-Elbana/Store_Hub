@@ -133,6 +133,7 @@
   }
   .form-group.has-error input,.form-group.has-error select{border-color:var(--danger)}
   .wage-unit-hint{color:var(--muted);font-weight:500}
+  .form-group select.locked-select{pointer-events:none;opacity:.6;background:var(--bg)}
 
   /* ---------- buttons ---------- */
   .btn-primary{
@@ -305,6 +306,12 @@
           {% csrf_token %}
           {% for hidden in invitation_form.hidden_fields %}{{ hidden }}{% endfor %}
 
+          {% if user_membership.role == "owner" %}
+          <div class="field-help" style="margin-bottom:14px;">
+            You currently own <strong>{{ user_membership.wage|default:"0" }}%</strong> of this store's profit share.
+          </div>
+          {% endif %}
+
           <div class="form-group {% if invitation_form.invitee_email.errors %}has-error{% endif %}">
             <label for="{{ invitation_form.invitee_email.id_for_label }}">Email {% if invitation_form.invitee_email.field.required %}*{% endif %}</label>
             {{ invitation_form.invitee_email }}
@@ -332,6 +339,7 @@
             <div class="form-group {% if invitation_form.wage_type.errors %}has-error{% endif %}">
               <label for="{{ invitation_form.wage_type.id_for_label }}">Wage type</label>
               {{ invitation_form.wage_type }}
+              <span class="field-help" id="wage-type-owner-note" style="display:none;">Owners are always paid via profit percentage.</span>
               {% for error in invitation_form.wage_type.errors %}
                 <span class="field-error">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
@@ -344,7 +352,10 @@
           <div class="form-group {% if invitation_form.wage.errors %}has-error{% endif %}">
             <label for="{{ invitation_form.wage.id_for_label }}">Wage <span class="wage-unit-hint" data-wage-hint>({% if invitation_form.wage_type.value == "percentage" %}%{% else %}$ salary{% endif %})</span></label>
             {{ invitation_form.wage }}
-            <span class="field-help">Percentage wages must be 100 or less.</span>
+            <span class="field-help" id="wage-help-default">Percentage wages must be 100 or less.</span>
+            <span class="field-help" id="wage-help-owner" style="display:none;" data-inviter-wage="{{ user_membership.wage|default:0 }}">
+              Give away up to {{ user_membership.wage|default:"0" }}% of your own share.
+            </span>
             {% for error in invitation_form.wage.errors %}
               <span class="field-error">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
@@ -547,11 +558,51 @@ document.addEventListener('DOMContentLoaded', function () {
     hintEl.textContent = select.value === 'percentage' ? '(%)' : '($ salary)';
   }
 
-  document.querySelectorAll('[data-wage-type-select]').forEach(function(select){
-    const hint = select.closest('.card, .edit-panel-inner')?.querySelector('[data-wage-hint]');
-    updateWageHint(select, hint);
-    select.addEventListener('change', function(){ updateWageHint(select, hint); });
-  });
+  const roleSelect = document.getElementById('id_role');
+  const wageTypeSelect = document.getElementById('id_wage_type');
+  const wageInput = document.getElementById('id_wage');
+  const wageHint = document.querySelector('[data-wage-hint]');
+  const wageTypeOwnerNote = document.getElementById('wage-type-owner-note');
+  const wageHelpDefault = document.getElementById('wage-help-default');
+  const wageHelpOwner = document.getElementById('wage-help-owner');
+
+  function applyRoleState(){
+    if (!roleSelect) return;
+    const isOwner = roleSelect.value === 'owner';
+
+    if (wageTypeSelect){
+      if (isOwner){
+        wageTypeSelect.value = 'percentage';
+        wageTypeSelect.classList.add('locked-select');
+      } else {
+        wageTypeSelect.classList.remove('locked-select');
+      }
+      updateWageHint(wageTypeSelect, wageHint);
+    }
+    if (wageTypeOwnerNote) wageTypeOwnerNote.style.display = isOwner ? 'block' : 'none';
+    if (wageHelpDefault) wageHelpDefault.style.display = isOwner ? 'none' : 'block';
+    if (wageHelpOwner) wageHelpOwner.style.display = isOwner ? 'block' : 'none';
+    if (wageInput){
+      if (isOwner) wageInput.max = wageHelpOwner ? wageHelpOwner.dataset.inviterWage : 100;
+      else wageInput.removeAttribute('max');
+    }
+  }
+
+  if (roleSelect){
+    applyRoleState();
+    roleSelect.addEventListener('change', applyRoleState);
+  }
+  if (wageTypeSelect){
+    wageTypeSelect.addEventListener('mousedown', function(e){
+      if (roleSelect && roleSelect.value === 'owner') e.preventDefault();
+    });
+    wageTypeSelect.addEventListener('change', function(){
+      if (roleSelect && roleSelect.value === 'owner'){
+        wageTypeSelect.value = 'percentage';
+      }
+      updateWageHint(wageTypeSelect, wageHint);
+    });
+  }
 
  
 

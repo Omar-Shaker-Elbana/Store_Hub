@@ -121,6 +121,7 @@
     transition:border-color .2s,box-shadow .2s;
   }
   select:focus, input[type="number"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+  select.locked-select{pointer-events:none;opacity:.6;background:var(--bg)}
 
   .btn-primary{
     background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
@@ -230,6 +231,14 @@
     <form method="post" id="edit-membership-form">
       {% csrf_token %}
 
+      {% if user_membership.role == "owner" %}
+      <div class="field-hint" style="margin-bottom:16px;">
+        You currently own <strong>{{ requester_available_wage|default:"0" }}%</strong> of this store's profit share.
+        Any increase to this member's percentage comes out of your own share, up to
+        <strong>{{ max_target_wage|default:"0" }}%</strong> total for them.
+      </div>
+      {% endif %}
+
       <div class="field-group">
         <label class="field-label" for="id_role">Role</label>
         <select name="role" id="id_role">
@@ -248,14 +257,17 @@
           <option value="salary" {% if form.wage_type.value == "salary" %}selected{% endif %}>Salary</option>
           <option value="percentage" {% if form.wage_type.value == "percentage" %}selected{% endif %}>Percentage</option>
         </select>
+        <div class="field-hint" id="wage-type-owner-note" style="display:none;">Owners are always paid via profit percentage.</div>
         {% for error in form.wage_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
       </div>
 
       <div class="field-group">
         <label class="field-label" for="id_wage">Wage</label>
         <input type="number" step="0.01" min="0" name="wage" id="id_wage"
+               data-owner-max="{{ max_target_wage|default:0 }}"
                value="{{ form.wage.value|default_if_none:'' }}">
-        <div class="field-hint">If wage type is Percentage, this must be between 0 and 100.</div>
+        <div class="field-hint" id="wage-hint-default">If wage type is Percentage, this must be between 0 and 100.</div>
+        <div class="field-hint" id="wage-hint-owner" style="display:none;">Must be {{ max_target_wage|default:"0" }}% or less — increases come out of your own {{ requester_available_wage|default:"0" }}% share.</div>
         {% for error in form.wage.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
       </div>
 
@@ -305,6 +317,49 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
       topbar.classList.add('loading');
+    });
+  }
+
+  const roleSelect = document.getElementById('id_role');
+  const wageTypeSelect = document.getElementById('id_wage_type');
+  const wageInput = document.getElementById('id_wage');
+  const wageTypeOwnerNote = document.getElementById('wage-type-owner-note');
+  const wageHintDefault = document.getElementById('wage-hint-default');
+  const wageHintOwner = document.getElementById('wage-hint-owner');
+
+  function applyRoleState(){
+    if (!roleSelect) return;
+    const isOwner = roleSelect.value === 'owner';
+
+    if (wageTypeSelect){
+      if (isOwner){
+        wageTypeSelect.value = 'percentage';
+        wageTypeSelect.classList.add('locked-select');
+      } else {
+        wageTypeSelect.classList.remove('locked-select');
+      }
+    }
+    if (wageTypeOwnerNote) wageTypeOwnerNote.style.display = isOwner ? 'block' : 'none';
+    if (wageHintDefault) wageHintDefault.style.display = isOwner ? 'none' : 'block';
+    if (wageHintOwner) wageHintOwner.style.display = isOwner ? 'block' : 'none';
+    if (wageInput){
+      if (isOwner) wageInput.max = wageInput.dataset.ownerMax || 100;
+      else wageInput.removeAttribute('max');
+    }
+  }
+
+  if (roleSelect){
+    applyRoleState();
+    roleSelect.addEventListener('change', applyRoleState);
+  }
+  if (wageTypeSelect){
+    wageTypeSelect.addEventListener('mousedown', function(e){
+      if (roleSelect && roleSelect.value === 'owner') e.preventDefault();
+    });
+    wageTypeSelect.addEventListener('change', function(){
+      if (roleSelect && roleSelect.value === 'owner'){
+        wageTypeSelect.value = 'percentage';
+      }
     });
   }
 

@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 
+from merchant_interface.models import Store
 from orders.models import OrderItem
 from products.models import Product
 
@@ -14,6 +15,13 @@ TRENDING_TTL = 60 * 15  # 15 min
 RELATED_TTL = 60 * 60  # 1 hr
 USER_REC_TTL = 60 * 30  # 30 min
 FBT_TTL = 60 * 60  # 1 hr
+STORE_REC_TTL = 60 * 30  # 30 min
+
+FEED_LENGTH = 96  # total feed items built and cached per user
+DILUTION_STEP = 0.015  # how fast trending's share of the feed grows per position
+MAX_DILUTION = 0.7  # cap - keeps some personalization even far down the feed
+FEED_STORE_INTERVAL = 2  # show a batch of recommended stores every N pages
+FEED_STORE_BATCH = 5  # how many stores per batch
 
 RECENCY_WINDOW = timedelta(days=90)  # ignore interactions older than this
 MIN_RATING = 3  # products rated below this get filtered from "popular"
@@ -167,11 +175,20 @@ def get_recommendations_for_user(user, limit=10):
             ids += list(fallback)
 
         if len(ids) < limit:
-            for p in get_popular_products(limit=(limit - len(ids)) * 2):
-                if p.id not in seen_ids and p.id not in ids:
-                    ids.append(p.id)
-                if len(ids) >= limit:
+            fetch_limit = (limit - len(ids)) * 2
+            total_products = Product.objects.count()
+            while len(ids) < limit:
+                candidates = get_popular_products(limit=fetch_limit)
+                added_any = False
+                for p in candidates:
+                    if p.id not in seen_ids and p.id not in ids:
+                        ids.append(p.id)
+                        added_any = True
+                    if len(ids) >= limit:
+                        break
+                if len(ids) >= limit or not added_any or fetch_limit >= total_products:
                     break
+                fetch_limit *= 2
 
         cache.set(key, ids, USER_REC_TTL)
     return _reorder(ids)
@@ -182,11 +199,11 @@ def get_frequently_bought_together(product, limit=5):
     key = f"fbt_{product.id}_{limit}"
     ids = cache.get(key)
     if ids is None:
-        order_ids = OrderItem.objects.filter(product=product).values_list(
-            "order_id", flat=True
+        store_order_ids = OrderItem.objects.filter(product=product).values_list(
+            "store_order_id", flat=True
         )
         co_bought = (
-            OrderItem.objects.filter(order_id__in=order_ids)
+            OrderItem.objects.filter(store_order_id__in=store_order_ids)
             .exclude(product=product)
             .values("product_id")
             .annotate(times_bought_together=Count("id"))
@@ -195,3 +212,127 @@ def get_frequently_bought_together(product, limit=5):
         ids = [row["product_id"] for row in co_bought]
         cache.set(key, ids, FBT_TTL)
     return _reorder(ids)
+
+def _interleave_by_dilution(primary_ids, secondary_ids, length, dilution_step, max_dilution):
+    """
+    Builds an ordered id list that starts as pure `primary_ids` and gradually
+    mixes in `secondary_ids`, with the secondary share growing by
+    `dilution_step` per position up to `max_dilution`. Falls back to
+    whichever list still has items once the other runs out.
+    """
+    result = []
+    p_idx = s_idx = 0
+    secondary_used = 0
+
+    for i in range(length):
+        target_ratio = min(max_dilution, i * dilution_step)
+        current_ratio = (secondary_used / i) if i else 0
+        want_secondary = current_ratio < target_ratio
+
+        if want_secondary and s_idx < len(secondary_ids):
+            result.append(secondary_ids[s_idx])
+            s_idx += 1
+            secondary_used += 1
+        elif p_idx < len(primary_ids):
+            result.append(primary_ids[p_idx])
+            p_idx += 1
+        elif s_idx < len(secondary_ids):
+            result.append(secondary_ids[s_idx])
+            s_idx += 1
+            secondary_used += 1
+        else:
+            break
+
+    return result
+
+
+def _build_home_feed_ids(user, length=FEED_LENGTH):
+    """Personalized ids first, gradually diluted with trending ids."""
+    recommended_ids = [p.id for p in get_recommendations_for_user(user, limit=length)]
+    trending = get_popular_products(limit=length)
+    trending_ids = [p.id for p in trending if p.id not in recommended_ids]
+
+    return _interleave_by_dilution(
+        recommended_ids, trending_ids, length, DILUTION_STEP, MAX_DILUTION
+    )
+
+
+def get_recommended_stores(user, limit=FEED_STORE_BATCH):
+    """
+    Stores to surface between product batches: prioritizes stores selling in
+    categories the user has interacted with (excluding ones they already
+    follow), falling back to the best-selling stores overall.
+    """
+    cache_key = f"recommended_stores_{user.id if user.is_authenticated else 'anon'}_{limit}"
+    ids = cache.get(cache_key)
+
+    if ids is None:
+        followed_ids = []
+        if user.is_authenticated:
+            followed_ids = list(
+                StoreFollow.objects.filter(user=user).values_list("store_id", flat=True)
+            )
+
+        base_qs = Store.objects.filter(enabled=True).exclude(id__in=followed_ids)
+        ids = []
+
+        if user.is_authenticated:
+            interacted_categories = (
+                Interaction.objects.filter(user=user)
+                .values_list("product__category_id", flat=True)
+                .distinct()
+            )
+            scored = (
+                base_qs.filter(products__category_id__in=interacted_categories)
+                .annotate(relevance=Count("products__sold"))
+                .order_by("-relevance")
+                .values_list("id", flat=True)
+                .distinct()[:limit]
+            )
+            ids = list(scored)
+
+        if len(ids) < limit:
+            needed = limit - len(ids)
+            fallback = (
+                base_qs.exclude(id__in=ids)
+                .annotate(total_sold=Sum("products__sold"))
+                .order_by("-total_sold")[:needed]
+                .values_list("id", flat=True)
+            )
+            ids += list(fallback)
+
+        cache.set(cache_key, ids, STORE_REC_TTL)
+
+    store_order = {sid: i for i, sid in enumerate(ids)}
+    stores = Store.objects.filter(id__in=ids)
+    return sorted(stores, key=lambda s: store_order.get(s.id, 999))
+
+
+def get_home_feed_page(user, page=1, page_size=12):
+    """
+    One page of the shopper home feed for infinite scroll. Product ordering
+    starts fully personalized and gradually dilutes with trending items as
+    the page number grows; every FEED_STORE_INTERVAL-th page also carries a
+    batch of recommended stores to break up the product grid.
+    """
+    feed_key = f"home_feed_ids_{user.id if user.is_authenticated else 'anon'}"
+    feed_ids = cache.get(feed_key)
+    if feed_ids is None:
+        feed_ids = _build_home_feed_ids(user)
+        cache.set(feed_key, feed_ids, USER_REC_TTL)
+
+    start = (page - 1) * page_size
+    end = start + page_size
+    products = _reorder(feed_ids[start:end])
+
+    stores = []
+    if page % FEED_STORE_INTERVAL == 0:
+        stores = get_recommended_stores(user)
+
+    return {
+        "products": products,
+        "stores": stores,
+        "has_more": end < len(feed_ids),
+        "start": start,
+        "total": len(feed_ids),
+    }

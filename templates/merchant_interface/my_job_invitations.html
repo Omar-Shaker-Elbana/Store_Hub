@@ -262,7 +262,9 @@
                 <div class="item-tags">
                   <span class="role-badge {{ invitation.role }}">{{ invitation.get_role_display }}</span>
                   <span class="wage-badge">
-                    {% if invitation.wage_type == "percentage" %}
+                    {% if invitation.role == "owner" %}
+                      {{ invitation.wage|default:"0" }}% profit share
+                    {% elif invitation.wage_type == "percentage" %}
                       {{ invitation.wage|default:"0" }}% commission
                     {% else %}
                       ${{ invitation.wage|default:"0" }} salary
@@ -328,7 +330,9 @@
                 </div>
                 <div class="change-diff">
                   <span class="wage-badge">
-                    {% if change_request.membership.wage_type == "percentage" %}
+                    {% if change_request.membership.role == "owner" %}
+                      {{ change_request.membership.wage|default:"0" }}% profit share
+                    {% elif change_request.membership.wage_type == "percentage" %}
                       {{ change_request.membership.wage|default:"0" }}%
                     {% else %}
                       ${{ change_request.membership.wage|default:"0" }} salary
@@ -336,7 +340,9 @@
                   </span>
                   <span class="arrow">→</span>
                   <span class="wage-badge">
-                    {% if change_request.new_wage_type == "percentage" %}
+                    {% if change_request.new_role == "owner" %}
+                      {{ change_request.new_wage|default:"0" }}% profit share
+                    {% elif change_request.new_wage_type == "percentage" %}
                       {{ change_request.new_wage|default:"0" }}%
                     {% else %}
                       ${{ change_request.new_wage|default:"0" }} salary
@@ -396,6 +402,15 @@
                 <div class="item-sub">Sent to {{ invitation.invitee_email }} · {{ invitation.sent_at|date:"M j, Y" }}</div>
                 <div class="item-tags">
                   <span class="role-badge {{ invitation.role }}">{{ invitation.get_role_display }}</span>
+                  <span class="wage-badge">
+                    {% if invitation.role == "owner" %}
+                      {{ invitation.wage|default:"0" }}% profit share
+                    {% elif invitation.wage_type == "percentage" %}
+                      {{ invitation.wage|default:"0" }}% commission
+                    {% else %}
+                      ${{ invitation.wage|default:"0" }} salary
+                    {% endif %}
+                  </span>
                   <span class="status-badge">Pending</span>
                 </div>
               </div>

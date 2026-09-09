@@ -1,13 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from notifications.models import Notification
+from orders.forms import StoreOrderStatusForm
+from orders.models import StoreOrder
 from products.models import Product
 
 from .forms import (MembershipForm, MembershipInvitationForm, StoreForm,
@@ -18,6 +21,13 @@ from .models import (Membership, MembershipChangeRequest, MembershipInvitation,
 # Create your views here.
 
 User = get_user_model()
+
+
+class _ChangeAcceptanceError(Exception):
+    """
+    Raised inside the change-request acceptance transaction to abort and
+    roll back cleanly, with a user-facing message.
+    """
 
 
 def _create_membership_change_request(request, user_membership, membership, form):
@@ -124,6 +134,8 @@ def create_store(request):
                         store=store,
                         role="owner",
                         join_date=timezone.now().date(),
+                        wage_type="percentage",
+                        wage=100,
                     )
                 messages.success(request, "Store created successfully!")
                 return redirect("manage_store_invitations", store_id=store.id)
@@ -165,7 +177,9 @@ def manage_store_invitations(request, store_id):
             )
             return redirect("manage_store_invitations", store_id=store.id)
 
-        invitation_form = MembershipInvitationForm(request.POST)
+        invitation_form = MembershipInvitationForm(
+            request.POST, inviter_membership=user_membership
+        )
 
         if "send_invitation_btn" in request.POST:
             if invitation_form.is_valid():
@@ -245,7 +259,7 @@ def manage_store_invitations(request, store_id):
             return redirect("manage_store_invitations", store_id=store.id)
 
     else:
-        invitation_form = MembershipInvitationForm()
+        invitation_form = MembershipInvitationForm(inviter_membership=user_membership)
 
     context = {
         "store": store,
@@ -354,6 +368,34 @@ def edit_membership(request, membership_id):
 
     can_remove = user_membership.role == "owner"
 
+    other_owners_wage = (
+        Membership.objects.filter(store=membership.store, role="owner")
+        .exclude(pk=membership.pk)
+        .aggregate(total=Sum("wage"))["total"]
+        or 0
+    )
+    available_for_owner = 100 - other_owners_wage
+
+    # How much of their own share the requester actually has to give —
+    # raising another owner's percentage is funded from this, not the
+    # blanket 100% total.
+    requester_available_wage = (
+        (user_membership.wage or 0) if user_membership.role == "owner" else 0
+    )
+    current_target_wage = (membership.wage or 0) if membership.role == "owner" else 0
+
+    # Every OTHER owner's share (excluding both this member and the
+    # requester) is the fixed floor. Whatever's left of the 100% can be
+    # freely reallocated between this member and the requester.
+    fixed_owners_wage = (
+        Membership.objects.filter(store=membership.store, role="owner")
+        .exclude(pk=membership.pk)
+        .exclude(pk=user_membership.pk)
+        .aggregate(total=Sum("wage"))["total"]
+        or 0
+    )
+    max_target_wage = 100 - fixed_owners_wage
+
     # Placeholder for member analytics, to be added later
 
     def _restrict_role_choices(bound_form):
@@ -364,7 +406,11 @@ def edit_membership(request, membership_id):
             ]
 
     if request.method == "POST":
-        form = MembershipForm(request.POST)
+        form = MembershipForm(
+            request.POST,
+            target_membership=membership,
+            requester_membership=user_membership,
+        )
         _restrict_role_choices(form)
         if form.is_valid():
             _create_membership_change_request(
@@ -374,7 +420,9 @@ def edit_membership(request, membership_id):
         else:
             messages.error(request, "Error submitting changes. Please try again.")
     else:
-        form = MembershipForm(instance=membership)
+        form = MembershipForm(
+            instance=membership, requester_membership=user_membership
+        )
         _restrict_role_choices(form)
 
     context = {
@@ -382,6 +430,10 @@ def edit_membership(request, membership_id):
         "membership": membership,
         "user_membership": user_membership,
         "can_remove": can_remove,
+        "other_owners_wage": other_owners_wage,
+        "available_for_owner": available_for_owner,
+        "requester_available_wage": requester_available_wage,
+        "max_target_wage": max_target_wage,
     }
 
     return render(request, "merchant_interface/edit_membership.html", context)
@@ -498,15 +550,53 @@ def my_job_invitations(request):
                         "not accepting new members.",
                     )
                     return redirect("my_job_invitations")
+
+                if invitation.role == "owner":
+                    with transaction.atomic():
+                        # select_for_update locks this row until commit, so a
+                        # second concurrent acceptance blocks here and then
+                        # re-reads the already-updated wage below, instead of
+                        # both acceptances reading the same stale value.
+                        inviter_membership = (
+                            Membership.objects.select_for_update()
+                            .filter(user=invitation.inviter, store=invitation.store)
+                            .first()
+                        )
+                        available = (
+                            (inviter_membership.wage or 0) if inviter_membership else 0
+                        )
+                        if not inviter_membership or invitation.wage > available:
+                            messages.error(
+                                request,
+                                f"{invitation.inviter} no longer owns enough profit "
+                                "share to honor this invitation.",
+                            )
+                            return redirect("my_job_invitations")
+
+                        inviter_membership.wage = available - invitation.wage
+                        if inviter_membership.wage <= 0:
+                            inviter_membership.wage = 0
+                            inviter_membership.role = "manager"
+                        inviter_membership.save()
+                        Membership.objects.create(
+                            user=request.user,
+                            store=invitation.store,
+                            role=invitation.role,
+                            wage_type=invitation.wage_type,
+                            wage=invitation.wage,
+                            join_date=timezone.now().date(),
+                        )
+                else:
+                    Membership.objects.create(
+                        user=request.user,
+                        store=invitation.store,
+                        role=invitation.role,
+                        wage_type=invitation.wage_type,
+                        wage=invitation.wage,
+                        join_date=timezone.now().date(),
+                    )
+
                 invitation.status = "accepted"
-                Membership.objects.create(
-                    user=request.user,
-                    store=invitation.store,
-                    role=invitation.role,
-                    wage_type=invitation.wage_type,
-                    wage=invitation.wage,
-                    join_date=timezone.now().date(),
-                )
                 Notification.objects.create(
                     recipient=invitation.inviter,
                     sender=request.user,
@@ -549,66 +639,194 @@ def my_job_invitations(request):
                 return redirect("my_job_invitations")
 
             if action == "accept":
-                membership = change_request.membership
-                old_role = membership.role
-                old_wage_type = membership.wage_type
-                old_wage = membership.wage
+                transferred_wage = None
+                transfer_direction = None  # "to_requester" or "from_requester"
+                try:
+                    with transaction.atomic():
+                        membership = (
+                            Membership.objects.select_for_update()
+                            .select_related("store")
+                            .get(pk=change_request.membership_id)
+                        )
+                        old_role = membership.role
+                        old_wage_type = membership.wage_type
+                        old_wage = membership.wage
 
-                membership.role = change_request.new_role
-                membership.wage_type = change_request.new_wage_type
-                membership.wage = change_request.new_wage
-                membership.save()
+                        new_role = change_request.new_role
+                        new_wage_type = change_request.new_wage_type
+                        new_wage = change_request.new_wage
 
-                role_changed = old_role != change_request.new_role
-                wage_type_changed = old_wage_type != change_request.new_wage_type
-                wage_changed = old_wage != change_request.new_wage
+                        old_owner_wage = (old_wage or 0) if old_role == "owner" else 0
+                        new_owner_wage = (new_wage or 0) if new_role == "owner" else 0
+                        wage_delta = new_owner_wage - old_owner_wage
 
-                if role_changed or wage_type_changed or wage_changed:
-                    role_labels = dict(Membership.ROLE_CHOICES)
-                    wage_labels = dict(Membership.WAGE_CHOICES)
-                    Promotion.objects.create(
-                        store=membership.store,
-                        date=timezone.now().date(),
-                        old_position=(
-                            role_labels.get(old_role, old_role)
-                            if role_changed
-                            else None
-                        ),
-                        new_position=(
-                            role_labels.get(
-                                change_request.new_role, change_request.new_role
+                        # Any change to how much profit share this member
+                        # holds as an owner — promotion into ownership, a
+                        # raise, a cut, or a full demotion — is funded by,
+                        # or returned to, whoever proposed the change. It's
+                        # never created or destroyed out of nowhere.
+                        if wage_delta != 0 and (
+                            old_role == "owner" or new_role == "owner"
+                        ):
+                            requester_membership = (
+                                Membership.objects.select_for_update()
+                                .filter(
+                                    user=change_request.requested_by,
+                                    store=membership.store,
+                                    role="owner",
+                                )
+                                .exclude(pk=membership.pk)
+                                .first()
                             )
-                            if role_changed
-                            else None
-                        ),
-                        old_wage_type=(
-                            wage_labels.get(old_wage_type, old_wage_type)
-                            if wage_type_changed
-                            else None
-                        ),
-                        new_wage_type=(
-                            wage_labels.get(
-                                change_request.new_wage_type,
-                                change_request.new_wage_type,
+                            if not requester_membership:
+                                raise _ChangeAcceptanceError(
+                                    f"{change_request.requested_by} is no "
+                                    "longer an owner of this store, so this "
+                                    "change can't be applied."
+                                )
+
+                            if wage_delta > 0:
+                                # Member's share is going UP — funded from
+                                # the requester's own share.
+                                available = requester_membership.wage or 0
+                                if wage_delta > available:
+                                    raise _ChangeAcceptanceError(
+                                        f"{change_request.requested_by} only "
+                                        f"has {available}% left to give — "
+                                        "this change can't be applied."
+                                    )
+                                requester_membership.wage = available - wage_delta
+                                transfer_direction = "from_requester"
+                            else:
+                                # Member's share is going DOWN, or they're
+                                # being demoted out of ownership entirely —
+                                # it reverts to the requester.
+                                requester_membership.wage = (
+                                    requester_membership.wage or 0
+                                ) + abs(wage_delta)
+                                transfer_direction = "to_requester"
+
+                            try:
+                                requester_membership.save()
+                            except ValidationError as exc:
+                                raise _ChangeAcceptanceError(
+                                    "Couldn't update "
+                                    f"{change_request.requested_by}'s own "
+                                    f"share: {'; '.join(exc.messages)}"
+                                )
+                            transferred_wage = abs(wage_delta)
+
+                        if new_role == "owner":
+                            # Force percentage regardless of what's stored,
+                            # and re-check the store-wide cap in case
+                            # anything shifted since this change request was
+                            # originally created. Since any increase is now
+                            # funded from the requester's own share, the
+                            # store's total stays conserved — this is left
+                            # in purely as a safety net.
+                            new_wage_type = "percentage"
+                            other_owned = (
+                                Membership.objects.filter(
+                                    store=membership.store, role="owner"
+                                )
+                                .exclude(pk=membership.pk)
+                                .aggregate(total=Sum("wage"))["total"]
+                                or 0
                             )
-                            if wage_type_changed
-                            else None
+                            if new_wage is None or other_owned + new_wage > 100:
+                                raise _ChangeAcceptanceError(
+                                    "This change would push the store's "
+                                    "owners over 100% profit share and "
+                                    "can't be applied."
+                                )
+
+                        membership.role = new_role
+                        membership.wage_type = new_wage_type
+                        membership.wage = new_wage
+                        try:
+                            membership.save()
+                        except ValidationError as exc:
+                            raise _ChangeAcceptanceError("; ".join(exc.messages))
+
+                        role_changed = old_role != new_role
+                        wage_type_changed = old_wage_type != new_wage_type
+                        wage_changed = old_wage != new_wage
+
+                        if role_changed or wage_type_changed or wage_changed:
+                            role_labels = dict(Membership.ROLE_CHOICES)
+                            wage_labels = dict(Membership.WAGE_CHOICES)
+                            Promotion.objects.create(
+                                store=membership.store,
+                                date=timezone.now().date(),
+                                old_position=(
+                                    role_labels.get(old_role, old_role)
+                                    if role_changed
+                                    else None
+                                ),
+                                new_position=(
+                                    role_labels.get(
+                                        change_request.new_role,
+                                        change_request.new_role,
+                                    )
+                                    if role_changed
+                                    else None
+                                ),
+                                old_wage_type=(
+                                    wage_labels.get(old_wage_type, old_wage_type)
+                                    if wage_type_changed
+                                    else None
+                                ),
+                                new_wage_type=(
+                                    wage_labels.get(
+                                        change_request.new_wage_type,
+                                        change_request.new_wage_type,
+                                    )
+                                    if wage_type_changed
+                                    else None
+                                ),
+                                old_wage=old_wage if wage_changed else None,
+                                new_wage=(
+                                    change_request.new_wage if wage_changed else None
+                                ),
+                                Giver=change_request.requested_by,
+                                Receiver=membership.user,
+                            )
+
+                        change_request.status = "accepted"
+                        change_request.save()
+                except _ChangeAcceptanceError as exc:
+                    messages.error(request, str(exc))
+                    return redirect("my_job_invitations")
+
+                if transfer_direction == "to_requester":
+                    Notification.objects.create(
+                        recipient=change_request.requested_by,
+                        sender=request.user,
+                        message=(
+                            f"{request.user} accepted the change — "
+                            f"{transferred_wage}% profit share has been "
+                            f"transferred back to you at {membership.store.name}."
                         ),
-                        old_wage=old_wage if wage_changed else None,
-                        new_wage=change_request.new_wage if wage_changed else None,
-                        Giver=change_request.requested_by,
-                        Receiver=membership.user,
                     )
-
-                change_request.status = "accepted"
-                Notification.objects.create(
-                    recipient=change_request.requested_by,
-                    sender=request.user,
-                    message=(
-                        f"{request.user} accepted the membership changes you "
-                        f"proposed at {membership.store.name}."
-                    ),
-                )
+                elif transfer_direction == "from_requester":
+                    Notification.objects.create(
+                        recipient=change_request.requested_by,
+                        sender=request.user,
+                        message=(
+                            f"{request.user} accepted the change — "
+                            f"{transferred_wage}% of your own profit share "
+                            f"has been given to them at {membership.store.name}."
+                        ),
+                    )
+                else:
+                    Notification.objects.create(
+                        recipient=change_request.requested_by,
+                        sender=request.user,
+                        message=(
+                            f"{request.user} accepted the membership changes "
+                            f"you proposed at {membership.store.name}."
+                        ),
+                    )
                 messages.success(request, "Membership changes accepted!")
             elif action == "reject":
                 change_request.status = "rejected"

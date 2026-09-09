@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -75,6 +76,14 @@ class Membership(models.Model):
                 name="membership_wage_not_negative",
             ),
         ]
+
+    def clean(self):
+        super().clean()
+        if self.role == "owner" and self.wage_type != "percentage":
+            raise ValidationError(
+                "Owners are paid in profit percentage, not salary — "
+                "set wage type to percentage."
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()

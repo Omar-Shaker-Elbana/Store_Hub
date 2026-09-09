@@ -1,0 +1,62 @@
+{% for product in recommended_products %}
+  {% with stock=product.current_stock|default_if_none:0 abs_index=forloop.counter0|add:feed_start_index %}
+  <a href="{% url 'view_product' product.id %}" class="product-card" data-fade="{% widthratio abs_index feed_total_length 100 %}">
+    <div class="product-thumb">
+      {% if product.primary_image %}
+        <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}">
+      {% else %}
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      {% endif %}
+      {% if product.offer %}<span class="offer-badge">{{ product.offer }}% off</span>{% endif %}
+      {% if stock <= 0 %}<span class="stock-tag">Out of stock</span>{% endif %}
+    </div>
+    <div class="product-body">
+      {% if product.store.name %}<span class="product-store">{{ product.store.name }}</span>{% endif %}
+      <span class="product-name">{{ product.name|default:"Unnamed product" }}</span>
+      <div class="product-price-row">
+        <div class="price-info">
+          {% if product.selling_price %}
+            {% if product.offer %}
+              <span class="price-now">${{ product.discounted_price|floatformat:2 }}</span>
+              <span class="price-was">${{ product.selling_price }}</span>
+            {% else %}
+              <span class="price-now">${{ product.selling_price }}</span>
+            {% endif %}
+          {% else %}
+            <span class="price-unset">Price unavailable</span>
+          {% endif %}
+        </div>
+        <div class="quick-actions" data-product-id="{{ product.id }}">
+          <button type="button" class="quick-btn quick-cart" title="Add to cart" aria-label="Add to cart">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+          </button>
+          <button type="button" class="quick-btn quick-wishlist" title="Add to wishlist" aria-label="Add to wishlist">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </a>
+  {% endwith %}
+{% endfor %}
+
+{% if recommended_stores %}
+  <div class="store-row">
+    <div class="store-row-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      Stores you might like
+    </div>
+    <div class="store-row-strip">
+      {% for store in recommended_stores %}
+        <a href="{% url 'show_store' store.id %}" class="store-chip">
+          {% if store.logo %}
+            <img src="{{ store.logo.url }}" alt="{{ store.name }}">
+          {% else %}
+            <div class="store-chip-fallback">{{ store.name|slice:":1" }}</div>
+          {% endif %}
+          <span>{{ store.name|default:"Store" }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

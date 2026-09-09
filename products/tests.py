@@ -28,13 +28,15 @@ from django.test import TestCase
 from django.urls import reverse
 
 from merchant_interface.models import Membership, Niche, Store
-from orders.models import (Cart, CartItem, Order, OrderItem, Wishlist,
+from shopper_interface.models import (Cart, CartItem, Wishlist,
                            WishlistItem)
+from orders.models import Order, OrderItem, StoreOrder
 from products.forms import (ProductForm, ProductImageFormSet, Review_Form,
                             SpecForm, SpecFormSet, Suggest_Category_Form)
 from products.models import (Category, Product, Product_Image, Review, Spec,
                              SpecType, SuggestedCategory)
 
+ 
 # A minimal valid 1x1 transparent GIF, used anywhere Product_Image.image needs
 # real (small) file bytes.
 TINY_GIF = (
@@ -79,7 +81,13 @@ class ProductsTestBase(TestCase):
         # --- Store / membership ---
         cls.niche = Niche.objects.create(name="Electronics")
         cls.store = Store.objects.create(name="Owner's Store", niche=cls.niche)
-        Membership.objects.create(user=cls.owner, store=cls.store, role="owner")
+        Membership.objects.create(
+            user=cls.owner,
+            store=cls.store,
+            role="owner",
+            wage_type="percentage",
+            wage=100,
+        )
         Membership.objects.create(user=cls.helper_user, store=cls.store, role="helper")
 
         # A second store the owner has NO membership in, to test permission checks
@@ -128,7 +136,13 @@ class ProductsTestBase(TestCase):
             status="Delivered",
             total_price=self.product.selling_price,
         )
-        OrderItem.objects.create(order=order, product=self.product, quantity=1)
+
+        store_order = StoreOrder.objects.create(
+    order=order, store=self.product.store, status="Delivered"
+)
+        OrderItem.objects.create(
+            store_order=store_order, product=self.product, quantity=1
+        )
         return order
 
 

@@ -4,8 +4,8 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
 from merchant_interface.models import Membership, Store
-from orders.models import Cart, CartItem, OrderItem, Wishlist, WishlistItem
-from shopper_interface.models import RecentlyViewed
+from shopper_interface.models import Cart, CartItem, Wishlist, WishlistItem, RecentlyViewed
+from orders.models import OrderItem
 from shopper_interface.recommendations import get_related_products
 
 from .forms import (ProductForm, ProductImageFormSet, Review_Form, SpecFormSet,
@@ -198,8 +198,8 @@ def View_Product(request, product_id):
     review_form = None
     if request.user.is_authenticated:
         has_purchased = OrderItem.objects.filter(
-            order__user=request.user,
-            order__status="Delivered",
+            store_order__order__user=request.user,
+            store_order__status="Delivered",
             product=product,
         ).exists()
         if has_purchased:

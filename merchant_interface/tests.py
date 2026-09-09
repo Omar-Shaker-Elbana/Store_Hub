@@ -64,8 +64,16 @@ def make_store(name="My Store", niche=None, enabled=True):
 
 
 def make_membership(
-    user, store, role="helper", wage_type="salary", wage=None, join_date=None
+    user, store, role="helper", wage_type=None, wage=None, join_date=None
 ):
+    # Membership.clean() requires owners to be paid in "percentage", and the
+    # percentage_wage_capped_at_100 constraint rejects a NULL wage under
+    # wage_type="percentage" — so an owner needs both an explicit wage_type
+    # and a numeric wage unless the caller overrides them.
+    if wage_type is None:
+        wage_type = "percentage" if role == "owner" else "salary"
+    if wage is None and role == "owner" and wage_type == "percentage":
+        wage = Decimal("100.00")
     return Membership.objects.create(
         user=user,
         store=store,
@@ -583,7 +591,17 @@ class ManageStoreInvitationsViewTests(TestCase):
 
     def test_manager_cannot_invite_as_owner(self):
         manager = make_user("manager1")
-        make_membership(manager, self.store, role="manager")
+        # Give the manager enough of their own profit share to clear the
+        # invitation form's wage-availability check, so this test actually
+        # reaches — and exercises — the view's "only an owner can invite
+        # as owner" rule, instead of failing on wage validation first.
+        make_membership(
+            manager,
+            self.store,
+            role="manager",
+            wage_type="percentage",
+            wage=Decimal("100.00"),
+        )
         self.client.force_login(manager)
         resp = self.client.post(
             reverse("manage_store_invitations", args=[self.store.id]),
@@ -591,8 +609,8 @@ class ManageStoreInvitationsViewTests(TestCase):
                 "send_invitation_btn": "1",
                 "invitee_email": "wannabeowner@example.com",
                 "role": "owner",
-                "wage_type": "salary",
-                "wage": "1000",
+                "wage_type": "percentage",
+                "wage": "50",
             },
         )
         self.assertRedirects(
