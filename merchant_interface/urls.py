@@ -36,6 +36,7 @@ urlpatterns = [
         views.manage_store_inventory,
         name="manage_store_inventory",
     ),
+    path("become-merchant/", views.become_merchant, name="become_merchant"),
     # path("store/<int:store_id>/members/", views.store_members, name="store_members"),
     # was views.my_store / "my_store" — function is actually store_analytics
     # path(

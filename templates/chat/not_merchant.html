@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Merchants Only | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --radius:18px;
+    --radius-sm:10px;
+    --shadow-lg:0 20px 60px rgba(15,23,42,.22);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    height:100vh;overflow:hidden;
+  }
+  h1{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+
+  @keyframes overlayIn{from{opacity:0}to{opacity:1}}
+  @keyframes popIn{from{opacity:0;transform:scale(.92) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+  #page-backdrop{position:fixed;inset:0;filter:blur(2px);opacity:.5;pointer-events:none}
+  #page-backdrop nav{
+    background:var(--surface);display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+  }
+  #page-backdrop .brand img{width:120px;height:auto;display:block}
+  #page-backdrop .nav-links{display:flex;align-items:center;gap:26px}
+  #page-backdrop .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
+  #page-backdrop .filler{padding:60px 40px;color:var(--muted);font-size:14px}
+
+  #overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,.55);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    animation:overlayIn .25s ease;z-index:1000;
+  }
+
+  .popup-card{
+    background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-lg);
+    max-width:400px;width:100%;padding:34px 30px;text-align:center;
+    animation:popIn .3s cubic-bezier(.2,.8,.3,1.1);
+  }
+  .popup-card .icon-badge{
+    width:56px;height:56px;border-radius:18px;background:var(--accent-light);color:var(--accent);
+    display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;
+  }
+  .popup-card h1{font-size:20px;font-weight:800;letter-spacing:-.02em}
+  .popup-card p{color:var(--muted);font-size:14px;margin-top:8px;line-height:1.55}
+
+  .become-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;
+    background:var(--accent);color:#fff;width:100%;
+    font-size:15px;font-weight:700;padding:13px 24px;border-radius:var(--radius-sm);
+    margin-top:22px;transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .become-btn:hover{background:var(--accent-2);transform:translateY(-1px);box-shadow:0 8px 20px rgba(26,73,170,.3)}
+  .become-btn:active{transform:translateY(0)}
+
+  .dismiss-link{
+    display:block;margin-top:14px;font-size:12.5px;color:var(--muted);font-weight:600;
+  }
+  .dismiss-link:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div id="page-backdrop">
+  <nav>
+    <a href="{% url 'home' %}" class="brand">
+      <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+    </a>
+    <div class="nav-links">
+      <a href="{% url 'home' %}">Home</a>
+      <a href="{% url 'profile' %}">Profile</a>
+    </div>
+  </nav>
+  <div class="filler">StoreHub</div>
+</div>
+
+<div id="overlay">
+  <div class="popup-card">
+    <div class="icon-badge">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3z"/><path d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7"/><path d="M9 21V12h6v9"/></svg>
+    </div>
+    <h1>Merchants only</h1>
+    <p>Chat is only available to registered merchants. Becoming one only takes a few seconds.</p>
+
+    <a href="{% url 'become_merchant' %}" class="become-btn">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Become a Merchant
+    </a>
+    <a href="{% url 'home' %}" class="dismiss-link">Not right now, take me home</a>
+  </div>
+</div>
+
+</body>
+</html>

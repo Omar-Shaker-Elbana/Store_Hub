@@ -5,39 +5,443 @@
 <meta charset="UTF-8">
 <title>Inbox | StoreHub</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:70px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+  ul{list-style:none;margin:0;padding:0}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
+
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-links a.current{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+  /* ---------- header ---------- */
+  .page-head{
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+    padding:44px 0 28px;animation:slideInUp .5s ease;
+  }
+  .page-head .icon-badge{
+    width:46px;height:46px;border-radius:14px;background:var(--accent-light);color:var(--accent);
+    display:inline-flex;align-items:center;justify-content:center;margin-right:14px;flex-shrink:0;
+  }
+  .page-head h1{font-size:26px;font-weight:800;color:var(--text);display:flex;align-items:center}
+  .page-head p{color:var(--muted);font-size:14px;margin-top:4px}
+
+  .layout{
+    display:grid;grid-template-columns:1.15fr .85fr;gap:26px;
+    animation:slideInUp .55s ease .05s both;
+  }
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} }
+
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;
+  }
+  .panel-head{
+    padding:20px 22px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .panel-head h2{font-size:15.5px;font-weight:700;color:var(--text)}
+  .count-pill{
+    background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:700;
+    padding:3px 10px;border-radius:999px;
+  }
+
+  /* ---------- conversation list ---------- */
+  .convo-item{
+    display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--border);
+    cursor:pointer;transition:background .15s ease;position:relative;animation:slideInUp .4s ease both;
+  }
+  .convo-item:last-child{border-bottom:none}
+  .convo-item:hover{background:var(--accent-light)}
+  .convo-item:hover .avatar{transform:scale(1.05)}
+
+  .avatar{
+    width:46px;height:46px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    color:#fff;font-weight:700;font-size:16px;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .2s ease;position:relative;
+  }
+  .avatar.dot::after{
+    content:"";position:absolute;bottom:1px;right:1px;width:11px;height:11px;
+    border-radius:50%;background:var(--success);border:2px solid var(--surface);
+  }
+
+  .convo-body{flex:1;min-width:0}
+  .convo-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .convo-name{font-weight:700;font-size:14.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .convo-time{font-size:12px;color:var(--muted);flex-shrink:0}
+  .convo-snippet{
+    font-size:13.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;
+  }
+  .convo-item.unread .convo-name{color:var(--accent)}
+  .convo-item.unread .convo-snippet{color:var(--text);font-weight:600}
+
+  .unread-badge{
+    background:var(--orange);color:#fff;font-size:11px;font-weight:800;
+    min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    box-shadow:0 3px 8px rgba(255,153,34,.35);
+  }
+
+  /* ---------- search box ---------- */
+  .search-box{padding:16px 22px;border-bottom:1px solid var(--border);position:relative}
+  .search-box svg{position:absolute;left:36px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+  .search-box input{
+    width:100%;padding:11px 14px 11px 38px;border:1px solid var(--border);border-radius:var(--radius-sm);
+    font-family:inherit;font-size:14px;background:var(--bg);color:var(--text);
+    transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+  }
+  .search-box input:focus{
+    outline:none;border-color:var(--accent-2);background:var(--surface);
+    box-shadow:0 0 0 3px rgba(59,111,224,.15);
+  }
+
+  /* ---------- merchant picker ---------- */
+  .merchant-row{
+    display:flex;align-items:center;gap:12px;padding:13px 22px;border-bottom:1px solid var(--border);
+    transition:background .15s ease;animation:slideInUp .4s ease both;
+  }
+  .merchant-row:last-child{border-bottom:none}
+  .merchant-row:hover{background:var(--bg)}
+  .merchant-row .avatar{width:38px;height:38px;font-size:13.5px}
+  .merchant-info{flex:1;min-width:0}
+  .merchant-info .name{font-weight:600;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .merchant-info .email{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .chat-btn{
+    display:inline-flex;align-items:center;gap:6px;border:none;background:var(--accent);color:#fff;
+    font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:var(--radius-sm);
+    transition:transform .15s ease, background .15s ease, box-shadow .15s ease;flex-shrink:0;
+  }
+  .chat-btn:hover{background:var(--accent-2);transform:translateY(-1px);box-shadow:0 6px 16px rgba(26,73,170,.25)}
+  .chat-btn:active{transform:translateY(0)}
+  .chat-btn.loading{pointer-events:none;color:transparent;position:relative}
+  .chat-btn.loading::after{
+    content:"";position:absolute;width:14px;height:14px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.5);border-top-color:#fff;animation:spin .6s linear infinite;
+  }
+
+  /* ---------- empty state ---------- */
+  .empty-state{
+    text-align:center;padding:56px 24px;color:var(--muted);
+  }
+  .empty-state svg{color:var(--accent);opacity:.5;margin-bottom:12px}
+  .empty-state h3{color:var(--text);font-size:15.5px;margin-bottom:6px}
+  .empty-state p{font-size:13.5px}
+
+  /* ---------- pagination ---------- */
+  .pagination{
+    display:flex;align-items:center;justify-content:center;gap:6px;padding:16px 22px;border-top:1px solid var(--border);
+  }
+  .pagination a, .pagination span{
+    display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;padding:0 8px;
+    border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--muted);
+    transition:background .15s ease, color .15s ease;
+  }
+  .pagination a:hover{background:var(--accent-light);color:var(--accent)}
+  .pagination .current{background:var(--accent);color:#fff}
+  .pagination .disabled{opacity:.35;pointer-events:none}
+
+  /* ---------- skeleton loading (shown briefly on load) ---------- */
+  .skeleton-row{display:flex;align-items:center;gap:14px;padding:16px 22px}
+  .skeleton-circle{width:46px;height:46px;border-radius:50%;background:var(--border);animation:pulse 1.3s ease-in-out infinite}
+  .skeleton-lines{flex:1}
+  .skeleton-line{height:10px;border-radius:6px;background:var(--border);animation:pulse 1.3s ease-in-out infinite}
+  .skeleton-line.short{width:40%;margin-top:8px}
+  .skeleton-line.long{width:75%}
+  #skeleton-wrap{display:none}
+  #skeleton-wrap.show{display:block}
+  #real-list.hide{display:none}
+
+  @media (max-width:640px){
+    nav{padding:10px 14px}
+    .page-head{padding:30px 0 20px}
+    .page-head h1{font-size:21px}
+  }
+</style>
 </head>
+
 <body>
+<div id="topbar"></div>
 
-<h2>Conversations</h2>
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'chat:inbox' %}" class="current">Chat</a>
+    <a href="{% url 'profile' %}">Profile</a>
+  </div>
+</nav>
 
-<ul>
-  {% for row in conversation_rows %}
-    <li>
-      <a href="{% url 'chat:conversation_detail' row.conversation.id %}">
-        {{ row.other_user }}
-      </a>
-      {% if row.last_message %}
-        — {{ row.last_message.content|truncatechars:50 }}
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>
+        <span class="icon-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </span>
+        Messages
+      </h1>
+      <p>Chat with other merchants on StoreHub</p>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- ================= Conversations ================= -->
+    <div class="panel" id="conversations-panel">
+      <div class="panel-head">
+        <h2>Conversations</h2>
+        {% if conversation_rows %}
+          <span class="count-pill">{{ conversation_rows|length }}</span>
+        {% endif %}
+      </div>
+
+      <div id="skeleton-wrap">
+        {% for i in "123" %}
+          <div class="skeleton-row">
+            <div class="skeleton-circle"></div>
+            <div class="skeleton-lines">
+              <div class="skeleton-line long"></div>
+              <div class="skeleton-line short"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div id="real-list">
+        {% if conversation_rows %}
+          <ul>
+            {% for row in conversation_rows %}
+              <li>
+                <a href="{% url 'chat:conversation_detail' row.conversation.id %}"
+                  class="convo-item {% if row.unread_count %}unread{% endif %}"
+                  data-delay="{{ forloop.counter }}0">
+                  <div class="avatar dot">{{ row.other_user|stringformat:"s"|first|upper }}</div>
+                  <div class="convo-body">
+                    <div class="convo-top">
+                      <span class="convo-name">{{ row.other_user }}</span>
+                      {% if row.last_message_at %}
+                        <span class="convo-time">{{ row.last_message_at|timesince }} ago</span>
+                      {% endif %}
+                    </div>
+                    <div class="convo-snippet">
+                      {% if row.last_message_content %}
+                        {{ row.last_message_content|truncatechars:56 }}
+                      {% else %}
+                        No messages yet — say hello.
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if row.unread_count %}
+                    <span class="unread-badge">{{ row.unread_count }}</span>
+                  {% endif %}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty-state">
+            <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <h3>No conversations yet</h3>
+            <p>Pick a merchant on the right to start chatting.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ================= Merchant picker ================= -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Start a new conversation</h2>
+        {% if merchant_page.paginator.count %}
+          <span class="count-pill">{{ merchant_page.paginator.count }}</span>
+        {% endif %}
+      </div>
+
+      <form method="get" class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" name="q" value="{{ query }}" placeholder="Search merchants by name or email…">
+      </form>
+
+      {% if merchants %}
+        <div>
+          {% for merchant in merchants %}
+            <div class="merchant-row" data-delay="{{ forloop.counter }}0">
+              <div class="avatar">{{ merchant|stringformat:"s"|first|upper }}</div>
+              <div class="merchant-info">
+                <div class="name">{{ merchant.get_full_name|default:merchant }}</div>
+                {% if merchant.email %}<div class="email">{{ merchant.email }}</div>{% endif %}
+              </div>
+              <form method="post" action="{% url 'chat:start_conversation' merchant.id %}" class="start-form">
+                {% csrf_token %}
+                <button type="submit" class="chat-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                  Chat
+                </button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if merchant_page.paginator.num_pages > 1 %}
+          <div class="pagination">
+            {% if merchant_page.has_previous %}
+              <a href="?q={{ query }}&amp;merchant_page={{ merchant_page.previous_page_number }}">‹</a>
+            {% else %}
+              <span class="disabled">‹</span>
+            {% endif %}
+            {% for num in merchant_page.paginator.page_range %}
+              {% if num == merchant_page.number %}
+                <span class="current">{{ num }}</span>
+              {% else %}
+                <a href="?q={{ query }}&amp;merchant_page={{ num }}">{{ num }}</a>
+              {% endif %}
+            {% endfor %}
+            {% if merchant_page.has_next %}
+              <a href="?q={{ query }}&amp;merchant_page={{ merchant_page.next_page_number }}">›</a>
+            {% else %}
+              <span class="disabled">›</span>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+          <h3>{% if query %}No merchants match "{{ query }}"{% else %}No other merchants yet{% endif %}</h3>
+          <p>{% if query %}Try a different search.{% else %}Check back once more merchants join.{% endif %}</p>
+        </div>
       {% endif %}
-      {% if row.unread_count %}
-        <strong>({{ row.unread_count }} unread)</strong>
-      {% endif %}
-    </li>
-  {% empty %}
-    <li>No conversations yet.</li>
-  {% endfor %}
-</ul>
+    </div>
+  </div>
+</div>
 
-<h3>Start a new conversation</h3>
-<ul>
-  {% for merchant in merchants %}
-    <li>
-      <a href="{% url 'chat:start_conversation' merchant.id %}">{{ merchant }}</a>
-    </li>
-  {% empty %}
-    <li>No other merchants to chat with yet.</li>
-  {% endfor %}
-</ul>
+<script>
+  // Brief top-loading bar + skeleton, so the panel doesn't just "pop" in.
+  var topbar = document.getElementById('topbar');
+  topbar.classList.add('loading');
 
+  window.addEventListener('load', function () {
+    topbar.style.width = '100%';
+    setTimeout(function () { topbar.style.opacity = '0'; }, 250);
+  });
+
+  // Auto-dismiss toasts
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('#toast-stack .toast').forEach(function (toast, i) {
+      setTimeout(function () {
+        toast.classList.add('hide');
+        setTimeout(function () { toast.remove(); }, 400);
+      }, 4200 + i * 150);
+    });
+
+    // Show a quick skeleton pass on first paint, then reveal the real list.
+    // Purely cosmetic - the data is already server-rendered above.
+    var skeleton = document.getElementById('skeleton-wrap');
+    var realList = document.getElementById('real-list');
+    if (sessionStorage.getItem('chat_inbox_seen')) {
+      return; // only show the skeleton flourish the first time per session
+    }
+    sessionStorage.setItem('chat_inbox_seen', '1');
+    skeleton.classList.add('show');
+    realList.classList.add('hide');
+    setTimeout(function () {
+      skeleton.classList.remove('show');
+      realList.classList.remove('hide');
+    }, 420);
+  });
+
+  // Loading state on the "Chat" button so a double-click can't fire two
+  // start_conversation requests.
+  document.querySelectorAll('.start-form').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      var btn = form.querySelector('.chat-btn');
+      btn.classList.add('loading');
+      btn.disabled = true;
+    });
+  });
+</script>
 </body>
 </html>

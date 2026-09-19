@@ -178,6 +178,7 @@
   <div class="nav-links">
     <a href="{% url 'home' %}">Home</a>
     <a href="{% url 'all_my_stores' %}" class="active">My Stores</a>
+    <a href="{% url 'chat:inbox' %}">Chat</a>
     <a href="{% url 'profile' %}">Profile</a>
   </div>
 </nav>
@@ -258,6 +259,7 @@
 
             <div class="store-actions">
               <a href="{% url 'show_store' membership.store.id %}">View store</a>
+              <a href="{% url 'chat:store_announcements' membership.store.id %}" class="secondary">Announcements</a>
               {% if membership.role in "owner,manager" %}
                 <a href="{% url 'manage_store_invitations' membership.store.id %}" class="secondary">Members</a>
                 <a href="{% url 'manage_store_invitations' membership.store.id %}" class="secondary">Invitations</a>

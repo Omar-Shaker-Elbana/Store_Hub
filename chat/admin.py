@@ -12,6 +12,7 @@ class DirectMessageAttachmentInline(admin.TabularInline):
 @admin.register(DirectConversation)
 class DirectConversationAdmin(admin.ModelAdmin):
     list_display = ("id", "participant_one", "participant_two", "updated_at")
+    list_select_related = ("participant_one", "participant_two")
     search_fields = ("participant_one__email", "participant_two__email")
 
 
@@ -19,6 +20,8 @@ class DirectConversationAdmin(admin.ModelAdmin):
 class DirectMessageAdmin(admin.ModelAdmin):
     list_display = ("id", "conversation", "sender", "created_at", "is_read")
     list_filter = ("is_read",)
+    list_select_related = ("conversation", "sender")
+    raw_id_fields = ("conversation", "sender")
     inlines = [DirectMessageAttachmentInline]
 
 

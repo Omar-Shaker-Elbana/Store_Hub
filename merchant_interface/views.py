@@ -12,6 +12,7 @@ from notifications.models import Notification
 from orders.forms import StoreOrderStatusForm
 from orders.models import StoreOrder
 from products.models import Product
+from users.models import Profile
 
 from .forms import (MembershipForm, MembershipInvitationForm, StoreForm,
                     SuggestNicheForm)
@@ -996,6 +997,23 @@ def manage_store_inventory(request, store_id):
     }
     return render(request, "merchant_interface/manage_store_inventory.html", context)
 
+@login_required
+def become_merchant(request):
+    """Landing page for shoppers who hit a merchant-only feature. A POST
+    here just flips the flag - no separate application/approval flow yet."""
+    profile = getattr(request.user, "profile", None)
+    if profile and profile.is_merchant:
+        messages.info(request, "You're already registered as a merchant.")
+        return redirect("all_my_stores")
+
+    if request.method == "POST":
+        profile, _created = Profile.objects.get_or_create(user=request.user)
+        profile.is_merchant = True
+        profile.save()
+        messages.success(request, "You're now a merchant! Welcome aboard.")
+        return redirect("all_my_stores")
+
+    return render(request, "merchant_interface/become_merchant.html")
 
 # @login_required
 # def store_analytics(request, store_id):
