@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "shopper_interface",
     "merchant_interface",
     "chat",
+    "fulfillment",
     # allauth
     "allauth",
     "allauth.account",

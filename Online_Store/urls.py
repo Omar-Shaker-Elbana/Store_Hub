@@ -31,6 +31,7 @@ urlpatterns = [
     path("shopper/", include("shopper_interface.urls")),
     path("merchant/", include("merchant_interface.urls")),
     path("chat/", include("chat.urls")),
+    path("fulfillment/", include("fulfillment.urls")),
 ]
 
 if settings.DEBUG:

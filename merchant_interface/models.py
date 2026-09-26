@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -55,6 +57,15 @@ class Membership(models.Model):
     wage = models.DecimalField(
         null=True,
         blank=True,
+        decimal_places=2,
+        max_digits=10,
+        validators=[MinValueValidator(0)],
+    )
+    # In-app wallet balance, credited by the fulfillment app when a
+    # percentage-wage staffer finishes processing a StoreOrder. Arbitrary
+    # for now — there's no real payout/withdrawal flow yet.
+    wallet_balance = models.DecimalField(
+        default=Decimal("0.00"),
         decimal_places=2,
         max_digits=10,
         validators=[MinValueValidator(0)],
