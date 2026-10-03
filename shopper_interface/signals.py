@@ -47,7 +47,13 @@ def log_wishlist_add(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=OrderItem)
 def log_purchase(sender, instance, created, **kwargs):
-    if created:
+    if (
+        created
+        and instance.store_order_id
+        and instance.store_order.order_id
+        and instance.store_order.order.user_id
+        and instance.product_id
+    ):
         Interaction.objects.create(
             user=instance.store_order.order.user,
             product=instance.product,

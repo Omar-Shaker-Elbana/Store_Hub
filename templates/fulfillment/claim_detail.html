@@ -1,0 +1,543 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Order #{{ claim.store_order.order_id }} | {{ store.name|default:"Store" }} | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;padding-bottom:70px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
+  @keyframes popBadge{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+  @keyframes countUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
+
+  nav{
+    background:var(--surface);display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:13.5px;margin:18px 0 0}
+  .back-link:hover{text-decoration:underline}
+
+  .hero{text-align:center;padding:26px 24px 22px;animation:slideInUp .5s ease}
+  .hero .icon-badge{
+    width:64px;height:64px;border-radius:18px;margin:0 auto 18px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:var(--shadow-lg);
+  }
+  .hero.finished .icon-badge{background:linear-gradient(135deg,var(--success),#22c55e);animation:popBadge .5s ease both}
+  .hero h1{font-size:26px;margin-bottom:6px}
+  .hero p{color:var(--muted);font-size:14px;max-width:480px;margin:0 auto}
+  .hero .store-name{color:var(--accent)}
+
+  .status-ribbon{
+    display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:11.5px;font-weight:700;
+    padding:5px 14px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;
+  }
+  .status-ribbon.claimed{background:var(--accent-light);color:var(--accent)}
+  .status-ribbon.finished{background:var(--success-light);color:var(--success)}
+  .status-ribbon.released{background:#fff4e0;color:#b45309}
+  .status-ribbon.expired{background:var(--danger-light);color:var(--danger)}
+
+  .detail-grid{display:grid;grid-template-columns:1fr 340px;gap:26px;align-items:flex-start;margin-top:8px}
+  @media(max-width:940px){.detail-grid{grid-template-columns:1fr}}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px;box-shadow:var(--shadow);animation:slideInUp .5s ease both;margin-bottom:22px;
+  }
+  .card:last-child{margin-bottom:0}
+  .card h3{font-size:16px;margin-bottom:4px}
+  .card .subtext{color:var(--muted);font-size:13px;margin-bottom:18px}
+
+  /* ---------- order items ---------- */
+  .order-item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .order-item-row:last-of-type{border-bottom:none}
+  .item-thumb{
+    width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;
+  }
+  .item-thumb img{width:100%;height:100%;object-fit:cover}
+  .item-thumb svg{color:var(--accent);opacity:.55}
+  .item-info{flex:1;min-width:0}
+  .item-name{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item-unit{font-size:11.5px;color:var(--muted)}
+  .item-qty{font-size:12.5px;color:var(--muted);font-weight:600;flex-shrink:0;padding:0 6px}
+  .item-line-total{font-size:13.5px;font-weight:700;color:var(--accent);flex-shrink:0;width:70px;text-align:right}
+
+  .order-subtotal-row{display:flex;justify-content:space-between;align-items:center;padding-top:16px;margin-top:6px;border-top:2px solid var(--border)}
+  .order-subtotal-row .label{font-size:13px;color:var(--muted);font-weight:600}
+  .order-subtotal-row .value{font-size:18px;font-weight:800;font-family:'Poppins',sans-serif;color:var(--accent)}
+
+  /* ---------- delivery info ---------- */
+  .info-row{display:flex;gap:12px;padding:10px 0}
+  .info-icon{
+    width:34px;height:34px;border-radius:10px;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .info-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+  .info-value{font-size:13.5px;font-weight:600;margin-top:2px}
+
+  /* ---------- sidebar: claim status ---------- */
+  .sidebar{position:sticky;top:86px}
+  .claimant-row{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .claimant-avatar{
+    width:36px;height:36px;border-radius:50%;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13.5px;flex-shrink:0;
+    font-family:'Poppins',sans-serif;
+  }
+  .claimant-name{font-size:13.5px;font-weight:700}
+  .claimant-sub{font-size:11.5px;color:var(--muted)}
+
+  .timer-block{margin-bottom:18px}
+  .timer-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .timer-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+  .timer-value{font-size:20px;font-weight:800;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums}
+  .timer-value.warn{color:var(--orange)}
+  .timer-value.urgent{color:var(--danger)}
+  .timer-track{height:8px;border-radius:999px;background:var(--border);overflow:hidden}
+  .timer-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--success));transition:width 1s linear, background .4s ease;width:100%}
+  .timer-fill.warn{background:linear-gradient(90deg,var(--orange),#ffb84d)}
+  .timer-fill.urgent{background:linear-gradient(90deg,var(--danger),#f87171)}
+  .urgent-card{animation:pulseWarn 2s infinite;border-color:rgba(239,68,68,.4) !important}
+
+  .wage-hint{
+    display:flex;gap:9px;background:var(--success-light);color:#15803d;border-radius:var(--radius-sm);
+    padding:11px 14px;font-size:12.5px;line-height:1.5;margin-bottom:18px;
+  }
+  .wage-hint svg{flex-shrink:0;margin-top:1px}
+
+  .outcome-figures{display:flex;flex-direction:column;gap:12px;margin-bottom:6px}
+  .outcome-figure{display:flex;justify-content:space-between;align-items:baseline}
+  .outcome-figure .label{font-size:12.5px;color:var(--muted)}
+  .outcome-figure .value{font-size:17px;font-weight:800;font-family:'Poppins',sans-serif;animation:countUp .4s ease both}
+  .outcome-figure .value.accent{color:var(--accent)}
+  .outcome-note{font-size:12.5px;color:var(--muted);line-height:1.5;padding-top:10px;border-top:1px solid var(--border);margin-top:6px}
+
+  .btn-primary{
+    width:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:13px 20px;border-radius:999px;font-weight:600;font-size:14px;
+    display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;
+    transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-ghost{
+    width:100%;background:var(--danger-light);color:var(--danger);border:none;padding:11px 20px;
+    border-radius:999px;font-weight:600;font-size:13.5px;transition:background .2s;
+  }
+  .btn-ghost:hover{background:#fde2e2}
+  .btn-spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite;display:none}
+  .btn-primary.loading .btn-spinner{display:inline-block}
+  .btn-primary.loading .btn-text{font-size:0}
+  .btn-primary.loading .btn-text::after{content:"Finishing...";font-size:14px}
+
+  .no-action-note{
+    display:flex;gap:9px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:12px 14px;font-size:12.5px;color:var(--muted);line-height:1.5;
+  }
+  .no-action-note svg{flex-shrink:0;color:var(--accent);margin-top:1px}
+
+  /* ---------- confirm modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9997;
+    display:none;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease;
+  }
+  .modal-overlay.open{display:flex}
+  .modal-box{
+    background:var(--surface);border-radius:var(--radius);padding:26px;
+    max-width:380px;width:100%;box-shadow:var(--shadow-lg);animation:scaleIn .25s ease;
+  }
+  .modal-icon{
+    width:46px;height:46px;border-radius:50%;background:var(--danger-light);color:var(--danger);
+    display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+  }
+  .modal-box h3{font-size:17px;margin-bottom:8px}
+  .modal-box p{color:var(--muted);font-size:13.5px;margin:0 0 20px;line-height:1.5}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+  .modal-actions .btn-ghost-cancel{
+    background:var(--bg);color:var(--text);border:1px solid var(--border);padding:9px 16px;
+    border-radius:999px;font-weight:600;font-size:13px;
+  }
+  .modal-actions .btn-danger-confirm{
+    background:linear-gradient(90deg,var(--danger),#f87171);color:#fff;border:none;padding:9px 18px;
+    border-radius:999px;font-weight:600;font-size:13px;
+  }
+
+  @media(max-width:600px){
+    .wrap{padding:0 16px}
+    nav{padding:12px 18px}
+    .nav-links{gap:14px}
+    .card{padding:20px}
+    .hero{padding:22px 16px 20px}
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar"></div>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'all_my_stores' %}">My Stores</a>
+    <a href="{% url 'profile' %}">Profile</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+
+  {% if can_act %}
+    <a href="{% url 'fulfillment:work_pool' store.id %}" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to work pool
+    </a>
+  {% else %}
+    <a href="{% url 'fulfillment:store_overview' store.id %}" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to store overview
+    </a>
+  {% endif %}
+
+  <div class="hero {% if claim.status == 'finished' %}finished{% endif %}">
+    <div class="icon-badge">
+      {% if claim.status == "finished" %}
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+      {% else %}
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      {% endif %}
+    </div>
+    <h1>Order #{{ claim.store_order.order_id }}</h1>
+    <p>{{ store.name|default:"This store" }}'s portion of the order{% if not can_act %} &middot; claimed by {{ claim.claimant }}{% endif %}</p>
+    <span class="status-ribbon {{ claim.status }}">{{ claim.get_status_display }}</span>
+  </div>
+
+  <div class="detail-grid">
+
+    <div>
+      <div class="card">
+        <h3>Order contents</h3>
+        <p class="subtext">What needs to be picked and packed for this claim.</p>
+
+        {% for item in claim.store_order.items.all %}
+          <div class="order-item-row">
+            <div class="item-thumb">
+              {% with img=item.product.images.first %}
+                {% if img %}
+                  <img src="{{ img.image.url }}" alt="{{ item.product.name }}">
+                {% else %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                {% endif %}
+              {% endwith %}
+            </div>
+            <div class="item-info">
+              <div class="item-name">{{ item.product.name|default:"Unnamed product" }}</div>
+              <div class="item-unit">${{ item.price_at_purchase|default:item.product.discounted_price|default:"0.00"|floatformat:2 }} each</div>
+            </div>
+            <div class="item-qty">&times;{{ item.quantity|default:1 }}</div>
+            <div class="item-line-total">
+              ${% widthratio item.price_at_purchase|default:item.product.discounted_price|default:0 1 item.quantity|default:1 %}
+            </div>
+          </div>
+        {% empty %}
+          <p class="subtext" style="margin-bottom:0">No items recorded on this order.</p>
+        {% endfor %}
+
+        <div class="order-subtotal-row">
+          <span class="label">Subtotal</span>
+          <span class="value">${{ claim.store_order.subtotal|default:"0.00"|floatformat:2 }}</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Delivery &amp; payment</h3>
+        <p class="subtext">Customer and checkout details for the full order.</p>
+
+        <div class="info-row">
+          <div class="info-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+          </div>
+          <div>
+            <div class="info-label">Customer</div>
+            <div class="info-value">{% if claim.store_order.order.user %}{{ claim.store_order.order.user }}{% else %}Guest checkout{% endif %}</div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <div class="info-label">Shipping address</div>
+            <div class="info-value">{{ claim.store_order.order.shipping_address|default:"Not provided" }}</div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          </div>
+          <div>
+            <div class="info-label">Payment</div>
+            <div class="info-value">{{ claim.store_order.order.get_payment_type_display|default:"Not recorded" }}</div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div>
+            <div class="info-label">Order placed</div>
+            <div class="info-value">{{ claim.store_order.order.created_at|date:"M j, Y, g:i A" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="card {% if claim.status == 'claimed' %}claim-timer-card{% endif %}" data-claim-card {% if claim.status == "claimed" %}data-deadline="{{ claim.deadline|date:'c' }}"{% endif %}>
+
+        {% if not can_act %}
+          <div class="claimant-row">
+            <div class="claimant-avatar">{{ claim.claimant|stringformat:"s"|first|upper }}</div>
+            <div>
+              <div class="claimant-name">{{ claim.claimant }}</div>
+              <div class="claimant-sub">claimed {{ claim.claimed_at|timesince }} ago</div>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if claim.status == "claimed" %}
+          <div class="timer-block">
+            <div class="timer-row">
+              <span class="timer-label">Time left</span>
+            </div>
+            <div class="timer-value" data-timer-text style="margin-bottom:8px">--</div>
+            <div class="timer-track"><div class="timer-fill" data-timer-fill></div></div>
+          </div>
+
+          {% if can_act %}
+            {% if claim.membership.wage_type == "percentage" %}
+              <div class="wage-hint">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Finishing credits {{ claim.membership.wage|default:"0"|floatformat:0 }}% of $5.00 per item processed to your wallet.</span>
+              </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'fulfillment:finish_claim' claim.id %}" id="finish-form">
+              {% csrf_token %}
+              <button type="submit" class="btn-primary">
+                <span class="btn-spinner"></span>
+                <span class="btn-text">Mark Finished</span>
+              </button>
+            </form>
+            <button type="button" class="btn-ghost" id="release-open-btn">Release Back to Pool</button>
+          {% else %}
+            <div class="no-action-note">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <span>Only {{ claim.claimant }} can finish or release this claim.</span>
+            </div>
+          {% endif %}
+
+        {% elif claim.status == "finished" %}
+          <div class="outcome-figures">
+            <div class="outcome-figure">
+              <span class="label">Items processed</span>
+              <span class="value">{{ claim.items_processed|default:0 }}</span>
+            </div>
+            {% if claim.wage_earned %}
+              <div class="outcome-figure">
+                <span class="label">Wage earned</span>
+                <span class="value accent">${{ claim.wage_earned|floatformat:2 }}</span>
+              </div>
+            {% endif %}
+          </div>
+          <div class="outcome-note">Finished {{ claim.finished_at|date:"M j, Y, g:i A" }} &middot; order moved to Shipped.</div>
+
+        {% elif claim.status == "released" %}
+          <div class="outcome-note" style="border-top:none;padding-top:0;margin-top:0">
+            This claim was voluntarily released back into the pool, originally claimed {{ claim.claimed_at|timesince }} ago. Anyone eligible can pick it up again.
+          </div>
+
+        {% elif claim.status == "expired" %}
+          <div class="outcome-note" style="border-top:none;padding-top:0;margin-top:0">
+            The 24-hour window on this claim ran out and it returned to the pool automatically. Originally claimed {{ claim.claimed_at|timesince }} ago.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="release-modal">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </div>
+    <h3>Release this claim?</h3>
+    <p>Order #{{ claim.store_order.order_id }} will go back into the pool for anyone else to pick up. You'll lose your spot on it.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost-cancel" id="release-modal-cancel">Cancel</button>
+      <form method="POST" action="{% url 'fulfillment:release_claim' claim.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger-confirm">Release</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const topbar = document.getElementById('topbar');
+
+  const finishForm = document.getElementById('finish-form');
+  if (finishForm) {
+    finishForm.addEventListener('submit', function () {
+      const btn = finishForm.querySelector('.btn-primary');
+      btn.classList.add('loading');
+      btn.disabled = true;
+      topbar.classList.add('loading');
+    });
+  }
+
+  const releaseModal = document.getElementById('release-modal');
+  const releaseOpenBtn = document.getElementById('release-open-btn');
+  const releaseCancelBtn = document.getElementById('release-modal-cancel');
+  if (releaseOpenBtn) {
+    releaseOpenBtn.addEventListener('click', function () { releaseModal.classList.add('open'); });
+  }
+  releaseCancelBtn.addEventListener('click', function () { releaseModal.classList.remove('open'); });
+  releaseModal.addEventListener('click', function (e) { if (e.target === releaseModal) releaseModal.classList.remove('open'); });
+  releaseModal.querySelector('form').addEventListener('submit', function () { topbar.classList.add('loading'); });
+
+  // Live countdown for a claimed order
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const WARN_MS = 6 * 60 * 60 * 1000;
+  const URGENT_MS = 60 * 60 * 1000;
+
+  function tickTimer(){
+    const card = document.querySelector('[data-claim-card][data-deadline]');
+    if (!card) return;
+    const deadline = new Date(card.dataset.deadline).getTime();
+    const remaining = deadline - Date.now();
+    const textEl = card.querySelector('[data-timer-text]');
+    const fillEl = card.querySelector('[data-timer-fill]');
+
+    textEl.classList.remove('warn', 'urgent');
+    fillEl.classList.remove('warn', 'urgent');
+    card.classList.remove('urgent-card');
+
+    if (remaining <= 0) {
+      textEl.textContent = 'Expired — refresh the page';
+      fillEl.style.width = '0%';
+      textEl.classList.add('urgent');
+      fillEl.classList.add('urgent');
+      return;
+    }
+
+    const hours = Math.floor(remaining / (60 * 60 * 1000));
+    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+    const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
+    textEl.textContent = hours + 'h ' + minutes + 'm ' + seconds + 's';
+
+    const pct = Math.max(0, Math.min(100, (remaining / DAY_MS) * 100));
+    fillEl.style.width = pct + '%';
+
+    if (remaining <= URGENT_MS) {
+      textEl.classList.add('urgent'); fillEl.classList.add('urgent'); card.classList.add('urgent-card');
+    } else if (remaining <= WARN_MS) {
+      textEl.classList.add('warn'); fillEl.classList.add('warn');
+    }
+  }
+  tickTimer();
+  setInterval(tickTimer, 1000);
+
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
+</script>
+
+</body>
+</html>

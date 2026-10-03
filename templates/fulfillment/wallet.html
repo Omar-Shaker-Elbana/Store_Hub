@@ -1,0 +1,309 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Wallet | {{ store.name|default:"Store" }} | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;padding-bottom:70px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes popDot{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  @keyframes growLine{from{height:0}to{height:100%}}
+  @keyframes ringPop{0%{transform:scale(.8);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+  @keyframes floatCoin{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999}
+
+  nav{
+    background:var(--surface);display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+  }
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
+  .toast.error{border-left-color:var(--danger)}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
+
+  .wrap{max-width:820px;margin:0 auto;padding:0 24px}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:13.5px;margin:18px 0 0}
+  .back-link:hover{text-decoration:underline}
+
+  .hero{text-align:center;padding:26px 24px 6px;animation:slideInUp .5s ease}
+  .hero .icon-badge{
+    width:64px;height:64px;border-radius:18px;margin:0 auto 18px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:var(--shadow-lg);
+    animation:ringPop .5s ease both;
+  }
+  .hero h1{font-size:28px;margin-bottom:8px}
+  .hero p{color:var(--muted);font-size:14.5px;max-width:460px;margin:0 auto}
+  .hero .store-name{color:var(--accent)}
+
+  /* ---------- balance hero card ---------- */
+  .balance-card{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:var(--radius);
+    padding:36px 30px;text-align:center;margin:24px 0;box-shadow:var(--shadow-lg);
+    animation:slideInUp .5s ease .05s both;position:relative;overflow:hidden;
+  }
+  .balance-card::before{
+    content:'';position:absolute;top:-40%;right:-10%;width:220px;height:220px;border-radius:50%;
+    background:rgba(255,255,255,.08);
+  }
+  .balance-card::after{
+    content:'';position:absolute;bottom:-50%;left:-5%;width:180px;height:180px;border-radius:50%;
+    background:rgba(255,255,255,.06);
+  }
+  .balance-icon{
+    width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);margin:0 auto 14px;
+    display:flex;align-items:center;justify-content:center;animation:floatCoin 3s ease-in-out infinite;position:relative;z-index:1;
+  }
+  .balance-label{font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;opacity:.85;position:relative;z-index:1}
+  .balance-amount{
+    font-size:48px;font-weight:800;font-family:'Poppins',sans-serif;margin:8px 0 14px;position:relative;z-index:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .balance-meta{
+    display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;
+    background:rgba(255,255,255,.16);padding:6px 14px;border-radius:999px;position:relative;z-index:1;
+  }
+
+  .salary-note{
+    display:flex;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:14px 16px;font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:26px;
+    animation:slideInUp .5s ease .1s both;
+  }
+  .salary-note svg{flex-shrink:0;color:var(--accent);margin-top:1px}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px;box-shadow:var(--shadow);animation:slideInUp .5s ease .1s both;
+  }
+  .card h3{font-size:17px;margin-bottom:4px}
+  .card .subtext{color:var(--muted);font-size:13.5px;margin-bottom:20px}
+
+  /* ---------- transaction timeline ---------- */
+  .timeline{position:relative}
+  .timeline-track{position:absolute;left:19px;top:6px;bottom:6px;width:2px;background:var(--border)}
+  .timeline-track-fill{position:absolute;left:0;top:0;width:100%;background:linear-gradient(var(--success),var(--accent-2));animation:growLine .8s ease both}
+  .timeline-item{position:relative;display:flex;gap:16px;padding-bottom:22px;animation:slideInUp .4s ease both}
+  .timeline-item:last-child{padding-bottom:0}
+  .timeline-dot-col{position:relative;width:40px;flex-shrink:0;display:flex;justify-content:center}
+  .timeline-dot{
+    width:40px;height:40px;border-radius:50%;background:var(--success-light);border:2px solid var(--success);
+    display:flex;align-items:center;justify-content:center;color:var(--success);z-index:2;
+    box-shadow:var(--shadow);animation:popDot .4s ease both;
+  }
+  .timeline-card{
+    flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:14px 16px;transition:border-color .2s ease;
+  }
+  .timeline-card:hover{border-color:var(--accent-2)}
+  .timeline-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .txn-amount{font-size:16px;font-weight:800;font-family:'Poppins',sans-serif;color:var(--success);white-space:nowrap;flex-shrink:0}
+  .txn-desc{font-size:13px;color:var(--text);line-height:1.5;flex:1;min-width:0}
+  .txn-date{font-size:11.5px;color:var(--muted);margin-top:7px}
+  .txn-link{font-size:12px;font-weight:600;color:var(--accent);margin-top:7px;display:inline-block}
+  .txn-link:hover{text-decoration:underline}
+
+  .empty-state{
+    background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);
+    padding:56px 24px;text-align:center;animation:slideInUp .5s ease .1s both;
+  }
+  .empty-state svg{color:var(--accent);opacity:.5;margin-bottom:12px}
+  .empty-state h3{font-size:16px;margin-bottom:6px}
+  .empty-state p{color:var(--muted);font-size:13.5px;max-width:320px;margin:0 auto}
+
+  @media(max-width:600px){
+    .wrap{padding:0 16px}
+    nav{padding:12px 18px}
+    .nav-links{gap:14px}
+    .card,.empty-state{padding:20px}
+    .hero{padding:22px 16px 4px}
+    .balance-amount{font-size:38px}
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar"></div>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand">
+    <img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo">
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'fulfillment:work_pool' store.id %}">Work Pool</a>
+    {% if membership.role == "owner" or membership.role == "manager" %}
+      <a href="{% url 'fulfillment:store_overview' store.id %}">Store Overview</a>
+    {% endif %}
+    <a href="{% url 'fulfillment:my_wallet' store.id %}" class="active">My Wallet</a>
+    <a href="{% url 'all_my_stores' %}">My Stores</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="wrap">
+
+  <a href="{% url 'fulfillment:work_pool' store.id %}" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to work pool
+  </a>
+
+  <div class="hero">
+    <div class="icon-badge">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+    </div>
+    <h1>My Wallet</h1>
+    <p>Earnings from finished claims at <span class="store-name">{{ store.name|default:"this store" }}</span>.</p>
+  </div>
+
+  <div class="balance-card">
+    <div class="balance-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div class="balance-label">Current balance</div>
+    <div class="balance-amount" data-count-to="{{ membership.wallet_balance|default:'0.00'|floatformat:2 }}">$0.00</div>
+    <div class="balance-meta">
+      {% if membership.wage_type == "percentage" %}
+        Earning {{ membership.wage|default:"0"|floatformat:0 }}% per item processed
+      {% else %}
+        Salaried role
+      {% endif %}
+    </div>
+  </div>
+
+  {% if membership.wage_type != "percentage" %}
+    <div class="salary-note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>Your pay here is salaried rather than per-order, so this wallet won't accrue money automatically from finished claims. Talk to your store owner if you think this should change.</span>
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <h3>Transaction history</h3>
+    <p class="subtext">Every payout, tied back to the order that earned it.</p>
+
+    {% if transactions %}
+      <div class="timeline">
+        <div class="timeline-track"><div class="timeline-track-fill"></div></div>
+
+        {% for txn in transactions %}
+          <div class="timeline-item">
+            <div class="timeline-dot-col">
+              <div class="timeline-dot">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="timeline-card-top">
+                <span class="txn-desc">{{ txn.description|default:"Wallet credit" }}</span>
+                <span class="txn-amount">+${{ txn.amount|floatformat:2 }}</span>
+              </div>
+              <div class="txn-date">{{ txn.created_at|date:"M j, Y, g:i A" }}</div>
+              {% if txn.claim %}
+                <a href="{% url 'fulfillment:claim_detail' txn.claim.id %}" class="txn-link">View order #{{ txn.claim.store_order.order_id }} &rarr;</a>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        <h3>No earnings yet</h3>
+        <p>{% if membership.wage_type == "percentage" %}Finish a claimed order in the work pool to earn your first payout.{% else %}Salaried roles don't earn wallet credits from finished claims.{% endif %}</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Count-up animation for the balance figure
+  const el = document.querySelector('[data-count-to]');
+  if (el) {
+    const target = parseFloat(el.dataset.countTo) || 0;
+    const duration = 900;
+    const start = performance.now();
+
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = '$' + (target * eased).toFixed(2);
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 400);
+    }, 4200 + i * 150);
+  });
+});
+</script>
+
+</body>
+</html>
