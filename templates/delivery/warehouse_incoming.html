@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Warehouse | Delivery | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f8fafc; --surface:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
+    --accent:#1a49aa; --accent-light:#eef3fd; --accent-2:#3b6fe0; --orange:#ff9922;
+    --radius:16px; --radius-sm:10px; --shadow:0 4px 20px rgba(30,41,59,0.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
+  h1,h2,h3{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+
+  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0}
+  .brand img{width:120px}
+  .nav-links{display:flex;gap:24px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
+  .nav-links a:hover,.nav-links a.active{color:var(--accent)}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:30px 24px 0}
+  h1{font-size:24px;margin-bottom:4px}
+  .subtext{color:var(--muted);font-size:13.5px;margin-bottom:24px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+  .card h3{font-size:15.5px;margin-bottom:4px}
+  .card .card-sub{color:var(--muted);font-size:12.5px;margin-bottom:16px}
+
+  .row{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:12px}
+  .row:last-child{margin-bottom:0}
+  .row-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .row-title{font-size:13.5px;font-weight:700}
+  .row-sub{font-size:12px;color:var(--muted)}
+  .code-pill{font-family:'Poppins',sans-serif;font-weight:800;font-size:15px;letter-spacing:3px;background:var(--accent-light);color:var(--accent);padding:4px 12px;border-radius:8px}
+  .empty-row{color:var(--muted);font-size:13px;padding:8px 0}
+
+  @media(max-width:600px){.wrap{padding:20px 16px 0}nav{padding:12px 18px}.card{padding:18px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand"><img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo"></a>
+  <div class="nav-links">
+    <a href="{% url 'delivery:work_pool' %}">Work Pool</a>
+    <a href="{% url 'delivery:warehouse_incoming' %}" class="active">Warehouse</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <h1>Warehouse</h1>
+  <p class="subtext">What's arriving from couriers, and what's waiting to go back out for delivery.</p>
+
+  <div class="grid">
+
+    <div class="card">
+      <h3>Arriving now</h3>
+      <p class="card-sub">Couriers on their way in — read out this code when they hand the goods over.</p>
+      {% for claim in arriving_claims %}
+        <div class="row">
+          <div class="row-head">
+            <span class="row-title">Order #{{ claim.mission.order_id }}{% if claim.mission.store_order %} &middot; {{ claim.mission.store_order.store.name }}{% endif %}</span>
+            <span class="code-pill">{{ claim.mission.confirmation_code }}</span>
+          </div>
+          <div class="row-sub">Courier: {{ claim.courier }} &middot; picked up {{ claim.picked_up_at|timesince }} ago</div>
+        </div>
+      {% empty %}
+        <div class="empty-row">Nothing arriving right now.</div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <h3>Waiting to go out</h3>
+      <p class="card-sub">Dropoff missions sitting in the pool for a courier to claim.</p>
+      {% for mission in awaiting_dropoff %}
+        <div class="row">
+          <div class="row-head">
+            <span class="row-title">Order #{{ mission.order_id }}</span>
+            <span class="row-sub">{{ mission.item_count }} item{{ mission.item_count|pluralize }}</span>
+          </div>
+          <div class="row-sub">To {{ mission.dropoff_area_hint }} &middot; posted {{ mission.created_at|timesince }} ago</div>
+        </div>
+      {% empty %}
+        <div class="empty-row">Nothing waiting for a courier right now.</div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

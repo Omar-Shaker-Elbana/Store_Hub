@@ -1,0 +1,254 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Order #{{ mission.order_id }} | Delivery | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc; --surface:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
+    --accent:#1a49aa; --accent-light:#eef3fd; --accent-2:#3b6fe0; --orange:#ff9922;
+    --danger:#ef4444; --danger-light:#fef2f2; --success:#16a34a; --success-light:#f0fdf4;
+    --radius:16px; --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06); --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
+
+  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;gap:24px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
+  .nav-links a:hover{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{background:var(--surface);border-left:4px solid var(--success);border-radius:10px;box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500}
+  .toast.error{border-left-color:var(--danger)}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:13.5px;margin:18px 0 0}
+
+  .hero{text-align:center;padding:24px 24px 20px;animation:slideInUp .4s ease}
+  .hero h1{font-size:25px;margin-bottom:6px}
+  .hero p{color:var(--muted);font-size:13.5px}
+  .status-ribbon{display:inline-flex;margin-top:12px;font-size:11px;font-weight:700;padding:5px 14px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+  .status-ribbon.claimed{background:var(--accent-light);color:var(--accent)}
+  .status-ribbon.picked_up{background:#fff4e0;color:#b45309}
+  .status-ribbon.delivered{background:var(--success-light);color:var(--success)}
+  .status-ribbon.expired,.status-ribbon.released,.status-ribbon.cancelled{background:var(--danger-light);color:var(--danger)}
+
+  .detail-grid{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:flex-start;margin-top:8px}
+  @media(max-width:940px){.detail-grid{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:20px}
+  .card:last-child{margin-bottom:0}
+  .card h3{font-size:15.5px;margin-bottom:4px}
+  .card .subtext{color:var(--muted);font-size:12.5px;margin-bottom:16px}
+
+  .info-row{display:flex;gap:12px;padding:9px 0}
+  .info-icon{width:32px;height:32px;border-radius:9px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .info-label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+  .info-value{font-size:13.5px;font-weight:600;margin-top:2px}
+
+  .item-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .item-row:last-child{border-bottom:none}
+  .item-row .muted{color:var(--muted);font-size:11.5px}
+
+  .sidebar{position:sticky;top:86px}
+  .timer-block{margin-bottom:16px}
+  .timer-label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase}
+  .timer-value{font-size:20px;font-weight:800;font-family:'Poppins',sans-serif}
+  .timer-value.urgent{color:var(--danger)}
+  .timer-track{height:7px;border-radius:999px;background:var(--border);overflow:hidden;margin-top:6px}
+  .timer-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--success))}
+  .timer-fill.urgent{background:linear-gradient(90deg,var(--danger),#f87171)}
+  .urgent-card{animation:pulseWarn 2s infinite;border-color:rgba(239,68,68,.4) !important}
+
+  .btn-primary{width:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;padding:12px 18px;border-radius:999px;font-weight:600;font-size:13.5px;margin-bottom:10px;box-shadow:0 6px 16px rgba(26,73,170,.25)}
+  .btn-ghost{width:100%;background:var(--danger-light);color:var(--danger);border:none;padding:10px 18px;border-radius:999px;font-weight:600;font-size:13px}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed}
+
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:5px}
+  .field input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;letter-spacing:3px;text-align:center;font-weight:700}
+  .checkbox-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text);margin-bottom:14px}
+  .cod-hint{background:#fff4e0;color:#b45309;border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;margin-bottom:12px}
+
+  .outcome-figures{display:flex;flex-direction:column;gap:10px}
+  .outcome-figure{display:flex;justify-content:space-between}
+  .outcome-figure .value{font-size:16px;font-weight:800;font-family:'Poppins',sans-serif;color:var(--accent)}
+  .outcome-note{font-size:12.5px;color:var(--muted);padding-top:10px;border-top:1px solid var(--border);margin-top:8px}
+  .no-action-note{font-size:12.5px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px}
+
+  @media(max-width:600px){.wrap{padding:0 16px}nav{padding:12px 18px}.card{padding:18px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand"><img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo"></a>
+  <div class="nav-links">
+    <a href="{% url 'delivery:work_pool' %}">Work Pool</a>
+    <a href="{% url 'delivery:my_wallet' %}">My Wallet</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}{% for message in messages %}
+    <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">{{ message }}</div>
+  {% endfor %}{% endif %}
+</div>
+
+<div class="wrap">
+
+  <a href="{% url 'delivery:work_pool' %}" class="back-link">&larr; Back to work pool</a>
+
+  <div class="hero">
+    <h1>Order #{{ mission.order_id }} &middot; {{ mission.get_kind_display }}</h1>
+    <p>{{ mission.item_count }} item{{ mission.item_count|pluralize }} &middot; fee ${{ mission.fee|floatformat:2 }}</p>
+    <span class="status-ribbon {{ claim.status }}">{{ claim.get_status_display }}</span>
+  </div>
+
+  <div class="detail-grid">
+
+    <div>
+      <div class="card">
+        <h3>Items</h3>
+        <p class="subtext">What you're carrying on this leg.</p>
+        {% for item in mission.items_snapshot %}
+          <div class="item-row">
+            <span>{{ item.product }}{% if item.store %} <span class="muted">&middot; {{ item.store }}</span>{% endif %}</span>
+            <span>&times;{{ item.quantity }}</span>
+          </div>
+        {% empty %}
+          <p class="subtext" style="margin-bottom:0">No items recorded.</p>
+        {% endfor %}
+      </div>
+
+      <div class="card">
+        <h3>Route</h3>
+        <p class="subtext">Pickup and dropoff for this leg of the order.</p>
+
+        <div class="info-row">
+          <div class="info-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <div class="info-label">Pickup</div>
+            <div class="info-value">{{ mission.pickup_address }}</div>
+            {% if mission.pickup_contact %}<div class="subtext" style="margin:2px 0 0">{{ mission.pickup_contact }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+          </div>
+          <div>
+            <div class="info-label">Dropoff</div>
+            <div class="info-value">{{ mission.dropoff_address }}</div>
+            {% if mission.dropoff_contact %}<div class="subtext" style="margin:2px 0 0">{{ mission.dropoff_contact }}</div>{% endif %}
+          </div>
+        </div>
+
+        {% if needs_cash %}
+          <div class="cod-hint">Collect <strong>${{ mission.cod_amount|floatformat:2 }}</strong> cash from the shopper on delivery.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="card {% if claim.is_active %}urgent-card-wrap{% endif %}" data-deadline="{% if claim.is_active %}{{ claim.deadline|date:'c' }}{% endif %}">
+
+        {% if claim.is_active %}
+          <div class="timer-block">
+            <div class="timer-label">Time left</div>
+            <div class="timer-value" data-timer-text>--</div>
+            <div class="timer-track"><div class="timer-fill" data-timer-fill></div></div>
+          </div>
+        {% endif %}
+
+        {% if can_act and claim.status == "claimed" %}
+          <form method="POST" action="{% url 'delivery:pick_up_claim' claim.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">Mark Picked Up</button>
+          </form>
+          <form method="POST" action="{% url 'delivery:release_claim' claim.id %}" onsubmit="return confirm('Release this mission back to the pool?');">
+            {% csrf_token %}
+            <button type="submit" class="btn-ghost">Release Back to Pool</button>
+          </form>
+
+        {% elif can_act and claim.status == "picked_up" %}
+          <form method="POST" action="{% url 'delivery:complete_claim' claim.id %}">
+            {% csrf_token %}
+            <div class="field">
+              <label for="code">Confirmation code from the receiver</label>
+              <input type="text" id="code" name="code" maxlength="6" inputmode="numeric" placeholder="000000" required>
+            </div>
+            {% if needs_cash %}
+              <label class="checkbox-row">
+                <input type="checkbox" name="cash_collected"> I collected ${{ mission.cod_amount|floatformat:2 }} in cash
+              </label>
+            {% endif %}
+            <button type="submit" class="btn-primary">Confirm Handover</button>
+          </form>
+
+        {% elif claim.status == "delivered" %}
+          <div class="outcome-figures">
+            <div class="outcome-figure"><span>Fee earned</span><span class="value">${{ claim.fee_earned|floatformat:2 }}</span></div>
+          </div>
+          <div class="outcome-note">Completed {{ claim.finished_at|date:"M j, Y, g:i A" }}.</div>
+
+        {% elif claim.status == "expired" %}
+          <div class="outcome-note" style="border-top:none;padding-top:0">This claim's 24-hour window ran out and it returned to the pool.</div>
+        {% elif claim.status == "released" %}
+          <div class="outcome-note" style="border-top:none;padding-top:0">This claim was released back to the pool.</div>
+        {% elif claim.status == "cancelled" %}
+          <div class="outcome-note" style="border-top:none;padding-top:0">This mission was cancelled.</div>
+        {% else %}
+          <div class="no-action-note">Only the courier who holds this claim can act on it.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var DAY_MS = 24 * 60 * 60 * 1000, URGENT_MS = 60 * 60 * 1000, WARN_MS = 6 * 60 * 60 * 1000;
+function tick(){
+  var card = document.querySelector('[data-deadline]');
+  if (!card || !card.dataset.deadline) return;
+  var remaining = new Date(card.dataset.deadline).getTime() - Date.now();
+  var textEl = card.querySelector('[data-timer-text]');
+  var fillEl = card.querySelector('[data-timer-fill]');
+  card.classList.remove('urgent-card');
+  if (remaining <= 0) { textEl.textContent = 'Expired — refresh the page'; textEl.classList.add('urgent'); fillEl.style.width = '0%'; return; }
+  var h = Math.floor(remaining / 3600000), m = Math.floor((remaining % 3600000) / 60000), s = Math.floor((remaining % 60000) / 1000);
+  textEl.textContent = h + 'h ' + m + 'm ' + s + 's';
+  fillEl.style.width = Math.max(0, Math.min(100, (remaining / DAY_MS) * 100)) + '%';
+  textEl.classList.toggle('urgent', remaining <= URGENT_MS);
+  fillEl.classList.toggle('urgent', remaining <= URGENT_MS);
+  card.classList.toggle('urgent-card', remaining <= URGENT_MS);
+}
+tick();
+setInterval(tick, 1000);
+
+document.querySelectorAll('.toast').forEach(function (t, i) {
+  setTimeout(function () { t.remove(); }, 5000 + i * 150);
+});
+</script>
+
+</body>
+</html>

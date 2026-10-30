@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Track Order #{{ order.id }} | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f8fafc; --surface:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
+    --accent:#1a49aa; --accent-light:#eef3fd; --accent-2:#3b6fe0; --orange:#ff9922;
+    --success:#16a34a; --success-light:#f0fdf4;
+    --radius:16px; --radius-sm:10px; --shadow:0 4px 20px rgba(30,41,59,0.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
+  h1,h2,h3{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+
+  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0}
+  .brand img{width:120px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
+
+  .wrap{max-width:760px;margin:0 auto;padding:30px 24px 0}
+  .hero{text-align:center;margin-bottom:26px}
+  .hero h1{font-size:24px;margin-bottom:6px}
+  .hero p{color:var(--muted);font-size:13.5px}
+
+  .code-card{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:var(--radius);padding:22px;text-align:center;margin-bottom:24px;box-shadow:var(--shadow)}
+  .code-card .label{font-size:12px;opacity:.85;margin-bottom:8px}
+  .code-card .code{font-size:34px;font-weight:800;font-family:'Poppins',sans-serif;letter-spacing:8px}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:20px}
+  .card h3{font-size:15px;margin-bottom:14px}
+
+  .timeline{display:flex;flex-direction:column;gap:0}
+  .step{display:flex;gap:14px;position:relative;padding-bottom:22px}
+  .step:last-child{padding-bottom:0}
+  .step::before{content:"";position:absolute;left:10px;top:22px;bottom:0;width:2px;background:var(--border)}
+  .step:last-child::before{display:none}
+  .step-dot{width:22px;height:22px;border-radius:50%;background:var(--border);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
+  .step.done .step-dot{background:var(--success)}
+  .step-title{font-size:13.5px;font-weight:700}
+  .step-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+  .store-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+  .store-row:last-child{border-bottom:none}
+  .status-pill{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--accent-light);color:var(--accent);text-transform:uppercase}
+
+  @media(max-width:600px){.wrap{padding:20px 16px 0}nav{padding:12px 18px}.card{padding:18px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand"><img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo"></a>
+  <div class="nav-links"><a href="{% url 'home' %}">Home</a></div>
+</nav>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1>Order #{{ order.id }}</h1>
+    <p>Status: {{ order.get_status_display|default:order.status }}</p>
+  </div>
+
+  {% if confirmation_code %}
+    <div class="code-card">
+      <div class="label">Give this code to your courier when they arrive</div>
+      <div class="code">{{ confirmation_code }}</div>
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <h3>Delivery progress</h3>
+    <div class="timeline">
+      <div class="step {% if order.processed_at or order.status != 'Pending' %}done{% endif %}">
+        <div class="step-dot">&#10003;</div>
+        <div><div class="step-title">Order placed</div><div class="step-sub">{{ order.created_at|date:"M j, Y, g:i A" }}</div></div>
+      </div>
+      <div class="step {% if order.shipped_at %}done{% endif %}">
+        <div class="step-dot">&#10003;</div>
+        <div><div class="step-title">Shipped by merchant(s)</div><div class="step-sub">{% if order.shipped_at %}{{ order.shipped_at|date:"M j, Y, g:i A" }}{% else %}Waiting on store(s) to ship{% endif %}</div></div>
+      </div>
+      <div class="step {% if order.status == 'Out for Delivery' or order.status == 'Delivered' %}done{% endif %}">
+        <div class="step-dot">&#10003;</div>
+        <div><div class="step-title">Out for delivery</div><div class="step-sub">{% if dropoff_claim %}Courier: {{ dropoff_claim.courier }}{% else %}Not dispatched yet{% endif %}</div></div>
+      </div>
+      <div class="step {% if order.delivered_at %}done{% endif %}">
+        <div class="step-dot">&#10003;</div>
+        <div><div class="step-title">Delivered</div><div class="step-sub">{% if order.delivered_at %}{{ order.delivered_at|date:"M j, Y, g:i A" }}{% else %}Not yet{% endif %}</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Items by store</h3>
+    {% for store_order in order.store_orders.all %}
+      <div class="store-row">
+        <span>{{ store_order.store.name|default:"Store" }}</span>
+        <span class="status-pill">{{ store_order.status }}</span>
+      </div>
+    {% empty %}
+      <p style="color:var(--muted);font-size:13px;margin:0">No stores on this order.</p>
+    {% endfor %}
+  </div>
+
+</div>
+
+</body>
+</html>

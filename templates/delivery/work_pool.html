@@ -1,0 +1,231 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Work Pool | Delivery | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f8fafc; --surface:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
+    --accent:#1a49aa; --accent-light:#eef3fd; --accent-2:#3b6fe0; --orange:#ff9922;
+    --danger:#ef4444; --danger-light:#fef2f2; --success:#16a34a; --success-light:#f0fdf4;
+    --radius:16px; --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06); --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+
+  @keyframes slideInUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:24px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
+  .nav-links a:hover,.nav-links a.active{color:var(--accent)}
+
+  #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{background:var(--surface);border-left:4px solid var(--success);border-radius:10px;box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500}
+  .toast.error{border-left-color:var(--danger)}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  .hero{text-align:center;padding:26px 24px 24px;animation:slideInUp .4s ease}
+  .hero h1{font-size:27px;margin-bottom:6px}
+  .hero p{color:var(--muted);font-size:14px;max-width:520px;margin:0 auto}
+
+  .filter-row{display:flex;justify-content:center;gap:8px;margin-bottom:22px}
+  .filter-row a{padding:7px 16px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--border);color:var(--muted)}
+  .filter-row a.active{background:var(--accent-light);color:var(--accent);border-color:transparent}
+
+  .pool-grid{display:grid;grid-template-columns:1fr 360px;gap:26px;align-items:flex-start}
+  @media(max-width:980px){.pool-grid{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+  .card h3{font-size:16px;margin-bottom:4px}
+  .card .subtext{color:var(--muted);font-size:13px;margin-bottom:18px}
+
+  .mission-list{display:flex;flex-direction:column;gap:14px}
+  .mission-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px 18px;animation:slideInUp .35s ease both;transition:border-color .2s,box-shadow .2s}
+  .mission-card:hover{border-color:var(--accent-2);box-shadow:var(--shadow)}
+  .mission-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .mission-title{font-size:14.5px;font-weight:700}
+  .mission-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .kind-badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;flex-shrink:0}
+  .kind-badge.pickup{background:#fff4e0;color:#b45309}
+  .kind-badge.dropoff{background:var(--accent-light);color:var(--accent)}
+
+  .mission-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;margin-top:4px;border-top:1px solid var(--border)}
+  .mission-area{font-size:12.5px;color:var(--muted)}
+  .mission-fee{font-size:14px;font-weight:700;color:var(--accent)}
+
+  .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;padding:9px 18px;border-radius:999px;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 6px 16px rgba(26,73,170,.25)}
+  .btn-primary:hover{transform:translateY(-1px)}
+  .btn-primary.loading .btn-spinner{display:inline-block}
+  .btn-spinner{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite;display:none}
+
+  .sidebar{display:flex;flex-direction:column;gap:18px;position:sticky;top:86px}
+  .claim-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px}
+  .claim-card:last-child{margin-bottom:0}
+  .claim-card.urgent{border-color:rgba(239,68,68,.4);animation:pulseWarn 2s infinite}
+  .claim-row-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:13px;font-weight:700}
+  .claim-sub{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+  .claim-actions{display:flex;gap:8px}
+  .btn-sm{padding:7px 14px;font-size:12px}
+  .btn-ghost{background:var(--accent-light);color:var(--accent);border:none;border-radius:999px;font-weight:600}
+
+  .empty-row{color:var(--muted);font-size:13px;padding:8px 0}
+  .empty-state{background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);padding:50px 24px;text-align:center}
+  .empty-state h2{font-size:18px;margin-bottom:6px}
+  .empty-state p{color:var(--muted);font-size:13.5px;margin:0}
+
+  @media(max-width:600px){.wrap{padding:0 16px}nav{padding:12px 18px}.card{padding:18px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand"><img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo"></a>
+  <div class="nav-links">
+    <a href="{% url 'delivery:work_pool' %}" class="active">Work Pool</a>
+    <a href="{% url 'delivery:my_wallet' %}">My Wallet</a>
+    {% if request.user.profile.is_warehouse_staff %}
+      <a href="{% url 'delivery:warehouse_incoming' %}">Warehouse</a>
+    {% endif %}
+    <a href="{% url 'home' %}">Home</a>
+  </div>
+</nav>
+
+<div id="toast-stack">
+  {% if messages %}{% for message in messages %}
+    <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">{{ message }}</div>
+  {% endfor %}{% endif %}
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1>Delivery Work Pool</h1>
+    <p>Claim pickup or dropoff missions. Once claimed, you have 24 hours to finish before it goes back in the pool.</p>
+  </div>
+
+  <div class="filter-row">
+    <a href="{% url 'delivery:work_pool' %}" class="{% if not kind %}active{% endif %}">All</a>
+    <a href="{% url 'delivery:work_pool' %}?kind=pickup" class="{% if kind == 'pickup' %}active{% endif %}">Pickup</a>
+    <a href="{% url 'delivery:work_pool' %}?kind=dropoff" class="{% if kind == 'dropoff' %}active{% endif %}">Dropoff</a>
+  </div>
+
+  <div class="pool-grid">
+
+    <div class="card">
+      <h3>Available missions</h3>
+      <p class="subtext">First come, first served — claiming locks the mission to you for 24 hours.</p>
+
+      {% if available_missions %}
+        <div class="mission-list">
+          {% for mission in available_missions %}
+            <div class="mission-card">
+              <div class="mission-head">
+                <div>
+                  <div class="mission-title">Order #{{ mission.order_id }}{% if mission.store_order %} &middot; {{ mission.store_order.store.name }}{% endif %}</div>
+                  <div class="mission-sub">{{ mission.item_count }} item{{ mission.item_count|pluralize }} &middot; posted {{ mission.created_at|timesince }} ago</div>
+                </div>
+                <span class="kind-badge {{ mission.kind }}">{{ mission.get_kind_display }}</span>
+              </div>
+              <div class="mission-foot">
+                <span class="mission-area">
+                  {% if mission.kind == "pickup" %}From {{ mission.pickup_area_hint }}{% else %}To {{ mission.dropoff_area_hint }}{% endif %}
+                </span>
+                <span class="mission-fee">${{ mission.fee|floatformat:2 }}</span>
+                <form method="POST" action="{% url 'delivery:claim_mission' mission.id %}" class="claim-form">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-primary">
+                    <span class="btn-spinner"></span>
+                    <span class="btn-text">Claim</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <h2>Pool's empty</h2>
+          <p>Nothing waiting to be claimed right now. Check back soon.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="sidebar">
+      <div class="card">
+        <h3>My active claims</h3>
+        <p class="subtext">Finish before the timer runs out or it's released automatically.</p>
+
+        {% if my_active_claims %}
+          {% for claim in my_active_claims %}
+            <div class="claim-card" data-deadline="{{ claim.deadline|date:'c' }}">
+              <div class="claim-row-head">
+                <span>Order #{{ claim.mission.order_id }}</span>
+                <span class="timer-text" data-timer-text>--</span>
+              </div>
+              <div class="claim-sub">{{ claim.mission.get_kind_display }} &middot; claimed {{ claim.claimed_at|timesince }} ago</div>
+              <div class="claim-actions">
+                <a href="{% url 'delivery:claim_detail' claim.id %}" class="btn-primary btn-sm">View &amp; Finish</a>
+                {% if claim.status == "claimed" %}
+                  <form method="POST" action="{% url 'delivery:release_claim' claim.id %}" onsubmit="return confirm('Release this mission back to the pool?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-ghost btn-sm">Release</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-row">You don't have any missions claimed right now.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.claim-form').forEach(function (form) {
+  form.addEventListener('submit', function () {
+    var btn = form.querySelector('.btn-primary');
+    btn.classList.add('loading');
+  });
+});
+
+var DAY_MS = 24 * 60 * 60 * 1000, URGENT_MS = 60 * 60 * 1000;
+function tickTimers(){
+  document.querySelectorAll('[data-deadline]').forEach(function (card) {
+    var deadline = new Date(card.dataset.deadline).getTime();
+    var remaining = deadline - Date.now();
+    var textEl = card.querySelector('[data-timer-text]');
+    card.classList.remove('urgent');
+    if (remaining <= 0) { textEl.textContent = 'Expired'; return; }
+    var h = Math.floor(remaining / 3600000), m = Math.floor((remaining % 3600000) / 60000);
+    textEl.textContent = h + 'h ' + m + 'm left';
+    if (remaining <= URGENT_MS) card.classList.add('urgent');
+  });
+}
+tickTimers();
+setInterval(tickTimers, 30000);
+
+document.querySelectorAll('.toast').forEach(function (t, i) {
+  setTimeout(function () { t.remove(); }, 5000 + i * 150);
+});
+</script>
+
+</body>
+</html>

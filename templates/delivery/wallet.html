@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Wallet | Delivery | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f8fafc; --surface:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
+    --accent:#1a49aa; --accent-light:#eef3fd; --accent-2:#3b6fe0;
+    --danger:#ef4444; --success:#16a34a; --success-light:#f0fdf4;
+    --radius:16px; --radius-sm:10px; --shadow:0 4px 20px rgba(30,41,59,0.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
+  h1,h2,h3{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+
+  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0}
+  .brand img{width:120px}
+  .nav-links{display:flex;gap:24px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
+  .nav-links a:hover,.nav-links a.active{color:var(--accent)}
+
+  .wrap{max-width:860px;margin:0 auto;padding:30px 24px 0}
+
+  .wallet-card{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:var(--radius);padding:30px;margin-bottom:26px;box-shadow:var(--shadow)}
+  .wallet-card .label{font-size:12.5px;opacity:.8;margin-bottom:8px}
+  .wallet-card .amount{font-size:38px;font-weight:800;font-family:'Poppins',sans-serif}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);margin-bottom:22px}
+  .card h3{font-size:16px;margin-bottom:16px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--border)}
+  td{padding:10px;border-bottom:1px solid var(--border)}
+  tr:last-child td{border-bottom:none}
+  .amount-cell{font-weight:700;color:var(--success);text-align:right}
+  .empty-row{color:var(--muted);padding:16px 0;font-size:13.5px}
+
+  .status-pill{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase}
+  .status-pill.delivered{background:var(--success-light);color:var(--success)}
+  .status-pill.expired,.status-pill.released,.status-pill.cancelled{background:#fef2f2;color:var(--danger)}
+
+  @media(max-width:600px){.wrap{padding:20px 16px 0}nav{padding:12px 18px}.card{padding:18px}table{font-size:12px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'home' %}" class="brand"><img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo"></a>
+  <div class="nav-links">
+    <a href="{% url 'delivery:work_pool' %}">Work Pool</a>
+    <a href="{% url 'delivery:my_wallet' %}" class="active">My Wallet</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <div class="wallet-card">
+    <div class="label">Wallet balance</div>
+    <div class="amount">${{ wallet.balance|floatformat:2 }}</div>
+  </div>
+
+  <div class="card">
+    <h3>Recent transactions</h3>
+    <table>
+      <thead><tr><th>Mission</th><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody>
+        {% for txn in transactions %}
+          <tr>
+            <td>{% if txn.claim %}Order #{{ txn.claim.mission.order_id }}{% else %}&mdash;{% endif %}</td>
+            <td>{{ txn.description }}</td>
+            <td class="amount-cell">+${{ txn.amount|floatformat:2 }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="empty-row">No transactions yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Claim history</h3>
+    <table>
+      <thead><tr><th>Order</th><th>Kind</th><th>Status</th><th style="text-align:right">Fee</th></tr></thead>
+      <tbody>
+        {% for claim in history %}
+          <tr>
+            <td>#{{ claim.mission.order_id }}</td>
+            <td>{{ claim.mission.get_kind_display }}</td>
+            <td><span class="status-pill {{ claim.status }}">{{ claim.get_status_display }}</span></td>
+            <td class="amount-cell" style="color:var(--text)">{% if claim.fee_earned %}${{ claim.fee_earned|floatformat:2 }}{% else %}&mdash;{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="empty-row">No past claims yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</body>
+</html>
