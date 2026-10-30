@@ -29,7 +29,7 @@ class StoreOrderStatusForm(forms.ModelForm):
 
     class Meta:
         model = StoreOrder
-        fields = ["status", "delivery_person"]
+        fields = ["status"]
 
     def clean_status(self):
         status = self.cleaned_data.get("status")
@@ -37,7 +37,12 @@ class StoreOrderStatusForm(forms.ModelForm):
         allowed_next = {
             "Pending": {"Processing", "Cancelled"},
             "Processing": {"Shipped", "Cancelled"},
-            "Shipped": {"Delivered"},
+            # Past Shipped the delivery app owns the status (pickup ->
+            # warehouse -> out for delivery -> delivered); merchants can't
+            # skip ahead.
+            "Shipped": set(),
+            "At Warehouse": set(),
+            "Out for Delivery": set(),
             "Delivered": set(),
             "Cancelled": set(),
         }

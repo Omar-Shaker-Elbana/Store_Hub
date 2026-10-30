@@ -20,6 +20,8 @@ class Order(models.Model):
         ("Pending", "Pending"),
         ("Processing", "Processing"),
         ("Shipped", "Shipped"),
+        ("At Warehouse", "At Warehouse"),
+        ("Out for Delivery", "Out for Delivery"),
         ("Delivered", "Delivered"),
         ("Cancelled", "Cancelled"),
     )
@@ -58,6 +60,8 @@ class StoreOrder(models.Model):
         ("Pending", "Pending"),
         ("Processing", "Processing"),
         ("Shipped", "Shipped"),
+        ("At Warehouse", "At Warehouse"),
+        ("Out for Delivery", "Out for Delivery"),
         ("Delivered", "Delivered"),
         ("Cancelled", "Cancelled"),
     )
