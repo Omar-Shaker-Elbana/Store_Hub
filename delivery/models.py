@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from merchant_interface.models import Store
 from orders.models import Order, StoreOrder
+from warehouse.models import Warehouse
 
 User = settings.AUTH_USER_MODEL
 
@@ -30,27 +31,14 @@ def area_hint(address):
     pool, so couriers can choose by area without seeing a shopper's full
     address before they claim."""
     parts = [p.strip() for p in (address or "").split(",") if p.strip()]
+    if len(parts) < 2:
+        # One chunk of text is the whole address (street included): show nothing.
+        return ""
+    if len(parts) == 2:
+        # "Street, City": the last two parts ARE the whole address, so only
+        # the last part (the city) is safe to show.
+        return parts[-1]
     return ", ".join(parts[-2:])
-
-
-class Warehouse(models.Model):
-    name = models.CharField(max_length=120)
-    address = models.CharField(max_length=255)
-    phone = models.CharField(max_length=32, blank=True)
-    is_default = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.is_default:
-            Warehouse.objects.exclude(pk=self.pk).update(is_default=False)
-
-    @classmethod
-    def get_default(cls):
-        return cls.objects.filter(is_active=True).order_by("-is_default", "pk").first()
 
 
 class StorePickupLocation(models.Model):

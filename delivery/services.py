@@ -207,6 +207,12 @@ def _warehouse_contact(warehouse):
     return " · ".join(p for p in (warehouse.name, warehouse.phone) if p)
 
 
+def _cod_total(order, store_orders):
+    if order.payment_type != "cash":
+        return Decimal("0.00")
+    return sum((so.subtotal or Decimal("0.00") for so in store_orders), Decimal("0.00"))
+
+
 def create_pickup_mission(store_order):
     """Merchant -> warehouse, carrying only this store's items. Idempotent.
     Returns (mission, error)."""
@@ -272,9 +278,7 @@ def create_dropoff_mission(order):
         return None, "No active warehouse is configured."
 
     store_orders = list(_live_store_orders(order.pk).select_related("store"))
-    cod = Decimal("0.00")
-    if order.payment_type == "cash":
-        cod = sum((so.subtotal or Decimal("0.00") for so in store_orders), Decimal("0.00"))
+    cod = _cod_total(order, store_orders)
     shopper = order.user
     contact = (shopper.get_full_name() or shopper.get_username()) if shopper else ""
 
@@ -325,6 +329,34 @@ def advance_order_if_ready(order):
     return mission, error
 
 
+def _refresh_dropoff_after_cancel(order):
+    """A store order was cancelled after the order's dropoff mission already
+    existed. Re-snapshot its items and COD total from the store orders that
+    are still live, or close the mission if nothing is left to deliver."""
+    mission = (
+        DeliveryMission.objects.select_for_update()
+        .filter(order=order, kind="dropoff", status="open")
+        .first()
+    )
+    if mission is None:
+        return
+    live = list(_live_store_orders(order.pk).select_related("store"))
+    if live:
+        mission.items_snapshot = _items_snapshot(live)
+        mission.cod_amount = _cod_total(order, live)
+        mission.save(update_fields=["items_snapshot", "cod_amount"])
+        return
+    for claim in mission.claims.select_for_update().filter(status__in=ACTIVE):
+        _end_claim(claim, "cancelled", revert=False)
+        _notify(
+            claim.courier,
+            f"Delivery mission #{mission.pk} was cancelled: every store order "
+            "in the order was cancelled.",
+        )
+    mission.status = "cancelled"
+    mission.save(update_fields=["status"])
+
+
 def handle_store_order_cancelled(store_order):
     """Cancel the store's pickup mission (telling any courier who held it),
     then re-check whether the rest of the order can move on."""
@@ -343,6 +375,7 @@ def handle_store_order_cancelled(store_order):
             mission.status = "cancelled"
             mission.save(update_fields=["status"])
         if store_order.order_id:
+            _refresh_dropoff_after_cancel(store_order.order)
             advance_order_if_ready(store_order.order)
 
 
@@ -391,11 +424,18 @@ def claim_mission(*, mission_id, user):
     # Serialise a courier's own claims so the active-claim cap can't be raced.
     User.objects.select_for_update().filter(pk=user.pk).first()
 
-    mission = DeliveryMission.objects.select_for_update().filter(id=mission_id).first()
+    mission = (
+        DeliveryMission.objects.select_for_update()
+        .select_related("order")
+        .filter(id=mission_id)
+        .first()
+    )
     if not mission:
         return None, "Mission not found."
     if mission.status != "open":
         return None, "This mission is no longer available."
+    if mission.order.user_id == user.id:
+        return None, "You can't take a delivery mission for your own order."
     if get_active_claim(mission):
         return None, "Someone else just claimed this mission."
 

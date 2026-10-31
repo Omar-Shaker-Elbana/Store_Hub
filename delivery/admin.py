@@ -7,13 +7,7 @@ from .models import (
     DeliveryClaim,
     DeliveryMission,
     StorePickupLocation,
-    Warehouse,
 )
-
-
-@admin.register(Warehouse)
-class WarehouseAdmin(admin.ModelAdmin):
-    list_display = ("name", "address", "is_default", "is_active")
 
 
 @admin.register(StorePickupLocation)

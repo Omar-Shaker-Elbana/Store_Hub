@@ -164,7 +164,7 @@
             <span class="row-title">Order #{{ mission.order_id }}</span>
             <span class="row-sub">{{ mission.item_count }} item{{ mission.item_count|pluralize }}</span>
           </div>
-          <div class="row-sub">To {{ mission.dropoff_area_hint }} &middot; posted {{ mission.created_at|timesince }} ago</div>
+          <div class="row-sub">To {{ mission.dropoff_area_hint|default:"area hidden" }} &middot; posted {{ mission.created_at|timesince }} ago</div>
         </div>
       {% empty %}
         <div class="empty-row">Nothing waiting for a courier right now.</div>

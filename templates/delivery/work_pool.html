@@ -146,7 +146,7 @@
               </div>
               <div class="mission-foot">
                 <span class="mission-area">
-                  {% if mission.kind == "pickup" %}From {{ mission.pickup_area_hint }}{% else %}To {{ mission.dropoff_area_hint }}{% endif %}
+                  {% if mission.kind == "pickup" %}From {{ mission.pickup_area_hint|default:"area shown after you claim" }}{% else %}To {{ mission.dropoff_area_hint|default:"area shown after you claim" }}{% endif %}
                 </span>
                 <span class="mission-fee">${{ mission.fee|floatformat:2 }}</span>
                 <form method="POST" action="{% url 'delivery:claim_mission' mission.id %}" class="claim-form">

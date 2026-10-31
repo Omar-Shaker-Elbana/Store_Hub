@@ -1557,7 +1557,7 @@ class ForceReleaseTests(DeliveryTestCase):
         CourierWallet.objects.create(user=self.courier)
         self.client.force_login(make_user("root2", is_staff=True, is_superuser=True))
         for name in (
-            "warehouse", "storepickuplocation", "deliverymission",
+            "storepickuplocation", "deliverymission",
             "deliveryclaim", "courierwallet", "courierwallettransaction",
         ):
             response = self.client.get(reverse(f"admin:delivery_{name}_changelist"))
@@ -2161,7 +2161,7 @@ class ReleaseExpiredCommandTests(DeliveryTestCase):
 
 
 class KnownBugTests(DeliveryTestCase):
-    @unittest.expectedFailure
+ 
     def test_BUG1_area_hint_must_not_reveal_a_short_address_in_full(self):
         """area_hint promises 'coarse location ... without seeing a shopper's
         full address before they claim'. For the very common two-part address
@@ -2171,11 +2171,11 @@ class KnownBugTests(DeliveryTestCase):
         self.assertNotEqual(area_hint("12 Tahrir St, Cairo"), "12 Tahrir St, Cairo")
         self.assertNotIn("12 Tahrir St", area_hint("12 Tahrir St, Cairo"))
 
-    @unittest.expectedFailure
+ 
     def test_BUG1b_a_single_part_address_is_not_echoed_back_in_the_pool(self):
         self.assertNotIn("Apartment 5", area_hint("12 Tahrir Street Apartment 5"))
 
-    @unittest.expectedFailure
+ 
     def test_BUG2_cancelling_a_store_order_after_the_dropoff_exists_updates_cod_and_items(self):
         """handle_store_order_cancelled only closes the cancelled store
         order's own PICKUP mission. A dropoff already in the pool keeps the
@@ -2198,7 +2198,7 @@ class KnownBugTests(DeliveryTestCase):
         self.assertEqual(live.cod_amount, so1.subtotal)
         self.assertEqual([i["product"] for i in live.items_snapshot], ["Item 1"])
 
-    @unittest.expectedFailure
+ 
     def test_BUG2b_cancelling_every_store_order_closes_the_open_dropoff(self):
         """If everything is cancelled after the dropoff exists, the mission
         stays in the work pool; a courier can claim, 'pick up' nothing, type
@@ -2209,7 +2209,7 @@ class KnownBugTests(DeliveryTestCase):
         so.save()
         self.assertEqual(services.open_missions("dropoff").count(), 0)
 
-    @unittest.expectedFailure
+ 
     def test_BUG3_a_courier_cannot_deliver_their_own_order(self):
         """Nothing stops the shopper from also being the courier. They claim
         the dropoff of their own order, receive the confirmation code in
@@ -2221,7 +2221,7 @@ class KnownBugTests(DeliveryTestCase):
         self.assertIsNone(claim)
         self.assertIsNotNone(error)
 
-    @unittest.expectedFailure
+ 
     def test_BUG4_warehouse_page_must_not_show_a_courier_their_own_handover_code(self):
         """is_delivery_person and is_warehouse_staff are independent flags. A
         user with both claims a pickup, opens /delivery/warehouse/incoming/ (which

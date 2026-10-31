@@ -8,7 +8,11 @@ class OrderForm(forms.ModelForm):
     fields are nullable for testing purposes."""
 
     shipping_address = forms.CharField(max_length=255, required=True)
-    payment_type = forms.ChoiceField(choices=Order.PAYMENT_CHOICES, required=True)
+    payment_type = forms.ChoiceField(
+        choices=Order.PAYMENT_CHOICES,
+        required=True,
+        widget=forms.RadioSelect,
+    )
 
     class Meta:
         model = Order

@@ -33,6 +33,7 @@ urlpatterns = [
     path("chat/", include("chat.urls")),
     path("fulfillment/", include("fulfillment.urls")),
      path("delivery/", include("delivery.urls")),
+    path("warehouse/", include("warehouse.urls")),
 ]
 
 if settings.DEBUG:

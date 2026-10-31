@@ -158,6 +158,7 @@ def warehouse_incoming(request):
     services.release_expired_claims()
     arriving_claims = (
         DeliveryClaim.objects.filter(mission__kind="pickup", status="picked_up")
+        .exclude(courier=request.user)
         .select_related("mission", "mission__order", "mission__store_order__store", "courier")
         .order_by("deadline")
     )
