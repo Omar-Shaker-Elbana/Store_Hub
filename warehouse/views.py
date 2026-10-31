@@ -32,4 +32,4 @@ def incoming(request):
         "awaiting_dropoff": awaiting_dropoff,
         "now": timezone.now(),
     }
-    return render(request, "warehouse/incoming.html", context)
+    return render(request, "warehouse/warehouse_incoming.html", context)

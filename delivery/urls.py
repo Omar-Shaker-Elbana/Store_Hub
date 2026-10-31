@@ -12,6 +12,6 @@ urlpatterns = [
     path("claims/<int:claim_id>/complete/", views.complete_claim, name="complete_claim"),
     path("claims/<int:claim_id>/release/", views.release_claim, name="release_claim"),
     path("wallet/", views.my_wallet, name="my_wallet"),
-    path("warehouse/incoming/", views.warehouse_incoming, name="warehouse_incoming"),
+ 
     path("orders/<int:order_id>/tracking/", views.order_tracking, name="order_tracking"),
 ]
