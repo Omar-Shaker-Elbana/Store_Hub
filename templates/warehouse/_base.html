@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}Warehouse{% endblock %} | StoreHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="{% static 'landing/imgs/favicon.png' %}" type="image/x-icon">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f8fafc;--surface:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--accent:#1a49aa;--accent-light:#eef3fd;--accent-2:#3b6fe0;--danger:#ef4444;--success:#16a34a;--radius:16px;--radius-sm:10px;--shadow:0 4px 20px rgba(30,41,59,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;padding-bottom:70px}
+  h1,h2,h3{font-family:'Poppins',sans-serif;margin:0}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  .brand img{width:120px;display:block}
+  .nav-links{display:flex;gap:24px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
+  .nav-links a:hover,.nav-links a.active{color:var(--accent)}
+  .toast{background:var(--surface);border-left:4px solid var(--success);border-radius:10px;box-shadow:var(--shadow);padding:13px 16px;font-size:14px;margin:12px auto;max-width:1100px}
+  .toast.error{border-left-color:var(--danger)}
+  .wrap{max-width:1100px;margin:0 auto;padding:30px 24px 0}
+  .page-head{margin-bottom:22px}
+  .page-head h1{font-size:27px}
+  .head-sub{color:var(--muted);font-size:14px;margin:6px 0 0}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:flex-start}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+  .card h3{font-size:16px;margin-bottom:4px}
+  .card-sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .row{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:12px}
+  .row:last-child{margin-bottom:0}
+  .row-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+  .row-title{font-size:14px;font-weight:700}
+  .row-sub{font-size:12px;color:var(--muted)}
+  .row-actions{display:flex;gap:8px;margin-top:10px}
+  .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;padding:9px 18px;border-radius:999px;font-weight:600;font-size:13px}
+  .btn-ghost{background:var(--accent-light);color:var(--accent);border:none;padding:9px 18px;border-radius:999px;font-weight:600;font-size:13px}
+  .empty-row{color:var(--muted);font-size:13px;padding:8px 0}
+  .store-group{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.03em;margin:14px 0 6px}
+  .item-line{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--border)}
+</style>
+</head>
+<body>
+<nav>
+  <a href="{% url 'home' %}" class="brand"><img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo"></a>
+  <div class="nav-links">
+    <a href="{% url 'warehouse:pack_pool' %}" class="{% block nav_pool %}{% endblock %}">Packing Pool</a>
+    <a href="{% url 'warehouse:incoming' %}">Incoming</a>
+    <a href="{% url 'home' %}">Home</a>
+  </div>
+</nav>
+{% if messages %}{% for message in messages %}
+  <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">{{ message }}</div>
+{% endfor %}{% endif %}
+<div class="wrap">{% block content %}{% endblock %}</div>
+</body>
+</html>

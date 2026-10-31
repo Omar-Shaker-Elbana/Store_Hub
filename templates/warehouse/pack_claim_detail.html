@@ -1,0 +1,37 @@
+{% extends "warehouse/_base.html" %}
+{% block title %}Pack order #{{ task.order_id }}{% endblock %}
+{% block nav_pool %}active{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Pack order #{{ task.order_id }}</h1>
+  <p class="head-sub">
+    {% if claim.status == "claimed" %}{{ claim.deadline|timeuntil }} left to finish.
+    {% else %}Status: {{ claim.get_status_display }}.{% endif %}
+  </p>
+</div>
+
+<div class="card">
+  <h3>Contents ({{ task.item_count }} item{{ task.item_count|pluralize }})</h3>
+  <p class="card-sub">Gather every store's part into one parcel before marking it finished.</p>
+  {% regroup task.items_snapshot by store as by_store %}
+  {% for group in by_store %}
+    <div class="store-group">{{ group.grouper|default:"Store" }}</div>
+    {% for item in group.list %}
+      <div class="item-line"><span>{{ item.product }}</span><span>&times; {{ item.quantity }}</span></div>
+    {% endfor %}
+  {% endfor %}
+
+  {% if can_act %}
+    <div class="row-actions" style="margin-top:20px">
+      <form method="post" action="{% url 'warehouse:finish_claim' claim.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn">Mark as packed</button>
+      </form>
+      <form method="post" action="{% url 'warehouse:release_claim' claim.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost">Release back to pool</button>
+      </form>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

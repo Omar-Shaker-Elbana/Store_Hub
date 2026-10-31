@@ -51,3 +51,4 @@ class UserSettings(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="dark")
+

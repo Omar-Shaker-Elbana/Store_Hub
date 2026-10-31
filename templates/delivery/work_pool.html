@@ -102,6 +102,7 @@
     <a href="{% url 'delivery:work_pool' %}" class="active">Work Pool</a>
     <a href="{% url 'delivery:my_wallet' %}">My Wallet</a>
     {% if request.user.profile.is_warehouse_staff %}
+      <a href="{% url 'warehouse:pack_pool' %}">Packing Pool</a>
       <a href="{% url 'warehouse:incoming' %}">Warehouse</a>
     {% endif %}
     <a href="{% url 'home' %}">Home</a>

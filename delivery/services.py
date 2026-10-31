@@ -307,9 +307,12 @@ def create_dropoff_mission(order):
 
 
 def advance_order_if_ready(order):
-    """Once every non-cancelled StoreOrder is 'At Warehouse', open the
-    warehouse -> shopper mission. Returns (mission, error); mission is None
-    if it wasn't time yet or one already exists."""
+    """Once every non-cancelled StoreOrder is 'At Warehouse', open a
+    warehouse packing task. The warehouse -> shopper mission is created
+    only when a warehouse worker finishes that task. Returns (task, error);
+    task is None if it wasn't time yet or one already exists."""
+    from warehouse import services as warehouse_services  # lazy: import cycle
+
     live = _live_store_orders(order.pk)
     if not live.exists() or live.exclude(status="At Warehouse").exists():
         return None, None
@@ -319,14 +322,16 @@ def advance_order_if_ready(order):
         .exists()
     ):
         return None, None
-    mission, error = create_dropoff_mission(order)
-    if mission:
+    if warehouse_services.get_live_task(order):
+        return None, None
+    task, error = warehouse_services.create_task(order)
+    if task:
         _notify(
             order.user,
             f"All items of order #{order.pk} are at our warehouse — "
-            "a courier will deliver them soon.",
+            "we're packing them now and a courier will deliver them soon.",
         )
-    return mission, error
+    return task, error
 
 
 def _refresh_dropoff_after_cancel(order):
@@ -375,6 +380,9 @@ def handle_store_order_cancelled(store_order):
             mission.status = "cancelled"
             mission.save(update_fields=["status"])
         if store_order.order_id:
+            from warehouse import services as warehouse_services  # lazy: import cycle
+
+            warehouse_services.refresh_task_after_cancel(store_order.order)
             _refresh_dropoff_after_cancel(store_order.order)
             advance_order_if_ready(store_order.order)
 

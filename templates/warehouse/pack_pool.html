@@ -1,0 +1,49 @@
+{% extends "warehouse/_base.html" %}
+{% block title %}Packing Pool{% endblock %}
+{% block nav_pool %}active{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Packing Pool</h1>
+  <p class="head-sub">An order appears here once every store's part has reached the warehouse. Claim it, pack it as one parcel, then mark it finished so a courier can take it out.</p>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h3>Ready to pack</h3>
+    <p class="card-sub">First come, first served — claiming locks the order to you for 24 hours.</p>
+    {% for task in available_tasks %}
+      <div class="row">
+        <div class="row-head">
+          <span class="row-title">Order #{{ task.order_id }}</span>
+          <span class="row-sub">{{ task.item_count }} item{{ task.item_count|pluralize }}</span>
+        </div>
+        <div class="row-sub">Ready {{ task.created_at|timesince }} ago</div>
+        <form method="post" action="{% url 'warehouse:claim_task' task.id %}" class="row-actions">
+          {% csrf_token %}
+          <button type="submit" class="btn">Claim order</button>
+        </form>
+      </div>
+    {% empty %}
+      <div class="empty-row">No orders are waiting to be packed.</div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h3>My active claims</h3>
+    <p class="card-sub">Finish before the deadline or the order goes back to the pool.</p>
+    {% for claim in my_active_claims %}
+      <div class="row">
+        <div class="row-head">
+          <span class="row-title">Order #{{ claim.task.order_id }}</span>
+          <span class="row-sub">{{ claim.deadline|timeuntil }} left</span>
+        </div>
+        <div class="row-actions">
+          <a class="btn-ghost" href="{% url 'warehouse:claim_detail' claim.id %}">Open</a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty-row">You haven't claimed anything.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

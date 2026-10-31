@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from delivery.services import release_expired_claims
+from warehouse.services import release_expired_claims as release_expired_pack_claims
 
 
 class Command(BaseCommand):
@@ -12,5 +13,5 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        released = release_expired_claims()
+        released = release_expired_claims() + release_expired_pack_claims()
         self.stdout.write(self.style.SUCCESS(f"Released {released} expired claim(s)."))

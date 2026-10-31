@@ -46,6 +46,14 @@ from notifications.models import Notification
 from orders.models import Order, OrderItem, StoreOrder
 from products.models import Category, Product
 from users.models import Profile
+from warehouse import services as wh_services
+from warehouse.models import WarehouseTask
+
+from users.models import Profile
+from warehouse import services as wh_services
+from warehouse.models import WarehouseTask
+
+from . import services
 
 from . import services
 from .models import (
@@ -216,12 +224,27 @@ class DeliveryTestCase(TestCase):
         self.assertIsNone(error)
         return result
 
+    def pack(self, order, worker=None):
+        """Claim and finish the order's warehouse packing task, which is
+        what opens the dropoff mission."""
+        from warehouse import services as wh_services
+        from warehouse.models import WarehouseTask
+
+        worker = worker or self.staff
+        task = WarehouseTask.objects.exclude(status="cancelled").get(order=order)
+        claim, error = wh_services.claim_task(task_id=task.pk, user=worker)
+        self.assertIsNone(error)
+        result, error = wh_services.finish_claim(claim_id=claim.pk, user=worker)
+        self.assertIsNone(error)
+        return result
+
     def order_at_warehouse(self, n=1, **order_kwargs):
-        """An order whose store orders are all At Warehouse, so the dropoff
-        mission exists. Returns (order, store_orders, dropoff_mission)."""
+        """An order whose store orders are all At Warehouse AND packed, so
+        the dropoff mission exists. Returns (order, store_orders, dropoff_mission)."""
         order, store_orders = self.order_with_stores(n, **order_kwargs)
         for so in store_orders:
             self.deliver_pickup(so)
+        self.pack(order)
         dropoff = DeliveryMission.objects.get(order=order, kind="dropoff")
         return order, store_orders, dropoff
 
@@ -720,12 +743,16 @@ class AdvanceOrderIfReadyTests(DeliveryTestCase):
         self.assertEqual(services.advance_order_if_ready(order), (None, None))
         self.assertFalse(DeliveryMission.objects.filter(kind="dropoff").exists())
 
-    def test_creates_dropoff_once_all_are_at_warehouse_and_notifies_shopper(self):
+    def test_opens_a_packing_task_once_all_are_at_warehouse_and_notifies_shopper(self):
         order, sos = self.order_with_stores(2)
         self.force(sos, "At Warehouse", "At Warehouse")
-        mission, error = services.advance_order_if_ready(order)
+        task, error = services.advance_order_if_ready(order)
         self.assertIsNone(error)
-        self.assertEqual(mission.kind, "dropoff")
+        self.assertIsInstance(task, WarehouseTask)
+        self.assertEqual(task.order, order)
+        self.assertEqual(task.status, "open")
+        # The courier-facing dropoff only appears once the order is packed.
+        self.assertFalse(DeliveryMission.objects.filter(order=order, kind="dropoff").exists())
         self.assertTrue(any("at our warehouse" in n for n in notes_for(self.shopper)))
 
     def test_second_call_does_not_duplicate_or_renotify(self):
@@ -733,7 +760,8 @@ class AdvanceOrderIfReadyTests(DeliveryTestCase):
         self.force(sos, "At Warehouse")
         services.advance_order_if_ready(order)
         self.assertEqual(services.advance_order_if_ready(order), (None, None))
-        self.assertEqual(DeliveryMission.objects.filter(kind="dropoff").count(), 1)
+        self.assertEqual(WarehouseTask.objects.filter(order=order).count(), 1)
+        self.assertFalse(DeliveryMission.objects.filter(kind="dropoff").exists())
         self.assertEqual(len(notes_for(self.shopper)), 1)
 
     def test_cancelled_store_orders_do_not_block(self):
@@ -854,10 +882,11 @@ class StoreOrderSignalTests(DeliveryTestCase):
 
     def test_cancelling_a_store_order_releases_the_rest_of_the_order(self):
         """Store A already at the warehouse, store B cancelled -> A's goods
-        must not be stranded: the dropoff opens, for A's items only."""
+        must not be stranded: the packing task opens for A's items only, and
+        the dropoff follows once it is packed."""
         order, [so1, so2] = self.order_with_stores(2)
         self.deliver_pickup(so1)
-        self.assertFalse(DeliveryMission.objects.filter(kind="dropoff").exists())
+        self.assertFalse(WarehouseTask.objects.filter(order=order).exists())
         mission_b = self.ship(so2)
 
         so2.status = "Cancelled"
@@ -865,6 +894,10 @@ class StoreOrderSignalTests(DeliveryTestCase):
 
         mission_b.refresh_from_db()
         self.assertEqual(mission_b.status, "cancelled")
+        task = WarehouseTask.objects.get(order=order)
+        self.assertEqual([i["product"] for i in task.items_snapshot], ["Item 1"])
+        self.assertFalse(DeliveryMission.objects.filter(kind="dropoff").exists())
+        self.pack(order)
         dropoff = DeliveryMission.objects.get(order=order, kind="dropoff")
         self.assertEqual(dropoff.cod_amount, so1.subtotal)
         self.assertEqual([i["product"] for i in dropoff.items_snapshot], ["Item 1"])
@@ -1184,9 +1217,12 @@ class CompleteClaimTests(DeliveryTestCase):
         self.assertEqual(CourierWallet.objects.get(user=self.courier).balance, PICKUP_FEE)
         self.assertTrue(any("reached our warehouse" in n for n in notes_for(self.shopper)))
 
-    def test_single_store_order_pickup_opens_the_dropoff(self):
+    def test_single_store_order_pickup_opens_the_packing_task_then_the_dropoff(self):
         order, so, mission, claim = self.pickup_claim_picked_up()
         self.complete(claim)
+        self.assertTrue(WarehouseTask.objects.filter(order=order, status="open").exists())
+        self.assertFalse(DeliveryMission.objects.filter(order=order, kind="dropoff").exists())
+        self.pack(order)
         self.assertTrue(DeliveryMission.objects.filter(order=order, kind="dropoff", status="open").exists())
 
     def test_dropoff_handover_delivers_the_order(self):
@@ -1206,6 +1242,7 @@ class CompleteClaimTests(DeliveryTestCase):
     def test_wallet_accumulates_and_ledger_has_one_row_per_claim(self):
         order, so, mission, claim = self.pickup_claim_picked_up()
         self.complete(claim)
+        self.pack(order)
         dropoff = DeliveryMission.objects.get(order=order, kind="dropoff")
         claim2 = self.claim(dropoff)  # same courier does both legs
         self.pick_up(claim2)
@@ -1368,12 +1405,20 @@ class MultiStoreOrderFlowTests(DeliveryTestCase):
         self.assertEqual(order.status, "Shipped")
         self.assertFalse(DeliveryMission.objects.filter(kind="dropoff").exists())
 
-        # Its goods arrive -> the single dropoff mission appears.
+        # Its goods arrive -> a packing task opens, but NOT the dropoff yet.
         claim2 = self.claim(mission2, self.courier2)
         self.pick_up(claim2, self.courier2)
         self.complete(claim2, self.courier2)
         order.refresh_from_db()
         self.assertEqual(order.status, "At Warehouse")
+        self.assertFalse(DeliveryMission.objects.filter(kind="dropoff").exists())
+        self.assertEqual(WarehouseTask.objects.get(order=order).status, "open")
+
+        # A warehouse worker packs it -> the single dropoff mission appears.
+        self.pack(order)
+        order.refresh_from_db()
+        self.assertEqual(order.status, "At Warehouse")
+        self.assertEqual(WarehouseTask.objects.get(order=order).status, "completed")
         dropoff = DeliveryMission.objects.get(order=order, kind="dropoff")
         self.assertEqual(dropoff.cod_amount, Decimal("200.00"))
         self.assertEqual(dropoff.item_count, 4)
@@ -1393,7 +1438,7 @@ class MultiStoreOrderFlowTests(DeliveryTestCase):
         self.assertEqual(CourierWallet.objects.get(user=self.courier).balance, PICKUP_FEE + DROPOFF_FEE)
         self.assertEqual(CourierWallet.objects.get(user=self.courier2).balance, PICKUP_FEE)
 
-    def test_the_dropoff_is_created_exactly_once_however_the_pickups_interleave(self):
+    def test_the_packing_task_and_dropoff_are_each_created_once_however_the_pickups_interleave(self):
         order, [so1, so2] = self.order_with_stores(2)
         m1, m2 = self.ship(so1), self.ship(so2)
         c1, c2 = self.claim(m1), self.claim(m2, self.courier2)
@@ -1401,6 +1446,9 @@ class MultiStoreOrderFlowTests(DeliveryTestCase):
         self.pick_up(c2, self.courier2)
         self.complete(c2, self.courier2)
         self.complete(c1)
+        self.assertEqual(WarehouseTask.objects.filter(order=order).count(), 1)
+        self.assertEqual(DeliveryMission.objects.filter(order=order, kind="dropoff").count(), 0)
+        self.pack(order)
         self.assertEqual(DeliveryMission.objects.filter(order=order, kind="dropoff").count(), 1)
 
     def test_work_pool_only_shows_the_dropoff_when_every_store_arrived(self):
@@ -2050,17 +2098,18 @@ class BackfillCommandTests(DeliveryTestCase):
         self.silently_set(so1, "Shipped")       # shipped without a signal
         self.silently_set(so2, "At Warehouse")  # arrived without a signal
         out, err = self.run_command()
-        self.assertIn("Created 1 pickup and 1 dropoff", out)
+        self.assertIn("Created 1 pickup mission(s) and 1 packing task(s)", out)
         self.assertEqual(err, "")
         self.assertTrue(DeliveryMission.objects.filter(store_order=so1, kind="pickup").exists())
-        self.assertTrue(DeliveryMission.objects.filter(order=order2, kind="dropoff").exists())
+        self.assertTrue(WarehouseTask.objects.filter(order=order2, status="open").exists())
+        self.assertFalse(DeliveryMission.objects.filter(order=order2, kind="dropoff").exists())
 
     def test_is_safe_to_run_repeatedly(self):
         order, [so] = self.order_with_stores(1)
         self.silently_set(so, "Shipped")
         self.run_command()
         out, _ = self.run_command()
-        self.assertIn("Created 0 pickup and 0 dropoff", out)
+        self.assertIn("Created 0 pickup mission(s) and 0 packing task(s)", out)
         self.assertEqual(DeliveryMission.objects.count(), 1)
 
     def test_reports_the_missing_warehouse_instead_of_crashing(self):
@@ -2069,20 +2118,21 @@ class BackfillCommandTests(DeliveryTestCase):
         self.silently_set(so, "Shipped")
         out, err = self.run_command()
         self.assertIn("warehouse", err.lower())
-        self.assertIn("Created 0 pickup and 0 dropoff", out)
+        self.assertIn("Created 0 pickup mission(s) and 0 packing task(s)", out)
 
-    def test_waits_for_every_store_order_before_creating_a_dropoff(self):
+    def test_waits_for_every_store_order_before_creating_a_packing_task(self):
         order, [so1, so2] = self.order_with_stores(2)
         self.silently_set(so1, "At Warehouse")
         self.silently_set(so2, "Shipped")
         out, _ = self.run_command()
-        self.assertIn("1 pickup and 0 dropoff", out)
+        self.assertIn("1 pickup mission(s) and 0 packing task(s)", out)
 
     def test_does_not_touch_orders_that_are_not_shipped_or_at_warehouse(self):
         order, [so] = self.order_with_stores(1)
         out, _ = self.run_command()
-        self.assertIn("Created 0 pickup and 0 dropoff", out)
+        self.assertIn("Created 0 pickup mission(s) and 0 packing task(s)", out)
         self.assertFalse(DeliveryMission.objects.exists())
+        self.assertFalse(WarehouseTask.objects.exists())
 
 
 class ReleaseExpiredCommandTests(DeliveryTestCase):
