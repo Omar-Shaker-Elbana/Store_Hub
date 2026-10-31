@@ -276,8 +276,6 @@ Please follow [Conventional Commits](https://www.conventionalcommits.org/) for c
 ### 👥 Team Members
 - **Omar Shaker** – Python / Django / Backend   🔗 **GitHub:** [Omar-Shaker-Elbana](https://github.com/Omar-Shaker-Elbana)
 - **Mark Fahim** – PHP / HTML / CSS / JavaScript / Full-Stack   🔗 **GitHub:** [mark1234720](https://github.com/mark1234720) 
-- **Ahmed Roshdy** – Frontend (HTML, CSS, JavaScript)   🔗 **GitHub:** [AhmedMohammedRo](https://github.com/AhmedMohammedRo) 
-- **Ziad Khaled** – SQL / Backend   🔗 **GitHub:** [ZiadKhaled-wb](https://github.com/ZiadKhaled-wb) 
 ---
 ## 📄 License
 
