@@ -10,41 +10,103 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f8fafc; --surface:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
-    --accent:#1a49aa; --accent-light:#eef3fd; --accent-2:#3b6fe0; --orange:#ff9922;
-    --radius:16px; --radius-sm:10px; --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
   }
+
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
-  h1,h2,h3{font-family:'Poppins',sans-serif;margin:0}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:70px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
   a{text-decoration:none;color:inherit}
 
-  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0}
-  .brand img{width:120px}
-  .nav-links{display:flex;gap:24px}
-  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
-  .nav-links a:hover,.nav-links a.active{color:var(--accent)}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulseCode{0%,100%{box-shadow:0 0 0 0 rgba(26,73,170,.18)}50%{box-shadow:0 0 0 5px rgba(26,73,170,0)}}
 
-  .wrap{max-width:1100px;margin:0 auto;padding:30px 24px 0}
-  h1{font-size:24px;margin-bottom:4px}
-  .subtext{color:var(--muted);font-size:13.5px;margin-bottom:24px}
+  /* ---------- nav ---------- */
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-links a.active{color:var(--accent)}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1100px;margin:0 auto;padding:34px 24px 0}
+  .continue-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .continue-link:hover{text-decoration:underline}
+
+  .page-head{margin-bottom:26px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:28px}
+  .head-sub{color:var(--muted);font-size:14.5px;font-weight:500;margin:6px 0 0}
 
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
   @media(max-width:900px){.grid{grid-template-columns:1fr}}
 
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
-  .card h3{font-size:15.5px;margin-bottom:4px}
-  .card .card-sub{color:var(--muted);font-size:12.5px;margin-bottom:16px}
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px;
+    animation:slideInUp .5s ease both;
+    transition:box-shadow .25s ease;
+  }
+  .card:hover{box-shadow:var(--shadow)}
+  .grid > .card:nth-of-type(1){animation-delay:.1s}
+  .grid > .card:nth-of-type(2){animation-delay:.18s}
+  .card h3{display:flex;align-items:center;gap:8px;font-size:16px;margin-bottom:4px}
+  .card .card-sub{color:var(--muted);font-size:12.5px;margin-bottom:18px}
 
-  .row{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:12px}
+  .row{
+    border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:12px;
+    transition:border-color .2s ease,box-shadow .2s ease;
+  }
+  .row:hover{border-color:var(--accent-2);box-shadow:var(--shadow)}
   .row:last-child{margin-bottom:0}
-  .row-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .row-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
   .row-title{font-size:13.5px;font-weight:700}
   .row-sub{font-size:12px;color:var(--muted)}
-  .code-pill{font-family:'Poppins',sans-serif;font-weight:800;font-size:15px;letter-spacing:3px;background:var(--accent-light);color:var(--accent);padding:4px 12px;border-radius:8px}
+  .code-pill{
+    font-family:'Poppins',sans-serif;font-weight:800;font-size:15px;letter-spacing:3px;
+    background:var(--accent-light);color:var(--accent);padding:4px 12px;border-radius:8px;
+    flex-shrink:0;animation:pulseCode 2.4s ease-in-out infinite;
+  }
   .empty-row{color:var(--muted);font-size:13px;padding:8px 0}
 
-  @media(max-width:600px){.wrap{padding:20px 16px 0}nav{padding:12px 18px}.card{padding:18px}}
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .page-head h1{font-size:22px}
+    .card{padding:18px}
+  }
 </style>
 </head>
 <body>
@@ -59,13 +121,23 @@
 
 <div class="wrap">
 
-  <h1>Warehouse</h1>
-  <p class="subtext">What's arriving from couriers, and what's waiting to go back out for delivery.</p>
+  <a href="{% url 'delivery:work_pool' %}" class="continue-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to work pool
+  </a>
+
+  <div class="page-head">
+    <h1>Warehouse</h1>
+    <p class="head-sub">What's arriving from couriers, and what's waiting to go back out for delivery.</p>
+  </div>
 
   <div class="grid">
 
     <div class="card">
-      <h3>Arriving now</h3>
+      <h3>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+        Arriving now
+      </h3>
       <p class="card-sub">Couriers on their way in — read out this code when they hand the goods over.</p>
       {% for claim in arriving_claims %}
         <div class="row">
@@ -81,7 +153,10 @@
     </div>
 
     <div class="card">
-      <h3>Waiting to go out</h3>
+      <h3>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Waiting to go out
+      </h3>
       <p class="card-sub">Dropoff missions sitting in the pool for a courier to claim.</p>
       {% for mission in awaiting_dropoff %}
         <div class="row">

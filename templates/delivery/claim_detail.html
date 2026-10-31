@@ -12,127 +12,259 @@
 
 <style>
   :root{
-    --bg:#f8fafc; --surface:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
-    --accent:#1a49aa; --accent-light:#eef3fd; --accent-2:#3b6fe0; --orange:#ff9922;
-    --danger:#ef4444; --danger-light:#fef2f2; --success:#16a34a; --success-light:#f0fdf4;
-    --radius:16px; --radius-sm:10px;
-    --shadow:0 4px 20px rgba(30,41,59,0.06); --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
   }
+
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:60px;
+  }
   h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
   a{text-decoration:none;color:inherit}
   button{font-family:inherit;cursor:pointer}
-  @keyframes slideInUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
 
-  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+
+  /* ---------- top progress bar ---------- */
+  #topbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--orange));z-index:9999;transition:width .25s ease}
+  #topbar.loading{width:70%;transition:width 2.4s cubic-bezier(.1,.6,.3,1)}
+
+  /* ---------- nav ---------- */
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
   .brand img{width:120px;height:auto;display:block}
-  .nav-links{display:flex;gap:24px}
-  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;transition:color .2s}
   .nav-links a:hover{color:var(--accent)}
+  .nav-links a.active{color:var(--accent)}
 
+  /* ---------- toasts ---------- */
   #toast-stack{position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:10px;max-width:340px}
-  .toast{background:var(--surface);border-left:4px solid var(--success);border-radius:10px;box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500}
+  .toast{
+    background:var(--surface);border-left:4px solid var(--success);border-radius:10px;
+    box-shadow:var(--shadow-lg);padding:13px 16px;font-size:14px;font-weight:500;
+    display:flex;align-items:center;gap:10px;animation:slideInRight .35s ease;
+  }
   .toast.error{border-left-color:var(--danger)}
+  .toast svg{flex-shrink:0}
+  .toast.hide{opacity:0;transform:translateX(30px);transition:all .35s ease}
 
-  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
-  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:13.5px;margin:18px 0 0}
+  /* ---------- layout ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 24px 0}
+  .continue-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .continue-link:hover{text-decoration:underline}
 
-  .hero{text-align:center;padding:24px 24px 20px;animation:slideInUp .4s ease}
-  .hero h1{font-size:25px;margin-bottom:6px}
-  .hero p{color:var(--muted);font-size:13.5px}
-  .status-ribbon{display:inline-flex;margin-top:12px;font-size:11px;font-weight:700;padding:5px 14px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:12px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:28px}
+  .head-sub{color:var(--muted);font-size:14.5px;font-weight:500;margin:6px 0 0}
+
+  .status-ribbon{display:inline-flex;font-size:11.5px;font-weight:700;padding:6px 16px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
   .status-ribbon.claimed{background:var(--accent-light);color:var(--accent)}
   .status-ribbon.picked_up{background:#fff4e0;color:#b45309}
   .status-ribbon.delivered{background:var(--success-light);color:var(--success)}
   .status-ribbon.expired,.status-ribbon.released,.status-ribbon.cancelled{background:var(--danger-light);color:var(--danger)}
 
-  .detail-grid{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:flex-start;margin-top:8px}
-  @media(max-width:940px){.detail-grid{grid-template-columns:1fr}}
+  .detail-grid{display:grid;grid-template-columns:1fr 380px;gap:30px;align-items:flex-start}
+  @media(max-width:900px){.detail-grid{grid-template-columns:1fr}}
 
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:20px}
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px;margin-bottom:20px;
+    animation:slideInUp .5s ease both;
+    transition:box-shadow .25s ease;
+  }
+  .card:hover{box-shadow:var(--shadow)}
   .card:last-child{margin-bottom:0}
-  .card h3{font-size:15.5px;margin-bottom:4px}
-  .card .subtext{color:var(--muted);font-size:12.5px;margin-bottom:16px}
+  .main-col .card:nth-child(1){animation-delay:.02s}
+  .main-col .card:nth-child(2){animation-delay:.08s}
+  .sidebar .card{animation-delay:.12s}
+  .card h3{font-size:17px;margin-bottom:4px}
+  .subtext{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .subtext.flush{margin-bottom:0}
 
-  .info-row{display:flex;gap:12px;padding:9px 0}
-  .info-icon{width:32px;height:32px;border-radius:9px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .info-label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
-  .info-value{font-size:13.5px;font-weight:600;margin-top:2px}
-
-  .item-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+  /* ---------- items ---------- */
+  .item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
   .item-row:last-child{border-bottom:none}
-  .item-row .muted{color:var(--muted);font-size:11.5px}
+  .item-thumb{
+    width:40px;height:40px;border-radius:10px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+    display:flex;align-items:center;justify-content:center;color:var(--accent);
+  }
+  .item-name{flex:1;min-width:0;font-weight:600}
+  .item-name .muted{display:block;color:var(--muted);font-size:12px;font-weight:400;margin-top:2px}
+  .qty-pill{background:var(--accent-light);color:var(--accent);font-weight:700;font-size:13px;padding:4px 12px;border-radius:999px}
 
+  /* ---------- route ---------- */
+  .info-row{display:flex;gap:14px;padding:10px 0}
+  .info-icon{width:36px;height:36px;border-radius:10px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .info-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+  .info-value{font-size:14.5px;font-weight:600;margin-top:2px}
+  .info-sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .cod-hint{background:#fff4e0;color:#b45309;border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;margin-top:10px}
+
+  /* ---------- sidebar / timer ---------- */
   .sidebar{position:sticky;top:86px}
-  .timer-block{margin-bottom:16px}
-  .timer-label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase}
-  .timer-value{font-size:20px;font-weight:800;font-family:'Poppins',sans-serif}
+  .timer-block{margin-bottom:18px}
+  .timer-label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+  .timer-value{font-size:24px;font-weight:800;font-family:'Poppins',sans-serif;margin-top:4px}
   .timer-value.urgent{color:var(--danger)}
-  .timer-track{height:7px;border-radius:999px;background:var(--border);overflow:hidden;margin-top:6px}
-  .timer-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--success))}
+  .timer-track{height:8px;border-radius:999px;background:var(--border);overflow:hidden;margin-top:8px}
+  .timer-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--success));transition:width 1s linear}
   .timer-fill.urgent{background:linear-gradient(90deg,var(--danger),#f87171)}
   .urgent-card{animation:pulseWarn 2s infinite;border-color:rgba(239,68,68,.4) !important}
 
-  .btn-primary{width:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;padding:12px 18px;border-radius:999px;font-weight:600;font-size:13.5px;margin-bottom:10px;box-shadow:0 6px 16px rgba(26,73,170,.25)}
-  .btn-ghost{width:100%;background:var(--danger-light);color:var(--danger);border:none;padding:10px 18px;border-radius:999px;font-weight:600;font-size:13px}
-  .btn-primary:disabled{opacity:.6;cursor:not-allowed}
+  /* ---------- buttons ---------- */
+  .btn-primary{
+    width:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:13px 26px;border-radius:999px;font-weight:600;font-size:14.5px;margin-bottom:10px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease;box-shadow:0 6px 16px rgba(26,73,170,.25);
+  }
+  .btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,73,170,.32)}
+  .btn-primary:active:not(:disabled){transform:translateY(0)}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
 
-  .field{margin-bottom:12px}
-  .field label{display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:5px}
-  .field input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;letter-spacing:3px;text-align:center;font-weight:700}
-  .checkbox-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text);margin-bottom:14px}
-  .cod-hint{background:#fff4e0;color:#b45309;border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;margin-bottom:12px}
+  .btn-danger{
+    width:100%;background:var(--danger-light);color:var(--danger);border:none;
+    padding:12px 24px;border-radius:999px;font-weight:600;font-size:14px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .2s, transform .2s;
+  }
+  .btn-danger:hover:not(:disabled){background:#fee2e2;transform:translateY(-1px)}
+  .btn-danger:disabled{opacity:.55;cursor:not-allowed}
 
+  .card form:last-child > .btn-primary{margin-bottom:0}
+
+  .btn-spinner{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .7s linear infinite;display:inline-block}
+  .btn-danger .btn-spinner{border-color:rgba(239,68,68,.3);border-top-color:var(--danger)}
+
+  /* ---------- form fields ---------- */
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field input[type=text]{
+    width:100%;padding:12px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    font-family:inherit;font-size:18px;letter-spacing:4px;text-align:center;font-weight:700;color:var(--text);
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .field input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+  .checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);margin-bottom:16px;cursor:pointer}
+  .checkbox-row input{accent-color:var(--accent);width:16px;height:16px}
+
+  /* ---------- outcomes ---------- */
   .outcome-figures{display:flex;flex-direction:column;gap:10px}
-  .outcome-figure{display:flex;justify-content:space-between}
-  .outcome-figure .value{font-size:16px;font-weight:800;font-family:'Poppins',sans-serif;color:var(--accent)}
-  .outcome-note{font-size:12.5px;color:var(--muted);padding-top:10px;border-top:1px solid var(--border);margin-top:8px}
-  .no-action-note{font-size:12.5px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px}
+  .outcome-figure{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted)}
+  .outcome-figure .value{font-size:20px;font-weight:800;font-family:'Poppins',sans-serif;color:var(--success)}
+  .outcome-note{font-size:13px;color:var(--muted);padding-top:12px;border-top:1px solid var(--border);margin-top:10px}
+  .outcome-note.plain{border-top:none;padding-top:0;margin-top:0}
+  .no-action-note{font-size:13px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px}
 
-  @media(max-width:600px){.wrap{padding:0 16px}nav{padding:12px 18px}.card{padding:18px}}
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .nav-links{gap:14px}
+    .page-head h1{font-size:22px}
+    .card{padding:18px}
+  }
 </style>
 </head>
 <body>
 
+<div id="topbar"></div>
+
 <nav>
   <a href="{% url 'home' %}" class="brand"><img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo"></a>
   <div class="nav-links">
-    <a href="{% url 'delivery:work_pool' %}">Work Pool</a>
-    <a href="{% url 'delivery:my_wallet' %}">My Wallet</a>
+    <a href="{% url 'delivery:work_pool' %}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      Work Pool
+    </a>
+    <a href="{% url 'delivery:my_wallet' %}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+      My Wallet
+    </a>
   </div>
 </nav>
 
 <div id="toast-stack">
-  {% if messages %}{% for message in messages %}
-    <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">{{ message }}</div>
-  {% endfor %}{% endif %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+        {% if message.tags == 'success' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
 </div>
-
 <div class="wrap">
 
-  <a href="{% url 'delivery:work_pool' %}" class="back-link">&larr; Back to work pool</a>
+  <a href="{% url 'delivery:work_pool' %}" class="continue-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to work pool
+  </a>
 
-  <div class="hero">
-    <h1>Order #{{ mission.order_id }} &middot; {{ mission.get_kind_display }}</h1>
-    <p>{{ mission.item_count }} item{{ mission.item_count|pluralize }} &middot; fee ${{ mission.fee|floatformat:2 }}</p>
+  <div class="page-head">
+    <div>
+      <h1>Order #{{ mission.order_id }} &middot; {{ mission.get_kind_display }}</h1>
+      <p class="head-sub">{{ mission.item_count }} item{{ mission.item_count|pluralize }} &middot; fee ${{ mission.fee|floatformat:2 }}</p>
+    </div>
     <span class="status-ribbon {{ claim.status }}">{{ claim.get_status_display }}</span>
   </div>
 
   <div class="detail-grid">
 
-    <div>
+    <div class="main-col">
       <div class="card">
         <h3>Items</h3>
         <p class="subtext">What you're carrying on this leg.</p>
         {% for item in mission.items_snapshot %}
           <div class="item-row">
-            <span>{{ item.product }}{% if item.store %} <span class="muted">&middot; {{ item.store }}</span>{% endif %}</span>
-            <span>&times;{{ item.quantity }}</span>
+            <div class="item-thumb">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <div class="item-name">
+              {{ item.product }}
+              {% if item.store %}<span class="muted">{{ item.store }}</span>{% endif %}
+            </div>
+            <span class="qty-pill">&times;{{ item.quantity }}</span>
           </div>
         {% empty %}
-          <p class="subtext" style="margin-bottom:0">No items recorded.</p>
+          <p class="subtext flush">No items recorded.</p>
         {% endfor %}
       </div>
 
@@ -142,23 +274,23 @@
 
         <div class="info-row">
           <div class="info-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
           <div>
             <div class="info-label">Pickup</div>
             <div class="info-value">{{ mission.pickup_address }}</div>
-            {% if mission.pickup_contact %}<div class="subtext" style="margin:2px 0 0">{{ mission.pickup_contact }}</div>{% endif %}
+            {% if mission.pickup_contact %}<div class="info-sub">{{ mission.pickup_contact }}</div>{% endif %}
           </div>
         </div>
 
         <div class="info-row">
           <div class="info-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
           </div>
           <div>
             <div class="info-label">Dropoff</div>
             <div class="info-value">{{ mission.dropoff_address }}</div>
-            {% if mission.dropoff_contact %}<div class="subtext" style="margin:2px 0 0">{{ mission.dropoff_contact }}</div>{% endif %}
+            {% if mission.dropoff_contact %}<div class="info-sub">{{ mission.dropoff_contact }}</div>{% endif %}
           </div>
         </div>
 
@@ -169,11 +301,14 @@
     </div>
 
     <div class="sidebar">
-      <div class="card {% if claim.is_active %}urgent-card-wrap{% endif %}" data-deadline="{% if claim.is_active %}{{ claim.deadline|date:'c' }}{% endif %}">
+      <div class="card" data-deadline="{% if claim.is_active %}{{ claim.deadline|date:'c' }}{% endif %}">
 
         {% if claim.is_active %}
           <div class="timer-block">
-            <div class="timer-label">Time left</div>
+            <div class="timer-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              Time left
+            </div>
             <div class="timer-value" data-timer-text>--</div>
             <div class="timer-track"><div class="timer-fill" data-timer-fill></div></div>
           </div>
@@ -186,7 +321,7 @@
           </form>
           <form method="POST" action="{% url 'delivery:release_claim' claim.id %}" onsubmit="return confirm('Release this mission back to the pool?');">
             {% csrf_token %}
-            <button type="submit" class="btn-ghost">Release Back to Pool</button>
+            <button type="submit" class="btn-danger">Release Back to Pool</button>
           </form>
 
         {% elif can_act and claim.status == "picked_up" %}
@@ -194,7 +329,7 @@
             {% csrf_token %}
             <div class="field">
               <label for="code">Confirmation code from the receiver</label>
-              <input type="text" id="code" name="code" maxlength="6" inputmode="numeric" placeholder="000000" required>
+              <input type="text" id="code" name="code" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="000000" required>
             </div>
             {% if needs_cash %}
               <label class="checkbox-row">
@@ -211,11 +346,11 @@
           <div class="outcome-note">Completed {{ claim.finished_at|date:"M j, Y, g:i A" }}.</div>
 
         {% elif claim.status == "expired" %}
-          <div class="outcome-note" style="border-top:none;padding-top:0">This claim's 24-hour window ran out and it returned to the pool.</div>
+          <div class="outcome-note plain">This claim's 24-hour window ran out and it returned to the pool.</div>
         {% elif claim.status == "released" %}
-          <div class="outcome-note" style="border-top:none;padding-top:0">This claim was released back to the pool.</div>
+          <div class="outcome-note plain">This claim was released back to the pool.</div>
         {% elif claim.status == "cancelled" %}
-          <div class="outcome-note" style="border-top:none;padding-top:0">This mission was cancelled.</div>
+          <div class="outcome-note plain">This mission was cancelled.</div>
         {% else %}
           <div class="no-action-note">Only the courier who holds this claim can act on it.</div>
         {% endif %}
@@ -224,31 +359,73 @@
 
   </div>
 </div>
-
 <script>
-var DAY_MS = 24 * 60 * 60 * 1000, URGENT_MS = 60 * 60 * 1000, WARN_MS = 6 * 60 * 60 * 1000;
-function tick(){
-  var card = document.querySelector('[data-deadline]');
-  if (!card || !card.dataset.deadline) return;
-  var remaining = new Date(card.dataset.deadline).getTime() - Date.now();
-  var textEl = card.querySelector('[data-timer-text]');
-  var fillEl = card.querySelector('[data-timer-fill]');
-  card.classList.remove('urgent-card');
-  if (remaining <= 0) { textEl.textContent = 'Expired — refresh the page'; textEl.classList.add('urgent'); fillEl.style.width = '0%'; return; }
-  var h = Math.floor(remaining / 3600000), m = Math.floor((remaining % 3600000) / 60000), s = Math.floor((remaining % 60000) / 1000);
-  textEl.textContent = h + 'h ' + m + 'm ' + s + 's';
-  fillEl.style.width = Math.max(0, Math.min(100, (remaining / DAY_MS) * 100)) + '%';
-  textEl.classList.toggle('urgent', remaining <= URGENT_MS);
-  fillEl.classList.toggle('urgent', remaining <= URGENT_MS);
-  card.classList.toggle('urgent-card', remaining <= URGENT_MS);
-}
-tick();
-setInterval(tick, 1000);
+document.addEventListener('DOMContentLoaded', function () {
+  var DAY_MS = 24 * 60 * 60 * 1000, URGENT_MS = 60 * 60 * 1000;
+  var topbar = document.getElementById('topbar');
 
-document.querySelectorAll('.toast').forEach(function (t, i) {
-  setTimeout(function () { t.remove(); }, 5000 + i * 150);
+  /* ---------- countdown timer (same logic, smoother) ---------- */
+  var timerId = null;
+  function tick(){
+    var card = document.querySelector('[data-deadline]');
+    if (!card || !card.dataset.deadline) return;
+    var textEl = card.querySelector('[data-timer-text]');
+    var fillEl = card.querySelector('[data-timer-fill]');
+    if (!textEl || !fillEl) return;
+
+    var remaining = new Date(card.dataset.deadline).getTime() - Date.now();
+    if (remaining <= 0) {
+      textEl.textContent = 'Expired \u2014 refresh the page';
+      textEl.classList.add('urgent');
+      fillEl.style.width = '0%';
+      card.classList.remove('urgent-card');
+      if (timerId) clearInterval(timerId);
+      return;
+    }
+    var h = Math.floor(remaining / 3600000),
+        m = Math.floor((remaining % 3600000) / 60000),
+        s = Math.floor((remaining % 60000) / 1000);
+    var urgent = remaining <= URGENT_MS;
+    textEl.textContent = h + 'h ' + m + 'm ' + s + 's';
+    fillEl.style.width = Math.max(0, Math.min(100, (remaining / DAY_MS) * 100)) + '%';
+    textEl.classList.toggle('urgent', urgent);
+    fillEl.classList.toggle('urgent', urgent);
+    card.classList.toggle('urgent-card', urgent);
+  }
+  tick();
+  timerId = setInterval(tick, 1000);
+
+  /* ---------- form submit feedback: top bar + button spinner ---------- */
+  var actionBtns = document.querySelectorAll('.btn-primary, .btn-danger');
+
+  document.querySelectorAll('form[method="POST"]').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      if (e.defaultPrevented) return; // e.g. user cancelled the confirm() dialog
+      topbar.classList.add('loading');
+      var clicked = form.querySelector('button[type="submit"]');
+      // defer so the browser submits the form before buttons get disabled
+      setTimeout(function () {
+        if (clicked) {
+          clicked.innerHTML = '<span class="btn-spinner"></span> Working...';
+        }
+        actionBtns.forEach(function (b) { b.disabled = true; });
+      }, 0);
+    });
+  });
+
+  // restore state if the user comes back via the browser's back button
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) window.location.reload();
+  });
+
+  /* ---------- toast auto-dismiss ---------- */
+  document.querySelectorAll('.toast').forEach(function (toast, i) {
+    setTimeout(function () {
+      toast.classList.add('hide');
+      setTimeout(function () { toast.remove(); }, 400);
+    }, 4200 + i * 150);
+  });
 });
 </script>
-
 </body>
 </html>

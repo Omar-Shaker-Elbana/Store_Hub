@@ -10,66 +10,183 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f8fafc; --surface:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
-    --accent:#1a49aa; --accent-light:#eef3fd; --accent-2:#3b6fe0; --orange:#ff9922;
-    --success:#16a34a; --success-light:#f0fdf4;
-    --radius:16px; --radius-sm:10px; --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --accent:#1a49aa;
+    --accent-light:#eef3fd;
+    --accent-2:#3b6fe0;
+    --orange:#ff9922;
+    --danger:#ef4444;
+    --danger-light:#fef2f2;
+    --success:#16a34a;
+    --success-light:#f0fdf4;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 4px 20px rgba(30,41,59,0.06);
+    --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
   }
+
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
-  h1,h2,h3{font-family:'Poppins',sans-serif;margin:0}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    animation:fadeIn .5s ease-in-out;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
   a{text-decoration:none;color:inherit}
 
-  nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0}
-  .brand img{width:120px}
-  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes shimmerBar{0%{transform:translateX(-100%)}100%{transform:translateX(420%)}}
+  @keyframes pulseCurrent{0%,100%{box-shadow:0 0 0 0 rgba(26,73,170,.35)}50%{box-shadow:0 0 0 7px rgba(26,73,170,0)}}
 
-  .wrap{max-width:760px;margin:0 auto;padding:30px 24px 0}
-  .hero{text-align:center;margin-bottom:26px}
-  .hero h1{font-size:24px;margin-bottom:6px}
-  .hero p{color:var(--muted);font-size:13.5px}
+  /* ---------- nav ---------- */
+  nav{
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 40px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:120px;height:auto;display:block}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;transition:color .2s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-links a.active{color:var(--accent)}
 
-  .code-card{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:var(--radius);padding:22px;text-align:center;margin-bottom:24px;box-shadow:var(--shadow)}
-  .code-card .label{font-size:12px;opacity:.85;margin-bottom:8px}
-  .code-card .code{font-size:34px;font-weight:800;font-family:'Poppins',sans-serif;letter-spacing:8px}
+  /* ---------- layout ---------- */
+  .wrap{max-width:760px;margin:0 auto;padding:34px 24px 0}
+  .continue-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:18px}
+  .continue-link:hover{text-decoration:underline}
 
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:20px}
-  .card h3{font-size:15px;margin-bottom:14px}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:12px;animation:slideInUp .5s ease}
+  .page-head h1{font-size:28px}
+  .head-sub{color:var(--muted);font-size:14.5px;font-weight:500;margin:6px 0 0}
 
+  .status-ribbon{display:inline-flex;font-size:11.5px;font-weight:700;padding:6px 16px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;background:var(--accent-light);color:var(--accent)}
+  .status-ribbon.delivered{background:var(--success-light);color:var(--success)}
+
+  /* ---------- confirmation code ---------- */
+  .code-card{
+    position:relative;overflow:hidden;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+    border-radius:var(--radius);padding:26px 22px;text-align:center;margin-bottom:24px;
+    box-shadow:var(--shadow-lg);animation:scaleIn .5s ease .05s both;
+  }
+  .code-card::after{
+    content:"";position:absolute;top:0;left:0;height:100%;width:25%;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+    animation:shimmerBar 3.6s ease-in-out infinite;
+  }
+  .code-card .label{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;opacity:.9;margin-bottom:10px}
+  .code-card .code{font-size:38px;font-weight:800;font-family:'Poppins',sans-serif;letter-spacing:9px;padding-left:9px;user-select:all}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px;margin-bottom:20px;
+    animation:slideInUp .5s ease both;
+    transition:box-shadow .25s ease;
+  }
+  .card:hover{box-shadow:var(--shadow)}
+  .wrap > .card:nth-of-type(1){animation-delay:.08s}
+  .wrap > .card:nth-of-type(2){animation-delay:.16s}
+  .card h3{font-size:17px;margin-bottom:18px}
+
+  /* ---------- timeline ---------- */
   .timeline{display:flex;flex-direction:column;gap:0}
-  .step{display:flex;gap:14px;position:relative;padding-bottom:22px}
+  .step{display:flex;gap:16px;position:relative;padding-bottom:26px;animation:slideInUp .5s ease both}
+  .step:nth-child(1){animation-delay:.14s}
+  .step:nth-child(2){animation-delay:.2s}
+  .step:nth-child(3){animation-delay:.26s}
+  .step:nth-child(4){animation-delay:.32s}
   .step:last-child{padding-bottom:0}
-  .step::before{content:"";position:absolute;left:10px;top:22px;bottom:0;width:2px;background:var(--border)}
+  .step::before{content:"";position:absolute;left:11px;top:26px;bottom:-2px;width:2px;background:var(--border);transition:background .3s}
+  .step.done::before{background:var(--success)}
   .step:last-child::before{display:none}
-  .step-dot{width:22px;height:22px;border-radius:50%;background:var(--border);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
-  .step.done .step-dot{background:var(--success)}
-  .step-title{font-size:13.5px;font-weight:700}
-  .step-sub{font-size:12px;color:var(--muted);margin-top:2px}
 
-  .store-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+  .step-dot{
+    width:24px;height:24px;border-radius:50%;flex-shrink:0;z-index:1;
+    background:var(--surface);border:2px solid var(--border);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step-dot svg{display:none}
+  .step-dot::after{content:"";width:8px;height:8px;border-radius:50%;background:transparent}
+  .step.done .step-dot{background:var(--success);border-color:var(--success)}
+  .step.done .step-dot svg{display:block}
+  .step.done .step-dot::after{display:none}
+
+  /* the next step after the last completed one = "current" */
+  .step.done + .step:not(.done) .step-dot{border-color:var(--accent);background:var(--accent-light);animation:pulseCurrent 2s infinite}
+  .step.done + .step:not(.done) .step-dot::after{background:var(--accent)}
+
+  .step-title{font-size:15px;font-weight:700}
+  .step:not(.done) .step-title{color:var(--muted)}
+  .step.done + .step:not(.done) .step-title{color:var(--text)}
+  .step-sub{font-size:13px;color:var(--muted);margin-top:3px}
+
+  /* ---------- stores ---------- */
+  .store-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14.5px}
   .store-row:last-child{border-bottom:none}
-  .status-pill{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--accent-light);color:var(--accent);text-transform:uppercase}
+  .store-thumb{
+    width:40px;height:40px;border-radius:10px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+    display:flex;align-items:center;justify-content:center;color:var(--accent);
+  }
+  .store-name{flex:1;min-width:0;font-weight:600}
+  .status-pill{font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;background:var(--accent-light);color:var(--accent);text-transform:uppercase;letter-spacing:.03em}
+  .empty-note{color:var(--muted);font-size:13.5px;margin:0}
 
-  @media(max-width:600px){.wrap{padding:20px 16px 0}nav{padding:12px 18px}.card{padding:18px}}
+  @media(max-width:600px){
+    .wrap{padding:22px 16px 0}
+    nav{padding:12px 18px}
+    .page-head h1{font-size:22px}
+    .card{padding:18px}
+    .code-card .code{font-size:28px;letter-spacing:6px;padding-left:6px}
+  }
 </style>
 </head>
 <body>
 
 <nav>
   <a href="{% url 'home' %}" class="brand"><img src="{% static 'landing/imgs/logo.png' %}" alt="StoreHub logo"></a>
-  <div class="nav-links"><a href="{% url 'home' %}">Home</a></div>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      Home
+    </a>
+  </div>
 </nav>
 
 <div class="wrap">
 
-  <div class="hero">
-    <h1>Order #{{ order.id }}</h1>
-    <p>Status: {{ order.get_status_display|default:order.status }}</p>
+  <a href="{% url 'home' %}" class="continue-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Continue shopping
+  </a>
+
+  <div class="page-head">
+    <div>
+      <h1>Order #{{ order.id }}</h1>
+      <p class="head-sub">Track your delivery</p>
+    </div>
+    <span class="status-ribbon {% if order.status == 'Delivered' %}delivered{% endif %}">{{ order.get_status_display|default:order.status }}</span>
   </div>
 
   {% if confirmation_code %}
     <div class="code-card">
-      <div class="label">Give this code to your courier when they arrive</div>
+      <div class="label">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 5 6v6c0 5 3.5 8.5 7 10 3.5-1.5 7-5 7-10V6z"/></svg>
+        Give this code to your courier when they arrive
+      </div>
       <div class="code">{{ confirmation_code }}</div>
     </div>
   {% endif %}
@@ -78,19 +195,19 @@
     <h3>Delivery progress</h3>
     <div class="timeline">
       <div class="step {% if order.processed_at or order.status != 'Pending' %}done{% endif %}">
-        <div class="step-dot">&#10003;</div>
+        <div class="step-dot"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M20 6 9 17l-5-5"/></svg></div>
         <div><div class="step-title">Order placed</div><div class="step-sub">{{ order.created_at|date:"M j, Y, g:i A" }}</div></div>
       </div>
       <div class="step {% if order.shipped_at %}done{% endif %}">
-        <div class="step-dot">&#10003;</div>
+        <div class="step-dot"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M20 6 9 17l-5-5"/></svg></div>
         <div><div class="step-title">Shipped by merchant(s)</div><div class="step-sub">{% if order.shipped_at %}{{ order.shipped_at|date:"M j, Y, g:i A" }}{% else %}Waiting on store(s) to ship{% endif %}</div></div>
       </div>
       <div class="step {% if order.status == 'Out for Delivery' or order.status == 'Delivered' %}done{% endif %}">
-        <div class="step-dot">&#10003;</div>
+        <div class="step-dot"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M20 6 9 17l-5-5"/></svg></div>
         <div><div class="step-title">Out for delivery</div><div class="step-sub">{% if dropoff_claim %}Courier: {{ dropoff_claim.courier }}{% else %}Not dispatched yet{% endif %}</div></div>
       </div>
       <div class="step {% if order.delivered_at %}done{% endif %}">
-        <div class="step-dot">&#10003;</div>
+        <div class="step-dot"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M20 6 9 17l-5-5"/></svg></div>
         <div><div class="step-title">Delivered</div><div class="step-sub">{% if order.delivered_at %}{{ order.delivered_at|date:"M j, Y, g:i A" }}{% else %}Not yet{% endif %}</div></div>
       </div>
     </div>
@@ -100,11 +217,14 @@
     <h3>Items by store</h3>
     {% for store_order in order.store_orders.all %}
       <div class="store-row">
-        <span>{{ store_order.store.name|default:"Store" }}</span>
+        <div class="store-thumb">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        </div>
+        <span class="store-name">{{ store_order.store.name|default:"Store" }}</span>
         <span class="status-pill">{{ store_order.status }}</span>
       </div>
     {% empty %}
-      <p style="color:var(--muted);font-size:13px;margin:0">No stores on this order.</p>
+      <p class="empty-note">No stores on this order.</p>
     {% endfor %}
   </div>
 

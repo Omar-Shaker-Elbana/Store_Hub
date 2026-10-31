@@ -19,16 +19,19 @@
     --shadow:0 4px 20px rgba(30,41,59,0.06); --shadow-lg:0 12px 40px rgba(26,73,170,0.14);
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;padding-bottom:70px}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;animation:fadeIn .5s ease-in-out;padding-bottom:70px}
   h1,h2,h3,h4{font-family:'Poppins',sans-serif;margin:0}
   a{text-decoration:none;color:inherit}
   button{font-family:inherit;cursor:pointer}
 
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
   @keyframes slideInUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.25)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
   @keyframes spin{to{transform:rotate(360deg)}}
 
   nav{background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  .brand{display:flex;align-items:center;gap:10px}
   .brand img{width:120px;height:auto;display:block}
   .nav-links{display:flex;align-items:center;gap:24px}
   .nav-links a{color:var(--muted);font-weight:600;font-size:14.5px;transition:color .2s}
@@ -39,7 +42,7 @@
   .toast.error{border-left-color:var(--danger)}
 
   .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
-  .hero{text-align:center;padding:26px 24px 24px;animation:slideInUp .4s ease}
+  .hero{text-align:center;padding:30px 24px 24px;animation:slideInUp .5s ease both}
   .hero h1{font-size:27px;margin-bottom:6px}
   .hero p{color:var(--muted);font-size:14px;max-width:520px;margin:0 auto}
 
