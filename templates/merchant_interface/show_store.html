@@ -119,28 +119,44 @@
   .products-heading h2{font-size:19px}
   .products-heading .count{color:var(--muted);font-size:13.5px;font-weight:500}
 
+  /* A real grid: this must match the container's class (it used to be styled
+     as .product-grid while the HTML only had an id, so nothing applied). */
   .product-grid{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;
+    align-items:start;
   }
 
   .product-card{
+    display:flex;flex-direction:column;
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     overflow:hidden;box-shadow:var(--shadow);transition:transform .2s ease,box-shadow .2s ease;
     animation:slideInUp .4s ease both;
   }
   .product-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .product-card:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
   .product-card-img{
-    width:100%;aspect-ratio:1/1;background:var(--accent-light);overflow:hidden;
+    position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;
+    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
     display:flex;align-items:center;justify-content:center;
   }
-  .product-card-img img{width:100%;height:100%;object-fit:cover;display:block}
+  .product-card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+  .product-card:hover .product-card-img img{transform:scale(1.05)}
   .product-card-img .no-image{color:var(--accent);opacity:.5}
-  .product-card-body{padding:14px}
-  .product-card-body h4{font-size:14.5px;margin-bottom:4px;line-height:1.3;
+  .badge{
+    position:absolute;top:10px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;color:#fff;
+  }
+  .badge-offer{left:10px;background:var(--orange)}
+  .badge-stock{right:10px;background:rgba(30,41,59,.82)}
+  .product-card-body{padding:12px 14px 14px}
+  .product-card-body h4{font-size:14px;margin-bottom:6px;line-height:1.3;min-height:2.6em;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .product-card-price-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
   .product-card-price{color:var(--accent);font-weight:700;font-size:15px;font-family:'Poppins',sans-serif}
+  .product-card-was{color:var(--muted);font-size:12.5px;text-decoration:line-through}
+  .product-card-unset{color:var(--muted);font-size:13px}
 
   .empty-state{
+    grid-column:1/-1;
     background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);
     padding:60px 24px;text-align:center;color:var(--muted);
   }
@@ -249,9 +265,7 @@
       <span class="count">{{ store_products.paginator.count }} item{{ store_products.paginator.count|pluralize }}</span>
     </div>
 
-    <div id="product-grid" data-next-page="{% if store_products.has_next %}{{ store_products.next_page_number }}{% endif %}">
-      {% include "merchant_interface/_product_cards.html" %}
-    </div>
+    {% include "merchant_interface/_product_cards.html" %}
 
     {% if store_products.has_next %}
       <div class="load-more-wrap">

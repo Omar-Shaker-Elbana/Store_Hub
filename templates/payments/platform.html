@@ -1,0 +1,147 @@
+{% extends "payments/_base.html" %}
+{% block title %}Platform account{% endblock %}
+
+{% block nav %}
+  <a href="{% url 'payments:wallet' %}">My Wallet</a>
+  <a href="{% url 'payments:platform' %}" class="active">Platform</a>
+  <a href="{% url 'admin:index' %}">Admin</a>
+{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <h1>Platform account</h1>
+    <p class="head-sub">The website's own money. Visible to superusers only.</p>
+  </div>
+
+  <div class="hero-card">
+    <div class="label">Platform balance</div>
+    <div class="amount {% if summary.balance < 0 %}negative{% endif %}">{% if summary.balance < 0 %}&minus;${{ summary.balance|cut:"-"|floatformat:2 }}{% else %}${{ summary.balance|floatformat:2 }}{% endif %}</div>
+    <div class="note">
+      {% if summary.in_flight > 0 %}
+        ${{ summary.in_flight|floatformat:2 }} of courier and packing pay is advanced for orders still in transit. Once they are delivered, the balance is
+        <strong>${{ summary.balance_after_in_flight|floatformat:2 }}</strong>.
+      {% else %}
+        Nothing is advanced right now: every courier and packing payment has been recovered through delivery fees.
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="s-label">1% platform fee</div><div class="s-num good">${{ summary.fees_month|floatformat:2 }}</div><div class="s-sub">This month &middot; ${{ summary.fees_total|floatformat:2 }} all time</div></div>
+    <div class="stat"><div class="s-label">Delivery &amp; handling fees</div><div class="s-num">${{ summary.shipping_month|floatformat:2 }}</div><div class="s-sub">This month &middot; ${{ summary.shipping_total|floatformat:2 }} all time</div></div>
+    <div class="stat"><div class="s-label">Paid to couriers</div><div class="s-num bad">${{ summary.courier_month|floatformat:2 }}</div><div class="s-sub">This month &middot; ${{ summary.courier_total|floatformat:2 }} all time</div></div>
+    <div class="stat"><div class="s-label">Paid to warehouse workers</div><div class="s-num bad">${{ summary.packing_month|floatformat:2 }}</div><div class="s-sub">This month &middot; ${{ summary.packing_total|floatformat:2 }} all time</div></div>
+    <div class="stat"><div class="s-label">Net this month</div><div class="s-num {% if summary.month_net < 0 %}bad{% else %}good{% endif %}">{% if summary.month_net < 0 %}&minus;${{ summary.month_net|cut:"-"|floatformat:2 }}{% else %}${{ summary.month_net|floatformat:2 }}{% endif %}</div><div class="s-sub">Since {{ summary.month_start|date:"M j" }}</div></div>
+    <div class="stat"><div class="s-label">Orders settled</div><div class="s-num">{{ summary.orders_settled }}</div><div class="s-sub">All time</div></div>
+  </div>
+
+  <div class="card">
+    <h3>Why this account can't end the month negative</h3>
+    <p class="sub" style="margin:0">
+      Couriers ($20 per trip) and warehouse workers ($10 per package) are paid from this account the moment they finish.
+      The shopper pays a delivery &amp; handling fee equal to exactly those costs ($20 &times; (stores + 1) + $10), collected with the order's cash on delivery.
+      So every delivered order leaves this account with its 1% fee as pure profit; the only dips are short-lived advances on orders still in transit.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>1% earned per order</h3>
+    <p class="sub">The most recent settled orders.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Order</th><th>Shopper</th><th class="r">Product sales</th><th class="r">1% fee</th><th class="r">Delivery fee</th><th>Settled</th></tr></thead>
+        <tbody>
+          {% for s in settlements %}
+            <tr>
+              <td>#{{ s.order_id }}</td>
+              <td class="muted">{{ s.order.user|default:"—" }}</td>
+              <td class="r">${{ s.gross_sales|floatformat:2 }}</td>
+              <td class="plus">+${{ s.platform_fee|floatformat:2 }}</td>
+              <td class="r">${{ s.shipping_fee|floatformat:2 }}</td>
+              <td class="muted">{{ s.settled_at|date:"M j, Y H:i" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="empty-row">No order has been delivered yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Warehouse workers</h3>
+    <p class="sub">Packages packed and what this account has paid each worker.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Worker</th><th class="r">Packages (this month)</th><th class="r">Paid (this month)</th><th class="r">Packages (all time)</th><th class="r">Paid (all time)</th></tr></thead>
+        <tbody>
+          {% for w in warehouse_total %}
+            <tr>
+              <td>{{ w.account__user__username|default:w.account__user__email }}</td>
+              <td class="r">{% for m in warehouse_month %}{% if m.account__user__id == w.account__user__id %}{{ m.packages }}{% endif %}{% endfor %}</td>
+              <td class="r">{% for m in warehouse_month %}{% if m.account__user__id == w.account__user__id %}${{ m.paid|floatformat:2 }}{% endif %}{% endfor %}</td>
+              <td class="r">{{ w.packages }}</td>
+              <td class="r">${{ w.paid|floatformat:2 }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="empty-row">No packages have been packed yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Store payroll</h3>
+    <p class="sub">Salaries and owner profit shares are paid from each store's treasury at the end of every month.</p>
+    <form method="post" action="{% url 'payments:run_payroll_now' %}" style="margin-bottom:16px">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost">Run payroll for this month now</button>
+    </form>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Store</th><th>Month</th><th class="r">Salaries due</th><th class="r">Salaries paid</th><th class="r">Profit shared</th></tr></thead>
+        <tbody>
+          {% for p in recent_payrolls %}
+            <tr>
+              <td>{{ p.store }}</td>
+              <td>{{ p.period|date:"F Y" }}</td>
+              <td class="r">${{ p.salaries_due|floatformat:2 }}</td>
+              <td class="r">${{ p.salaries_paid|floatformat:2 }}</td>
+              <td class="r">${{ p.profit_distributed|floatformat:2 }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="empty-row">No payroll has run yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Platform ledger</h3>
+    <p class="sub">The latest money movements on this account.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Details</th><th class="r">Amount</th><th class="r">Balance</th></tr></thead>
+        <tbody>
+          {% for e in entries %}
+            <tr>
+              <td class="muted">{{ e.created_at|date:"M j, Y H:i" }}</td>
+              <td><span class="pill">{{ e.get_kind_display }}</span></td>
+              <td>{{ e.description|default:"—" }}</td>
+              {% if e.amount < 0 %}
+                <td class="minus">&minus;${{ e.amount|cut:"-"|floatformat:2 }}</td>
+              {% else %}
+                <td class="plus">+${{ e.amount|floatformat:2 }}</td>
+              {% endif %}
+              <td class="r muted">${{ e.balance_after|floatformat:2 }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="empty-row">No movements yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

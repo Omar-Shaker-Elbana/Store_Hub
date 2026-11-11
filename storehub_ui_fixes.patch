@@ -1,0 +1,435 @@
+diff --git a/merchant_interface/tests.py b/merchant_interface/tests.py
+index 224e50c..09fb838 100644
+--- a/merchant_interface/tests.py
++++ b/merchant_interface/tests.py
+@@ -27,10 +27,13 @@ from django.contrib.auth import get_user_model
+ from django.core.exceptions import ValidationError
+ from django.db import IntegrityError, transaction
+ from django.test import Client, TestCase
++from django.test.utils import CaptureQueriesContext
++from django.db import connection
+ from django.urls import reverse
+ from django.utils import timezone
+ 
+ from notifications.models import Notification
++from products.models import Category, Product, Product_Image
+ 
+ from .forms import (MembershipForm, MembershipInvitationForm, StoreForm,
+                     SuggestNicheForm)
+@@ -419,6 +422,106 @@ class ShowStoreViewTests(TestCase):
+         self.assertTemplateUsed(resp, "merchant_interface/_product_cards.html")
+ 
+ 
++class ShowStoreProductGridTests(TestCase):
++    """The store page lists products in a compact, clickable grid."""
++
++    def setUp(self):
++        self.client = Client()
++        self.store = make_store(enabled=True)
++        self.category = Category.objects.create(name="Gadgets")
++        self.url = reverse("show_store", args=[self.store.id])
++
++    def product(self, name="Widget", price="25.00", **extra):
++        return Product.objects.create(
++            store=self.store, category=self.category, name=name,
++            selling_price=Decimal(price), current_stock=5, **extra,
++        )
++
++    def page(self, **kwargs):
++        return self.client.get(self.url, **kwargs)
++
++    def test_grid_container_is_styled_by_class_and_only_appears_once(self):
++        # Regression: the CSS targeted .product-grid but the markup only had an
++        # id, so no grid applied and every image filled the whole screen.
++        self.product()
++        html = self.page().content.decode()
++        self.assertEqual(html.count('id="product-grid"'), 1)
++        self.assertIn('id="product-grid" class="product-grid"', html)
++        self.assertIn(".product-grid{", html)
++
++    def test_cards_show_the_primary_image_the_price_and_link_to_the_product(self):
++        product = self.product(name="Lamp", price="19.50")
++        Product_Image.objects.create(product=product, image="products_pics/second.jpg", order=2)
++        Product_Image.objects.create(product=product, image="products_pics/main.jpg", is_primary=True, order=5)
++        html = self.page().content.decode()
++        self.assertIn("products_pics/main.jpg", html)
++        self.assertNotIn("products_pics/second.jpg", html)
++        self.assertIn("$19.50", html)
++        self.assertIn(f'href="{reverse("view_product", args=[product.id])}"', html)
++        self.assertIn('loading="lazy"', html)
++
++    def test_without_images_the_first_image_is_used_then_a_placeholder(self):
++        with_image = self.product(name="Has image")
++        Product_Image.objects.create(product=with_image, image="products_pics/only.jpg", order=0)
++        self.product(name="No image")
++        html = self.page().content.decode()
++        self.assertIn("products_pics/only.jpg", html)
++        self.assertEqual(html.count('class="no-image"'), 1)
++
++    def test_discount_shows_the_new_price_the_old_one_and_a_badge(self):
++        self.product(price="100.00", offer=Decimal("25.00"))
++        html = self.page().content.decode()
++        self.assertIn("$75.00", html)
++        self.assertIn("$100.00", html)
++        self.assertIn("25% off", html)
++
++    def test_missing_price_and_out_of_stock_are_labelled(self):
++        Product.objects.create(
++            store=self.store, category=self.category, name="Mystery", current_stock=0
++        )
++        html = self.page().content.decode()
++        self.assertIn("Price unavailable", html)
++        self.assertIn("Out of stock", html)
++        self.assertNotIn("$None", html)
++
++    def test_inactive_products_are_not_listed(self):
++        self.product(name="Visible")
++        self.product(name="Hidden", is_active=False)
++        response = self.page()
++        self.assertContains(response, "Visible")
++        self.assertNotContains(response, "Hidden")
++        self.assertEqual(response.context["store_products"].paginator.count, 1)
++
++    def test_empty_store_shows_the_empty_state(self):
++        self.assertContains(self.page(), "No products yet")
++
++    def test_load_more_pages_do_not_repeat_or_skip_products(self):
++        ids = [self.product(name=f"P{i}").id for i in range(15)]
++        first = self.page().context["store_products"]
++        self.assertEqual(len(first), 12)
++        ajax = self.client.get(self.url + "?page=2", HTTP_X_REQUESTED_WITH="XMLHttpRequest")
++        second = ajax.context["store_products"]
++        self.assertEqual(len(second), 3)
++        shown = [p.id for p in first] + [p.id for p in second]
++        self.assertEqual(sorted(shown), sorted(ids))
++        self.assertEqual(len(set(shown)), 15)
++        self.assertContains(ajax, 'id="product-grid"', count=1)
++        self.assertEqual(ajax.content.decode().count('data-next-page=""'), 1)
++
++    def test_query_count_does_not_grow_with_the_number_of_products(self):
++        def queries():
++            with CaptureQueriesContext(connection) as ctx:
++                self.page()
++            return len(ctx)
++
++        for i in range(2):
++            Product_Image.objects.create(product=self.product(name=f"A{i}"), image=f"products_pics/a{i}.jpg", is_primary=True)
++        few = queries()
++        for i in range(10):
++            Product_Image.objects.create(product=self.product(name=f"B{i}"), image=f"products_pics/b{i}.jpg", is_primary=True)
++        self.assertEqual(queries(), few)
++
++
+ class CreateStoreViewTests(TestCase):
+     def setUp(self):
+         self.client = Client()
+diff --git a/merchant_interface/views.py b/merchant_interface/views.py
+index e1affc6..43f8423 100644
+--- a/merchant_interface/views.py
++++ b/merchant_interface/views.py
+@@ -4,14 +4,14 @@ from django.contrib.auth.decorators import login_required
+ from django.core.exceptions import ValidationError
+ from django.core.paginator import Paginator
+ from django.db import transaction
+-from django.db.models import Q, Sum
++from django.db.models import Prefetch, Q, Sum
+ from django.shortcuts import redirect, render
+ from django.utils import timezone
+ 
+ from notifications.models import Notification
+ from orders.forms import StoreOrderStatusForm
+ from orders.models import StoreOrder
+-from products.models import Product
++from products.models import Product, Product_Image
+ from users.models import Profile
+ 
+ from .forms import (MembershipForm, MembershipInvitationForm, StoreForm,
+@@ -93,10 +93,24 @@ def show_store(request, store_id):
+             messages.error(request, "This store is currently closed.")
+             return redirect("home")
+ 
+-    product_list = Product.objects.filter(store=store)
++    # Shoppers can only open active products, so only list those. Images are
++    # prefetched (primary first) so the cards don't cost one query each, and
++    # the ordering is made total so "Load more" can't repeat or skip items.
++    product_list = (
++        Product.active.filter(store=store)
++        .prefetch_related(
++            Prefetch(
++                "images",
++                queryset=Product_Image.objects.order_by("-is_primary", "order", "id"),
++            )
++        )
++        .order_by("-creation_date", "-id")
++    )
+     paginator = Paginator(product_list, 12)
+     page_number = request.GET.get("page", 1)
+     store_products = paginator.get_page(page_number)
++    for product in store_products:
++        product.cover = next(iter(product.images.all()), None)
+ 
+     context = {"store": store, "store_products": store_products}
+ 
+diff --git a/shopper_interface/tests.py b/shopper_interface/tests.py
+index f25fe4b..98fecf2 100644
+--- a/shopper_interface/tests.py
++++ b/shopper_interface/tests.py
+@@ -908,4 +908,43 @@ class SearchResultsPageViewTests(ShopperInterfaceTestBase):
+         self.client.get(
+             reverse("shopper_interface:search_results_page"), {"q": "mouse", "page": "xyz"}
+         )
+-        mock_search.assert_called_once_with("mouse", page=1)
+\ No newline at end of file
++        mock_search.assert_called_once_with("mouse", page=1)
++
++
++# ---------------------------------------------------------------------------
++# Store pictures in the feed and in search results
++# ---------------------------------------------------------------------------
++
++
++class StorePictureCardTests(TestCase):
++    """Regression: these cards read `store.logo`, a field Store doesn't have,
++    so a store's picture never showed up (everyone got the letter fallback)."""
++
++    def setUp(self):
++        niche = Niche.objects.create(name="Pictures")
++        self.with_picture = Store.objects.create(
++            name="Pic Store", niche=niche, main_picture="store_pics/logo.png"
++        )
++        self.without_picture = Store.objects.create(name="Plain Store", niche=niche)
++
++    def test_feed_store_chips_show_the_store_picture(self):
++        from django.template.loader import render_to_string
++
++        html = render_to_string(
++            "shopper_interface/_feed_cards.html",
++            {"recommended_products": [], "recommended_stores": [self.with_picture, self.without_picture]},
++        )
++        self.assertIn("store_pics/logo.png", html)
++        self.assertEqual(html.count("store-chip-fallback"), 1)
++        self.assertIn("Plain Store", html)
++
++    def test_search_store_cards_show_the_store_picture(self):
++        from django.template.loader import render_to_string
++
++        results = [
++            {"type": "store", "object": self.with_picture},
++            {"type": "store", "object": self.without_picture},
++        ]
++        html = render_to_string("shopper_interface/_search_results_cards.html", {"results": results})
++        self.assertIn("store_pics/logo.png", html)
++        self.assertEqual(html.count("store-card-fallback"), 1)
+diff --git a/templates/merchant_interface/_product_cards.html b/templates/merchant_interface/_product_cards.html
+index a03acf1..5980096 100644
+--- a/templates/merchant_interface/_product_cards.html
++++ b/templates/merchant_interface/_product_cards.html
+@@ -1,25 +1,38 @@
+-<div id="product-grid" data-next-page="{% if store_products.has_next %}{{ store_products.next_page_number }}{% endif %}">
+-  {% if store_products %}
+-    {% for product in store_products %}
+-      <div class="product-card">
+-        <div class="product-card-img">
+-          {% if product.picture %}
+-            <img src="{{ product.picture.url }}" alt="{{ product.name }}">
+-          {% else %}
+-            <svg class="no-image" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+-          {% endif %}
+-        </div>
+-        <div class="product-card-body">
+-          <h4>{{ product.name }}</h4>
+-          <span class="product-card-price">${{ product.price }}</span>
+-        </div>
++<div id="product-grid" class="product-grid" data-next-page="{% if store_products.has_next %}{{ store_products.next_page_number }}{% endif %}">
++  {% for product in store_products %}
++    {% with stock=product.current_stock|default_if_none:0 %}
++    <a href="{% url 'view_product' product.id %}" class="product-card">
++      <div class="product-card-img">
++        {% if product.cover %}
++          <img src="{{ product.cover.image.url }}" alt="{{ product.name|default:'Product' }}" loading="lazy" decoding="async">
++        {% else %}
++          <svg class="no-image" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
++        {% endif %}
++        {% if product.offer %}<span class="badge badge-offer">{{ product.offer|floatformat:"-2" }}% off</span>{% endif %}
++        {% if stock <= 0 %}<span class="badge badge-stock">Out of stock</span>{% endif %}
+       </div>
+-    {% endfor %}
+-  {% else %}
++      <div class="product-card-body">
++        <h4>{{ product.name|default:"Unnamed product" }}</h4>
++        {% if product.selling_price %}
++          <div class="product-card-price-row">
++            {% if product.offer %}
++              <span class="product-card-price">${{ product.discounted_price|floatformat:2 }}</span>
++              <span class="product-card-was">${{ product.selling_price }}</span>
++            {% else %}
++              <span class="product-card-price">${{ product.selling_price }}</span>
++            {% endif %}
++          </div>
++        {% else %}
++          <span class="product-card-unset">Price unavailable</span>
++        {% endif %}
++      </div>
++    </a>
++    {% endwith %}
++  {% empty %}
+     <div class="empty-state">
+       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l1.5-5h15L21 9M3 9v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M3 9h18M9 21v-6h6v6"/></svg>
+       <h3>No products yet</h3>
+       <p>This store hasn't listed any products.</p>
+     </div>
+-  {% endif %}
+-</div>
+\ No newline at end of file
++  {% endfor %}
++</div>
+diff --git a/templates/merchant_interface/show_store.html b/templates/merchant_interface/show_store.html
+index 0fc7298..6b2d3a9 100644
+--- a/templates/merchant_interface/show_store.html
++++ b/templates/merchant_interface/show_store.html
+@@ -119,28 +119,44 @@
+   .products-heading h2{font-size:19px}
+   .products-heading .count{color:var(--muted);font-size:13.5px;font-weight:500}
+ 
++  /* A real grid: this must match the container's class (it used to be styled
++     as .product-grid while the HTML only had an id, so nothing applied). */
+   .product-grid{
+-    display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;
++    display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;
++    align-items:start;
+   }
+ 
+   .product-card{
++    display:flex;flex-direction:column;
+     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+     overflow:hidden;box-shadow:var(--shadow);transition:transform .2s ease,box-shadow .2s ease;
+     animation:slideInUp .4s ease both;
+   }
+   .product-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
++  .product-card:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
+   .product-card-img{
+-    width:100%;aspect-ratio:1/1;background:var(--accent-light);overflow:hidden;
++    position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;
++    background:linear-gradient(135deg,var(--accent-light),#dbe6fb);
+     display:flex;align-items:center;justify-content:center;
+   }
+-  .product-card-img img{width:100%;height:100%;object-fit:cover;display:block}
++  .product-card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
++  .product-card:hover .product-card-img img{transform:scale(1.05)}
+   .product-card-img .no-image{color:var(--accent);opacity:.5}
+-  .product-card-body{padding:14px}
+-  .product-card-body h4{font-size:14.5px;margin-bottom:4px;line-height:1.3;
++  .badge{
++    position:absolute;top:10px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;color:#fff;
++  }
++  .badge-offer{left:10px;background:var(--orange)}
++  .badge-stock{right:10px;background:rgba(30,41,59,.82)}
++  .product-card-body{padding:12px 14px 14px}
++  .product-card-body h4{font-size:14px;margin-bottom:6px;line-height:1.3;min-height:2.6em;
+     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
++  .product-card-price-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+   .product-card-price{color:var(--accent);font-weight:700;font-size:15px;font-family:'Poppins',sans-serif}
++  .product-card-was{color:var(--muted);font-size:12.5px;text-decoration:line-through}
++  .product-card-unset{color:var(--muted);font-size:13px}
+ 
+   .empty-state{
++    grid-column:1/-1;
+     background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);
+     padding:60px 24px;text-align:center;color:var(--muted);
+   }
+@@ -249,9 +265,7 @@
+       <span class="count">{{ store_products.paginator.count }} item{{ store_products.paginator.count|pluralize }}</span>
+     </div>
+ 
+-    <div id="product-grid" data-next-page="{% if store_products.has_next %}{{ store_products.next_page_number }}{% endif %}">
+-      {% include "merchant_interface/_product_cards.html" %}
+-    </div>
++    {% include "merchant_interface/_product_cards.html" %}
+ 
+     {% if store_products.has_next %}
+       <div class="load-more-wrap">
+diff --git a/templates/related_products/recommended_products.html b/templates/related_products/recommended_products.html
+index 7518131..8575195 100644
+--- a/templates/related_products/recommended_products.html
++++ b/templates/related_products/recommended_products.html
+@@ -1,7 +1,7 @@
+ <div class="product-grid">
+   {% for p in recommended_products %}
+     <a href="{% url 'view_product' p.id %}" class="product-card">
+-      {% if p.image1 %}<img src="{{ p.image1.url }}" alt="{{ p.name }}">{% endif %}
++      {% if p.primary_image %}<img src="{{ p.primary_image.image.url }}" alt="{{ p.name }}" loading="lazy">{% endif %}
+       <h4>{{ p.name }}</h4>
+       <span>${{ p.selling_price }}</span>
+     </a>
+diff --git a/templates/shopper_interface/_feed_cards.html b/templates/shopper_interface/_feed_cards.html
+index 89eea10..140d4ed 100644
+--- a/templates/shopper_interface/_feed_cards.html
++++ b/templates/shopper_interface/_feed_cards.html
+@@ -49,8 +49,8 @@
+     <div class="store-row-strip">
+       {% for store in recommended_stores %}
+         <a href="{% url 'show_store' store.id %}" class="store-chip">
+-          {% if store.logo %}
+-            <img src="{{ store.logo.url }}" alt="{{ store.name }}">
++          {% if store.main_picture %}
++            <img src="{{ store.main_picture.url }}" alt="{{ store.name }}" loading="lazy">
+           {% else %}
+             <div class="store-chip-fallback">{{ store.name|slice:":1" }}</div>
+           {% endif %}
+diff --git a/templates/shopper_interface/_search_results_cards.html b/templates/shopper_interface/_search_results_cards.html
+index 05c3425..99a8db2 100644
+--- a/templates/shopper_interface/_search_results_cards.html
++++ b/templates/shopper_interface/_search_results_cards.html
+@@ -43,8 +43,8 @@
+     {% with store=item.object %}
+     <a href="{% url 'show_store' store.id %}" class="store-card" data-type="store">
+       <span class="store-card-badge">Store</span>
+-      {% if store.logo %}
+-        <img src="{{ store.logo.url }}" alt="{{ store.name }}">
++      {% if store.main_picture %}
++        <img src="{{ store.main_picture.url }}" alt="{{ store.name }}" loading="lazy">
+       {% else %}
+         <div class="store-card-fallback">{{ store.name|slice:":1" }}</div>
+       {% endif %}
+diff --git a/templates/shopper_interface/home.html b/templates/shopper_interface/home.html
+index 9925c59..ab1633f 100644
+--- a/templates/shopper_interface/home.html
++++ b/templates/shopper_interface/home.html
+@@ -239,37 +239,6 @@
+     display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+   }
+ 
+-  /* fading gradient: --fade goes 0 (top of feed) to 100 (bottom) */
+-  .product-card{
+-    opacity:calc(1 - (var(--fade, 0) / 100) * 0.6);
+-    filter:saturate(calc(1 - (var(--fade, 0) / 100) * 0.35));
+-  }
+-  .product-card:hover{opacity:1;filter:saturate(1)}
+-
+-  /* recommended-stores row inserted into the feed every few scrolls */
+-  .store-row{
+-    grid-column:1/-1;
+-    background:linear-gradient(135deg,var(--accent-light),#fff);
+-    border:1px solid var(--border);border-radius:var(--radius);
+-    padding:16px 20px;animation:slideInUp .5s ease both;
+-  }
+-  .store-row-label{
+-    display:flex;align-items:center;gap:8px;color:var(--accent);
+-    font-weight:600;font-size:13px;margin-bottom:12px;
+-  }
+-  .store-row-strip{display:flex;gap:14px;flex-wrap:wrap}
+-  .store-chip{
+-    display:flex;align-items:center;gap:8px;background:var(--surface);
+-    border:1px solid var(--border);border-radius:999px;padding:6px 14px 6px 6px;
+-    font-size:13.5px;font-weight:600;transition:transform .2s,box-shadow .2s;
+-  }
+-  .store-chip:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+-  .store-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover}
+-  .store-chip-fallback{
+-    width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
+-    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+-  }
+-
+   /* ---------- empty state ---------- */
+   .empty-state{
+     background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);

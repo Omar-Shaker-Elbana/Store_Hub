@@ -27,10 +27,13 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
 from django.urls import reverse
 from django.utils import timezone
 
 from notifications.models import Notification
+from products.models import Category, Product, Product_Image
 
 from .forms import (MembershipForm, MembershipInvitationForm, StoreForm,
                     SuggestNicheForm)
@@ -417,6 +420,106 @@ class ShowStoreViewTests(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertTemplateUsed(resp, "merchant_interface/_product_cards.html")
+
+
+class ShowStoreProductGridTests(TestCase):
+    """The store page lists products in a compact, clickable grid."""
+
+    def setUp(self):
+        self.client = Client()
+        self.store = make_store(enabled=True)
+        self.category = Category.objects.create(name="Gadgets")
+        self.url = reverse("show_store", args=[self.store.id])
+
+    def product(self, name="Widget", price="25.00", **extra):
+        return Product.objects.create(
+            store=self.store, category=self.category, name=name,
+            selling_price=Decimal(price), current_stock=5, **extra,
+        )
+
+    def page(self, **kwargs):
+        return self.client.get(self.url, **kwargs)
+
+    def test_grid_container_is_styled_by_class_and_only_appears_once(self):
+        # Regression: the CSS targeted .product-grid but the markup only had an
+        # id, so no grid applied and every image filled the whole screen.
+        self.product()
+        html = self.page().content.decode()
+        self.assertEqual(html.count('id="product-grid"'), 1)
+        self.assertIn('id="product-grid" class="product-grid"', html)
+        self.assertIn(".product-grid{", html)
+
+    def test_cards_show_the_primary_image_the_price_and_link_to_the_product(self):
+        product = self.product(name="Lamp", price="19.50")
+        Product_Image.objects.create(product=product, image="products_pics/second.jpg", order=2)
+        Product_Image.objects.create(product=product, image="products_pics/main.jpg", is_primary=True, order=5)
+        html = self.page().content.decode()
+        self.assertIn("products_pics/main.jpg", html)
+        self.assertNotIn("products_pics/second.jpg", html)
+        self.assertIn("$19.50", html)
+        self.assertIn(f'href="{reverse("view_product", args=[product.id])}"', html)
+        self.assertIn('loading="lazy"', html)
+
+    def test_without_images_the_first_image_is_used_then_a_placeholder(self):
+        with_image = self.product(name="Has image")
+        Product_Image.objects.create(product=with_image, image="products_pics/only.jpg", order=0)
+        self.product(name="No image")
+        html = self.page().content.decode()
+        self.assertIn("products_pics/only.jpg", html)
+        self.assertEqual(html.count('class="no-image"'), 1)
+
+    def test_discount_shows_the_new_price_the_old_one_and_a_badge(self):
+        self.product(price="100.00", offer=Decimal("25.00"))
+        html = self.page().content.decode()
+        self.assertIn("$75.00", html)
+        self.assertIn("$100.00", html)
+        self.assertIn("25% off", html)
+
+    def test_missing_price_and_out_of_stock_are_labelled(self):
+        Product.objects.create(
+            store=self.store, category=self.category, name="Mystery", current_stock=0
+        )
+        html = self.page().content.decode()
+        self.assertIn("Price unavailable", html)
+        self.assertIn("Out of stock", html)
+        self.assertNotIn("$None", html)
+
+    def test_inactive_products_are_not_listed(self):
+        self.product(name="Visible")
+        self.product(name="Hidden", is_active=False)
+        response = self.page()
+        self.assertContains(response, "Visible")
+        self.assertNotContains(response, "Hidden")
+        self.assertEqual(response.context["store_products"].paginator.count, 1)
+
+    def test_empty_store_shows_the_empty_state(self):
+        self.assertContains(self.page(), "No products yet")
+
+    def test_load_more_pages_do_not_repeat_or_skip_products(self):
+        ids = [self.product(name=f"P{i}").id for i in range(15)]
+        first = self.page().context["store_products"]
+        self.assertEqual(len(first), 12)
+        ajax = self.client.get(self.url + "?page=2", HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        second = ajax.context["store_products"]
+        self.assertEqual(len(second), 3)
+        shown = [p.id for p in first] + [p.id for p in second]
+        self.assertEqual(sorted(shown), sorted(ids))
+        self.assertEqual(len(set(shown)), 15)
+        self.assertContains(ajax, 'id="product-grid"', count=1)
+        self.assertEqual(ajax.content.decode().count('data-next-page=""'), 1)
+
+    def test_query_count_does_not_grow_with_the_number_of_products(self):
+        def queries():
+            with CaptureQueriesContext(connection) as ctx:
+                self.page()
+            return len(ctx)
+
+        for i in range(2):
+            Product_Image.objects.create(product=self.product(name=f"A{i}"), image=f"products_pics/a{i}.jpg", is_primary=True)
+        few = queries()
+        for i in range(10):
+            Product_Image.objects.create(product=self.product(name=f"B{i}"), image=f"products_pics/b{i}.jpg", is_primary=True)
+        self.assertEqual(queries(), few)
 
 
 class CreateStoreViewTests(TestCase):

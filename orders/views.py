@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from merchant_interface.models import Membership, Store
 from notifications.models import Notification
+from payments.rates import shipping_fee
 from products.models import Product
 from shopper_interface.models import Cart, CartItem
 
@@ -123,12 +124,19 @@ def checkout_view(request):
 
     order_form = forms.OrderForm()
 
+    # The shopper pays a delivery & handling fee that covers the courier
+    # trips and packing this order will cost (see payments/rates.py).
+    store_count = len({item.product.store_id for item in items if item.product})
+    delivery_fee = shipping_fee(store_count)
+
     return render(
         request,
         "orders/checkout.html",
         {
             "items": items,
             "subtotal": subtotal,
+            "shipping_fee": delivery_fee,
+            "total": subtotal + delivery_fee,
             "order_form": order_form,
         },
     )
@@ -173,9 +181,13 @@ def Place_Order_View(request):
             )
             return redirect("shopper_interface:cart")
 
+    # Same fee the checkout page showed: one pickup trip per store, one
+    # drop-off trip and one packing fee.
+    delivery_fee = shipping_fee(len({locked_products[item.product_id].store_id for item in items}))
+
     current_order = Order.objects.create(
         user=request.user,
-        total_price=current_cart.total_price,
+        total_price=current_cart.total_price + delivery_fee,
         **order_form.cleaned_data,
     )
 

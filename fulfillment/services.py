@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
@@ -8,7 +6,7 @@ from merchant_interface.models import Membership
 from notifications.models import Notification
 from orders.models import StoreOrder
 
-from .models import PER_ITEM_BASE_RATE, OrderClaim, WalletTransaction
+from .models import OrderClaim
 
 # StoreOrders in these statuses still need in-store work done on them and
 # can be claimed. Shipped/Delivered/Cancelled orders never show up in the
@@ -98,9 +96,9 @@ def claim_store_order(*, store_order_id, store, user):
 
 @transaction.atomic
 def finish_claim(*, claim_id, user):
-    """Mark a claim finished, tally items processed, and — for
-    percentage-wage staff only — credit an arbitrary per-item wage to
-    their wallet.
+    """Mark a claim finished and tally the items processed. A percentage-wage
+    helper/manager's commission is not paid here: it is paid out of the
+    order's sales by payments.settle_order once the shopper has paid.
 
     Returns (claim, error_message) — exactly one of the two is None.
     """
@@ -129,29 +127,7 @@ def finish_claim(*, claim_id, user):
     claim.finished_at = timezone.now()
     claim.items_processed = items_processed
 
-    membership = claim.membership
-    if membership.wage_type == "percentage" and membership.wage:
-        wage_earned = (
-            Decimal(items_processed) * PER_ITEM_BASE_RATE * (membership.wage / Decimal("100"))
-        ).quantize(Decimal("0.01"))
-        claim.wage_earned = wage_earned
-        membership.wallet_balance = (
-            membership.wallet_balance or Decimal("0.00")
-        ) + wage_earned
-        membership.save(update_fields=["wallet_balance"])
-        WalletTransaction.objects.create(
-            membership=membership,
-            claim=claim,
-            amount=wage_earned,
-            description=(
-                f"Processed {items_processed} item(s) on order "
-                f"#{claim.store_order.order_id} (StoreOrder #{claim.store_order_id})"
-            ),
-        )
-
-    claim.save(
-        update_fields=["status", "finished_at", "items_processed", "wage_earned"]
-    )
+    claim.save(update_fields=["status", "finished_at", "items_processed"])
 
     store_order = claim.store_order
     if store_order.status == "Processing":

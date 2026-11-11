@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "fulfillment",
      "delivery",
     "warehouse",
+    "payments",
     # allauth
     "allauth",
     "allauth.account",

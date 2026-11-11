@@ -15,5 +15,4 @@ urlpatterns = [
     path("claim/<int:claim_id>/finish/", views.finish_claim, name="finish_claim"),
     path("claim/<int:claim_id>/release/", views.release_claim, name="release_claim"),
     path("store/<int:store_id>/overview/", views.store_overview, name="store_overview"),
-    path("store/<int:store_id>/wallet/", views.my_wallet, name="my_wallet"),
 ]

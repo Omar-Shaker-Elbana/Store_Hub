@@ -55,6 +55,10 @@ from warehouse.models import WarehouseTask
 
 from . import services
 
+from payments.models import Account, LedgerEntry
+from payments.services import user_account, wallet_balance
+from payments.rates import shipping_fee
+
 from . import services
 from .models import (
     CLAIM_DURATION,
@@ -62,8 +66,6 @@ from .models import (
     MAX_ACTIVE_CLAIMS,
     MAX_CODE_ATTEMPTS,
     PICKUP_FEE,
-    CourierWallet,
-    CourierWalletTransaction,
     DeliveryClaim,
     DeliveryMission,
     StorePickupLocation,
@@ -479,18 +481,20 @@ class ClaimModelTests(DeliveryTestCase):
         self.assertEqual(self.make_claim(hours=-3).time_left, timedelta(0))
         self.assertEqual(self.make_claim(self.courier2, status="released").time_left, timedelta(0))
 
-    def test_wallet_transaction_is_one_per_claim(self):
+    def test_ledger_entry_is_one_per_claim(self):
         claim = self.make_claim(status="delivered")
-        wallet = CourierWallet.objects.create(user=self.courier)
-        CourierWalletTransaction.objects.create(wallet=wallet, claim=claim, amount=Decimal("25"))
+        account = user_account(self.courier)
+        fields = dict(
+            account=account, kind="delivery_trip", amount=Decimal("20"),
+            balance_after=Decimal("20"), ref=f"delivery_claim:{claim.pk}",
+        )
+        LedgerEntry.objects.create(**fields)
         with self.assertRaises(IntegrityError), transaction.atomic():
-            CourierWalletTransaction.objects.create(wallet=wallet, claim=claim, amount=Decimal("25"))
+            LedgerEntry.objects.create(**fields)
 
     def test_str_methods_do_not_crash(self):
         claim = self.make_claim()
-        wallet = CourierWallet.objects.create(user=self.courier)
-        txn = CourierWalletTransaction.objects.create(wallet=wallet, amount=Decimal("1"))
-        for obj in (claim, wallet, txn, StorePickupLocation(store=self.so.store, address="x")):
+        for obj in (claim, StorePickupLocation(store=self.so.store, address="x")):
             self.assertTrue(str(obj))
 
 
@@ -679,7 +683,8 @@ class CreateDropoffMissionTests(DeliveryTestCase):
         self.assertEqual(mission.kind, "dropoff")
         self.assertIsNone(mission.store_order)
         self.assertEqual(mission.fee, DROPOFF_FEE)
-        self.assertEqual(mission.cod_amount, Decimal("200.00"))
+        # products (2 x 100) + delivery & handling for a two-store order
+        self.assertEqual(mission.cod_amount, Decimal("200.00") + shipping_fee(2))
         self.assertEqual(mission.pickup_address, self.warehouse.address)
         self.assertEqual(mission.dropoff_address, order.shipping_address)
         self.assertEqual(mission.dropoff_contact, "shopper")
@@ -689,7 +694,8 @@ class CreateDropoffMissionTests(DeliveryTestCase):
         order, [so1, so2] = self.order_with_stores(2)
         StoreOrder.objects.filter(pk=so2.pk).update(status="Cancelled")
         mission, _ = services.create_dropoff_mission(order)
-        self.assertEqual(mission.cod_amount, Decimal("100.00"))
+        # only the live store's products, and the fee for one store, not two
+        self.assertEqual(mission.cod_amount, Decimal("100.00") + shipping_fee(1))
         self.assertEqual([i["product"] for i in mission.items_snapshot], ["Item 1"])
 
     def test_no_cod_when_not_cash(self):
@@ -701,7 +707,8 @@ class CreateDropoffMissionTests(DeliveryTestCase):
         order, [so] = self.order_with_stores(1)
         StoreOrder.objects.filter(pk=so.pk).update(subtotal=None)
         mission, _ = services.create_dropoff_mission(order)
-        self.assertEqual(mission.cod_amount, Decimal("0.00"))
+        # no product money, but the delivery & handling fee is still collected
+        self.assertEqual(mission.cod_amount, shipping_fee(1))
 
     def test_contact_prefers_full_name_over_username(self):
         self.shopper.first_name, self.shopper.last_name = "Sara", "Ali"
@@ -899,7 +906,7 @@ class StoreOrderSignalTests(DeliveryTestCase):
         self.assertFalse(DeliveryMission.objects.filter(kind="dropoff").exists())
         self.pack(order)
         dropoff = DeliveryMission.objects.get(order=order, kind="dropoff")
-        self.assertEqual(dropoff.cod_amount, so1.subtotal)
+        self.assertEqual(dropoff.cod_amount, so1.subtotal + shipping_fee(1))
         self.assertEqual([i["product"] for i in dropoff.items_snapshot], ["Item 1"])
 
     def test_cancelling_the_only_store_order_cancels_the_order(self):
@@ -1214,7 +1221,7 @@ class CompleteClaimTests(DeliveryTestCase):
         self.assertIsNotNone(mission.completed_at)
         so.refresh_from_db()
         self.assertEqual(so.status, "At Warehouse")
-        self.assertEqual(CourierWallet.objects.get(user=self.courier).balance, PICKUP_FEE)
+        self.assertEqual(wallet_balance(self.courier), PICKUP_FEE)
         self.assertTrue(any("reached our warehouse" in n for n in notes_for(self.shopper)))
 
     def test_single_store_order_pickup_opens_the_packing_task_then_the_dropoff(self):
@@ -1248,9 +1255,9 @@ class CompleteClaimTests(DeliveryTestCase):
         self.pick_up(claim2)
         self.complete(claim2)
 
-        wallet = CourierWallet.objects.get(user=self.courier)
+        wallet = Account.objects.get(user=self.courier)
         self.assertEqual(wallet.balance, PICKUP_FEE + DROPOFF_FEE)
-        txns = wallet.transactions.all()
+        txns = wallet.entries.filter(kind="delivery_trip")
         self.assertEqual(txns.count(), 2)
         self.assertEqual(sum(t.amount for t in txns), PICKUP_FEE + DROPOFF_FEE)
         self.assertTrue(all(f"order #{order.pk}" in t.description for t in txns))
@@ -1267,7 +1274,7 @@ class CompleteClaimTests(DeliveryTestCase):
         claim.refresh_from_db()
         self.assertEqual(claim.code_attempts, 1)
         self.assertEqual(claim.status, "picked_up")
-        self.assertFalse(CourierWallet.objects.filter(user=self.courier).exists())
+        self.assertFalse(LedgerEntry.objects.filter(account__user=self.courier).exists())
 
     def test_the_counter_persists_across_calls_and_locks_after_the_limit(self):
         order, so, mission, claim = self.pickup_claim_picked_up()
@@ -1369,8 +1376,10 @@ class CompleteClaimTests(DeliveryTestCase):
         result, error = self.complete(claim)
         self.assertIsNone(result)
         self.assertIn("no longer active", error)
-        self.assertEqual(CourierWallet.objects.get(user=self.courier).balance, PICKUP_FEE)
-        self.assertEqual(CourierWalletTransaction.objects.count(), 1)
+        self.assertEqual(wallet_balance(self.courier), PICKUP_FEE)
+        self.assertEqual(
+            LedgerEntry.objects.filter(account__user=self.courier, kind="delivery_trip").count(), 1
+        )
 
     def test_cannot_complete_after_the_window_expired(self):
         order, so, mission, claim = self.pickup_claim_picked_up()
@@ -1378,7 +1387,7 @@ class CompleteClaimTests(DeliveryTestCase):
         result, error = self.complete(claim)
         self.assertIsNone(result)
         self.assertIn("expired", error)
-        self.assertFalse(CourierWallet.objects.filter(user=self.courier).exists())
+        self.assertFalse(LedgerEntry.objects.filter(account__user=self.courier).exists())
 
     def test_unknown_claim(self):
         self.assertEqual(
@@ -1420,7 +1429,7 @@ class MultiStoreOrderFlowTests(DeliveryTestCase):
         self.assertEqual(order.status, "At Warehouse")
         self.assertEqual(WarehouseTask.objects.get(order=order).status, "completed")
         dropoff = DeliveryMission.objects.get(order=order, kind="dropoff")
-        self.assertEqual(dropoff.cod_amount, Decimal("200.00"))
+        self.assertEqual(dropoff.cod_amount, Decimal("200.00") + shipping_fee(2))
         self.assertEqual(dropoff.item_count, 4)
 
         # A courier takes the whole order out and hands it over.
@@ -1435,8 +1444,8 @@ class MultiStoreOrderFlowTests(DeliveryTestCase):
         self.assertEqual(DeliveryMission.objects.filter(kind="dropoff").count(), 1)
 
         # Money: courier 1 earned a pickup + the dropoff, courier 2 a pickup.
-        self.assertEqual(CourierWallet.objects.get(user=self.courier).balance, PICKUP_FEE + DROPOFF_FEE)
-        self.assertEqual(CourierWallet.objects.get(user=self.courier2).balance, PICKUP_FEE)
+        self.assertEqual(wallet_balance(self.courier), PICKUP_FEE + DROPOFF_FEE)
+        self.assertEqual(wallet_balance(self.courier2), PICKUP_FEE)
 
     def test_the_packing_task_and_dropoff_are_each_created_once_however_the_pickups_interleave(self):
         order, [so1, so2] = self.order_with_stores(2)
@@ -1602,12 +1611,8 @@ class ForceReleaseTests(DeliveryTestCase):
     def test_admin_changelists_render(self):
         order, [so] = self.order_with_stores(1)
         self.claim(self.ship(so))
-        CourierWallet.objects.create(user=self.courier)
         self.client.force_login(make_user("root2", is_staff=True, is_superuser=True))
-        for name in (
-            "storepickuplocation", "deliverymission",
-            "deliveryclaim", "courierwallet", "courierwallettransaction",
-        ):
+        for name in ("storepickuplocation", "deliverymission", "deliveryclaim"):
             response = self.client.get(reverse(f"admin:delivery_{name}_changelist"))
             self.assertEqual(response.status_code, 200, name)
 
@@ -1921,7 +1926,7 @@ class ClaimActionViewTests(DeliveryTestCase):
         )
         self.assertRedirects(response, self.detail, fetch_redirect_response=False)
         self.assertTrue(any("wallet was credited" in m for m in messages_of(response)))
-        self.assertEqual(CourierWallet.objects.get(user=self.courier).balance, PICKUP_FEE)
+        self.assertEqual(wallet_balance(self.courier), PICKUP_FEE)
 
     def test_cash_checkbox_value_on_is_what_counts(self):
         order, [so], dropoff = self.order_at_warehouse(1)
@@ -1948,58 +1953,6 @@ class ClaimActionViewTests(DeliveryTestCase):
             {"code": dropoff.confirmation_code, "cash_collected": "true"},
         )
         self.assertTrue(any("cash" in m for m in messages_of(response)))
-
-
-class WalletViewTests(DeliveryTestCase):
-    url = property(lambda self: reverse("delivery:my_wallet"))
-
-    def test_anonymous_is_sent_to_login(self):
-        self.assertEqual(self.client.get(self.url).status_code, 302)
-
-    def test_non_courier_is_sent_home(self):
-        self.client.force_login(self.shopper)
-        self.assertRedirects(self.client.get(self.url), reverse("home"), fetch_redirect_response=False)
-
-    def test_first_visit_creates_an_empty_wallet(self):
-        self.client.force_login(self.courier)
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["wallet"].balance, Decimal("0.00"))
-        self.assertEqual(CourierWallet.objects.filter(user=self.courier).count(), 1)
-
-    def test_shows_balance_transactions_and_history_but_not_active_claims(self):
-        order, [so1] = self.order_with_stores(1)
-        self.deliver_pickup(so1)
-        order2, [so2] = self.order_with_stores(1)
-        active = self.claim(self.ship(so2))
-        self.client.force_login(self.courier)
-        response = self.client.get(self.url)
-        self.assertEqual(response.context["wallet"].balance, PICKUP_FEE)
-        self.assertEqual(len(response.context["transactions"]), 1)
-        history = list(response.context["history"])
-        self.assertEqual(len(history), 1)
-        self.assertNotIn(active, history)
-
-    def test_couriers_only_see_their_own_money(self):
-        order, [so] = self.order_with_stores(1)
-        self.deliver_pickup(so, self.courier2)
-        self.client.force_login(self.courier)
-        response = self.client.get(self.url)
-        self.assertEqual(response.context["wallet"].balance, Decimal("0.00"))
-        self.assertEqual(len(response.context["transactions"]), 0)
-        self.assertEqual(len(response.context["history"]), 0)
-
-    def test_history_is_capped_at_25_rows(self):
-        order, [so] = self.order_with_stores(1)
-        mission = self.ship(so)
-        for _ in range(30):
-            claim = self.claim(mission)
-            services.release_claim(claim_id=claim.pk, user=self.courier)
-        self.client.force_login(self.courier)
-        self.assertEqual(len(self.client.get(self.url).context["history"]), 25)
-
-
- 
 
 
 class OrderTrackingViewTests(DeliveryTestCase):
@@ -2074,8 +2027,8 @@ class EndToEndViewFlowTest(DeliveryTestCase):
         so.refresh_from_db()
         self.assertEqual(claim.status, "delivered")
         self.assertEqual(so.status, "At Warehouse")
-        wallet_page = self.client.get(reverse("delivery:my_wallet"))
-        self.assertEqual(wallet_page.context["wallet"].balance, PICKUP_FEE)
+        wallet_page = self.client.get(reverse("payments:wallet"))
+        self.assertEqual(wallet_page.context["account"].balance, PICKUP_FEE)
 
 
 # ===========================================================================
@@ -2181,7 +2134,7 @@ class KnownBugTests(DeliveryTestCase):
         that will not be delivered. (Reachable via admin: the merchant form
         forbids cancelling past Processing.)"""
         order, [so1, so2], dropoff = self.order_at_warehouse(2)
-        self.assertEqual(dropoff.cod_amount, Decimal("200.00"))
+        self.assertEqual(dropoff.cod_amount, Decimal("200.00") + shipping_fee(2))
 
         so2.refresh_from_db()
         so2.status = "Cancelled"
@@ -2193,7 +2146,8 @@ class KnownBugTests(DeliveryTestCase):
             .first()
         )
         self.assertIsNotNone(live)
-        self.assertEqual(live.cod_amount, so1.subtotal)
+        # products and the delivery fee both shrink to the one remaining store
+        self.assertEqual(live.cod_amount, so1.subtotal + shipping_fee(1))
         self.assertEqual([i["product"] for i in live.items_snapshot], ["Item 1"])
 
  

@@ -396,7 +396,7 @@
             {% if claim.membership.wage_type == "percentage" %}
               <div class="wage-hint">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                <span>Finishing credits {{ claim.membership.wage|default:"0"|floatformat:0 }}% of $5.00 per item processed to your wallet.</span>
+                <span>You earn {{ claim.membership.wage|default:"0"|floatformat:0 }}% of this order's sales (after the 1% platform fee) once it is delivered and paid.</span>
               </div>
             {% endif %}
 
@@ -423,7 +423,7 @@
             </div>
             {% if claim.wage_earned %}
               <div class="outcome-figure">
-                <span class="label">Wage earned</span>
+                <span class="label">Commission earned</span>
                 <span class="value accent">${{ claim.wage_earned|floatformat:2 }}</span>
               </div>
             {% endif %}

@@ -1,6 +1,5 @@
 import secrets
 from datetime import timedelta
-from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
@@ -8,6 +7,7 @@ from django.utils import timezone
 
 from merchant_interface.models import Store
 from orders.models import Order, StoreOrder
+from payments.rates import COURIER_TRIP_FEE
 from warehouse.models import Warehouse
 
 User = settings.AUTH_USER_MODEL
@@ -16,10 +16,10 @@ CLAIM_DURATION = timedelta(hours=24)
 MAX_ACTIVE_CLAIMS = 5  # missions one courier can hold at the same time
 MAX_CODE_ATTEMPTS = 5  # wrong confirmation codes before a claim locks
 
-# Arbitrary placeholder flat fees, same spirit as fulfillment's
-# PER_ITEM_BASE_RATE. Swap for real pay logic later.
-PICKUP_FEE = Decimal("25.00")
-DROPOFF_FEE = Decimal("40.00")
+# Flat pay per trip, set in one place (payments/rates.py): store -> warehouse
+# is one trip, warehouse -> shopper is another.
+PICKUP_FEE = COURIER_TRIP_FEE
+DROPOFF_FEE = COURIER_TRIP_FEE
 
 
 def new_confirmation_code():
@@ -199,37 +199,3 @@ class DeliveryClaim(models.Model):
         if not self.is_active:
             return timedelta(0)
         return max(self.deadline - timezone.now(), timedelta(0))
-
-
-class CourierWallet(models.Model):
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="courier_wallet"
-    )
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-
-    def __str__(self):
-        return f"{self.user} wallet ({self.balance})"
-
-
-class CourierWalletTransaction(models.Model):
-    """Append-only ledger. OneToOne to the claim makes payout idempotent."""
-
-    wallet = models.ForeignKey(
-        CourierWallet, on_delete=models.CASCADE, related_name="transactions"
-    )
-    claim = models.OneToOneField(
-        DeliveryClaim,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="wallet_transaction",
-    )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.CharField(max_length=255, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.amount} -> {self.wallet.user} ({self.created_at:%Y-%m-%d})"

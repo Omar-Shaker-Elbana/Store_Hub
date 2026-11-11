@@ -4,14 +4,14 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Prefetch, Q, Sum
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from notifications.models import Notification
 from orders.forms import StoreOrderStatusForm
 from orders.models import StoreOrder
-from products.models import Product
+from products.models import Product, Product_Image
 from users.models import Profile
 
 from .forms import (MembershipForm, MembershipInvitationForm, StoreForm,
@@ -93,10 +93,24 @@ def show_store(request, store_id):
             messages.error(request, "This store is currently closed.")
             return redirect("home")
 
-    product_list = Product.objects.filter(store=store)
+    # Shoppers can only open active products, so only list those. Images are
+    # prefetched (primary first) so the cards don't cost one query each, and
+    # the ordering is made total so "Load more" can't repeat or skip items.
+    product_list = (
+        Product.active.filter(store=store)
+        .prefetch_related(
+            Prefetch(
+                "images",
+                queryset=Product_Image.objects.order_by("-is_primary", "order", "id"),
+            )
+        )
+        .order_by("-creation_date", "-id")
+    )
     paginator = Paginator(product_list, 12)
     page_number = request.GET.get("page", 1)
     store_products = paginator.get_page(page_number)
+    for product in store_products:
+        product.cover = next(iter(product.images.all()), None)
 
     context = {"store": store, "store_products": store_products}
 
