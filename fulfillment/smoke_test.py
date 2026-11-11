@@ -31,7 +31,7 @@ from datetime import timedelta
 from merchant_interface.models import Membership, Niche, Store
 from orders.models import Order, OrderItem, StoreOrder
 from products.models import Category, Product
-from fulfillment.models import OrderClaim, WalletTransaction
+from fulfillment.models import OrderClaim
 from fulfillment import services
 
 if "testserver" not in settings.ALLOWED_HOSTS:
@@ -218,10 +218,10 @@ store_order.refresh_from_db()
 print(f"    claim.status={claim.status}  items_processed={claim.items_processed}  wage_earned={claim.wage_earned}")
 print(f"    store_order.status={store_order.status}")
 
-step("Helper 1 checks their wallet")
-response = show_response(client1.get(reverse("fulfillment:my_wallet", args=[store.id])), expect_status=200)
-print(f"    wallet_balance={response.context['membership'].wallet_balance}")
-print(f"    transactions this run: {[str(t) for t in response.context['transactions'][:3]]}")
+step("Helper 1 checks their wallet (commission is only paid once the order is delivered)")
+response = show_response(client1.get(reverse("payments:wallet")), expect_status=200)
+print(f"    wallet balance={response.context['account'].balance}")
+print(f"    history this run: {[str(e) for e in response.context['page_obj'][:3]]}")
 
 
 # ---------------------------------------------------------------------------
@@ -287,7 +287,7 @@ print(f"active_claims:  {[c.id for c in response.context['active_claims']]}")
 print(f"recent_claims:  {[(c.id, c.status) for c in response.context['recent_claims']]}")
 print("staff_wallets:")
 for m in response.context["staff_wallets"]:
-    print(f"    {m.user.username:15s} role={m.role:8s} wage_type={m.wage_type:11s} balance=${m.wallet_balance}")
+    print(f"    {m.user.username:15s} role={m.role:8s} wage_type={m.wage_type:11s} earned here=${m.earned_here}")
 
 
 section("DONE")

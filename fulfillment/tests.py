@@ -1,6 +1,7 @@
 """
 Comprehensive test suite for the fulfillment app (in-store order claiming,
-finishing/releasing a claim, and the percentage-wage wallet system).
+finishing/releasing a claim; commissions themselves are paid by
+payments.settle_order and tested in payments/tests.py).
 
 Notes on assumptions (adjust if wrong for your project):
 - Uses django.contrib.auth.get_user_model() with users created via
@@ -42,7 +43,7 @@ from orders.models import Order, OrderItem, StoreOrder
 from products.models import Category, Product
 
 from . import services
-from .models import PER_ITEM_BASE_RATE, OrderClaim, WalletTransaction
+from .models import OrderClaim
 
 User = get_user_model()
 
@@ -231,22 +232,6 @@ class OrderClaimModelTests(TestCase):
         second_membership = make_membership(second_helper, self.store, role="helper")
         make_claim(self.store_order, second_membership, claimant=second_helper, status="released")
         self.assertEqual(OrderClaim.objects.filter(store_order=self.store_order).count(), 2)
-
-
-class WalletTransactionModelTests(TestCase):
-    def test_ordered_newest_first(self):
-        store = make_store()
-        user = make_user("helper1")
-        membership = make_membership(
-            user, store, role="helper", wage_type="percentage", wage=Decimal("10.00")
-        )
-        first = WalletTransaction.objects.create(
-            membership=membership, amount=Decimal("5.00"), description="first"
-        )
-        second = WalletTransaction.objects.create(
-            membership=membership, amount=Decimal("7.00"), description="second"
-        )
-        self.assertEqual(list(WalletTransaction.objects.filter(membership=membership)), [second, first])
 
 
 # ---------------------------------------------------------------------------
@@ -483,32 +468,26 @@ class FinishClaimServiceTests(TestCase):
         self.assertIsNotNone(result.finished_at)
         self.assertEqual(result.items_processed, 5)
 
-    def test_success_credits_wallet_for_percentage_wage(self):
+    def test_finishing_does_not_pay_commission_yet(self):
+        # Commission comes out of the order's sales, which only exist once the
+        # shopper has paid on delivery (payments.settle_order), so finishing
+        # a claim must not touch any wallet.
+        from payments.models import LedgerEntry
+
         claim, membership = self._make_claimed(wage_type="percentage", wage=Decimal("10.00"))
         result, error = services.finish_claim(claim_id=claim.id, user=self.helper)
         self.assertIsNone(error)
+        self.assertIsNone(result.wage_earned)
+        self.assertEqual(LedgerEntry.objects.count(), 0)
 
-        expected = (Decimal(5) * PER_ITEM_BASE_RATE * Decimal("10.00") / Decimal("100")).quantize(
-            Decimal("0.01")
-        )
-        self.assertEqual(result.wage_earned, expected)
+    def test_salary_wage_does_not_pay_anything_here_either(self):
+        from payments.models import LedgerEntry
 
-        membership.refresh_from_db()
-        self.assertEqual(membership.wallet_balance, expected)
-
-        txn = WalletTransaction.objects.get(membership=membership)
-        self.assertEqual(txn.amount, expected)
-        self.assertEqual(txn.claim, result)
-        self.assertIn(str(self.store_order.order_id), txn.description)
-
-    def test_salary_wage_does_not_credit_wallet(self):
-        claim, membership = self._make_claimed(wage_type="salary", wage=None)
+        claim, _ = self._make_claimed(wage_type="salary", wage=None)
         result, error = services.finish_claim(claim_id=claim.id, user=self.helper)
         self.assertIsNone(error)
         self.assertIsNone(result.wage_earned)
-        membership.refresh_from_db()
-        self.assertEqual(membership.wallet_balance, Decimal("0.00"))
-        self.assertEqual(WalletTransaction.objects.filter(membership=membership).count(), 0)
+        self.assertEqual(LedgerEntry.objects.count(), 0)
 
     def test_success_ships_a_processing_store_order(self):
         claim, _ = self._make_claimed()
@@ -907,49 +886,3 @@ class StoreOverviewViewTests(TestCase):
         self.client.get(reverse("fulfillment:store_overview", args=[self.store.id]))
         stale_claim.refresh_from_db()
         self.assertEqual(stale_claim.status, "expired")
-
-
-class MyWalletViewTests(TestCase):
-    def setUp(self):
-        self.niche = make_niche()
-        self.store = make_store(niche=self.niche)
-        self.helper = make_user("helper1")
-        self.membership = make_membership(
-            self.helper, self.store, role="helper", wage_type="percentage", wage=Decimal("10.00")
-        )
-
-    def test_requires_login(self):
-        response = self.client.get(reverse("fulfillment:my_wallet", args=[self.store.id]))
-        self.assertEqual(response.status_code, 302)
-
-    def test_404_when_user_has_no_membership(self):
-        outsider = make_user("outsider")
-        self.client.force_login(outsider)
-        response = self.client.get(reverse("fulfillment:my_wallet", args=[self.store.id]))
-        self.assertEqual(response.status_code, 404)
-
-    def test_shows_own_wallet_and_transactions(self):
-        order = make_order()
-        store_order = make_store_order(order, self.store, status="Processing")
-        make_order_item(store_order, quantity=4)
-        claim = make_claim(store_order, self.membership, claimant=self.helper)
-        services.finish_claim(claim_id=claim.id, user=self.helper)
-
-        self.client.force_login(self.helper)
-        response = self.client.get(reverse("fulfillment:my_wallet", args=[self.store.id]))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["membership"], self.membership)
-        self.assertEqual(len(response.context["transactions"]), 1)
-
-    def test_only_shows_this_stores_membership_transactions(self):
-        other_store = make_store(niche=self.niche, name="Other Store")
-        other_membership = make_membership(
-            self.helper, other_store, role="helper", wage_type="percentage", wage=Decimal("50.00")
-        )
-        WalletTransaction.objects.create(
-            membership=other_membership, amount=Decimal("99.00"), description="From another store"
-        )
-
-        self.client.force_login(self.helper)
-        response = self.client.get(reverse("fulfillment:my_wallet", args=[self.store.id]))
-        self.assertEqual(len(response.context["transactions"]), 0)

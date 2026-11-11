@@ -5,6 +5,7 @@ from django.utils import timezone
 from delivery import services as delivery_services
 from notifications.models import Notification
 from orders.models import Order
+from payments import services as payments_services
 
 from .models import (
     MAX_ACTIVE_PACK_CLAIMS,
@@ -219,6 +220,7 @@ def finish_claim(*, claim_id, user):
     task.status = "completed"
     task.completed_at = now
     task.save(update_fields=["status", "completed_at"])
+    payments_services.pay_packer(claim)
 
     _notify(
         order.user,

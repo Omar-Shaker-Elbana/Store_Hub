@@ -34,6 +34,7 @@ urlpatterns = [
     path("fulfillment/", include("fulfillment.urls")),
      path("delivery/", include("delivery.urls")),
     path("warehouse/", include("warehouse.urls")),
+    path("payments/", include("payments.urls")),
 ]
 
 if settings.DEBUG:

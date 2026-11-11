@@ -1,10 +1,15 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from merchant_interface.models import Membership, Store
 from orders.models import StoreOrder
+from payments import services as payments_services
+from payments.models import Account, LedgerEntry, PayrollRun
 
 from . import services
 from .models import OrderClaim
@@ -47,6 +52,7 @@ def work_pool(request, store_id):
         "membership": membership,
         "available_orders": available_orders,
         "my_active_claims": my_active_claims,
+        "wallet_balance": payments_services.wallet_balance(request.user),
         "now": timezone.now(),
     }
     return render(request, "fulfillment/work_pool.html", context)
@@ -130,8 +136,8 @@ def release_claim(request, claim_id):
 
 @login_required
 def store_overview(request, store_id):
-    """Owner/manager oversight: everyone's active + recent claims and
-    wallet balances for this store."""
+    """Owner/manager oversight: everyone's active + recent claims, what each
+    staff member has earned at this store, and the store's treasury."""
     store = get_object_or_404(Store, id=store_id)
     membership = Membership.objects.filter(user=request.user, store=store).first()
     if not membership or membership.role not in ("owner", "manager"):
@@ -139,6 +145,7 @@ def store_overview(request, store_id):
         return redirect("create_store")
 
     services.release_expired_claims(store=store)
+    payments_services.close_due_payrolls(stores=[store])
 
     active_claims = (
         OrderClaim.objects.filter(store_order__store=store, status="claimed")
@@ -151,34 +158,35 @@ def store_overview(request, store_id):
         .select_related("claimant", "store_order", "store_order__order")
         .order_by("-claimed_at")[:25]
     )
-    staff_wallets = (
-        Membership.objects.filter(store=store, role__in=("helper", "manager"))
-        .select_related("user")
-        .order_by("-wallet_balance")
+    # What each helper/manager has earned *at this store* (commission and
+    # salary), summed from the ledger. Their wallet itself is shared across
+    # every job they hold, so it isn't shown here.
+    earned_by_user = {
+        row["account__user_id"]: row["total"]
+        for row in LedgerEntry.objects.filter(
+            store=store, account__kind=Account.USER, amount__gt=0
+        )
+        .values("account__user_id")
+        .annotate(total=Sum("amount"))
+    }
+    staff_wallets = list(
+        Membership.objects.filter(store=store, role__in=("helper", "manager")).select_related(
+            "user"
+        )
     )
+    for member in staff_wallets:
+        member.earned_here = earned_by_user.get(member.user_id, Decimal("0.00"))
+    staff_wallets.sort(key=lambda member: member.earned_here, reverse=True)
+
+    treasury = Account.objects.filter(kind=Account.STORE, store=store).first()
 
     context = {
         "store": store,
         "active_claims": active_claims,
         "recent_claims": recent_claims,
         "staff_wallets": staff_wallets,
+        "treasury_balance": treasury.balance if treasury else Decimal("0.00"),
+        "payroll_runs": PayrollRun.objects.filter(store=store)[:6],
         "now": timezone.now(),
     }
     return render(request, "fulfillment/store_overview.html", context)
-
-
-@login_required
-def my_wallet(request, store_id):
-    store = get_object_or_404(Store, id=store_id)
-    membership = get_object_or_404(Membership, user=request.user, store=store)
-
-    transactions = membership.wallet_transactions.select_related(
-        "claim", "claim__store_order"
-    )
-
-    context = {
-        "store": store,
-        "membership": membership,
-        "transactions": transactions,
-    }
-    return render(request, "fulfillment/wallet.html", context)

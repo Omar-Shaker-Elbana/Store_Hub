@@ -909,3 +909,42 @@ class SearchResultsPageViewTests(ShopperInterfaceTestBase):
             reverse("shopper_interface:search_results_page"), {"q": "mouse", "page": "xyz"}
         )
         mock_search.assert_called_once_with("mouse", page=1)
+
+
+# ---------------------------------------------------------------------------
+# Store pictures in the feed and in search results
+# ---------------------------------------------------------------------------
+
+
+class StorePictureCardTests(TestCase):
+    """Regression: these cards read `store.logo`, a field Store doesn't have,
+    so a store's picture never showed up (everyone got the letter fallback)."""
+
+    def setUp(self):
+        niche = Niche.objects.create(name="Pictures")
+        self.with_picture = Store.objects.create(
+            name="Pic Store", niche=niche, main_picture="store_pics/logo.png"
+        )
+        self.without_picture = Store.objects.create(name="Plain Store", niche=niche)
+
+    def test_feed_store_chips_show_the_store_picture(self):
+        from django.template.loader import render_to_string
+
+        html = render_to_string(
+            "shopper_interface/_feed_cards.html",
+            {"recommended_products": [], "recommended_stores": [self.with_picture, self.without_picture]},
+        )
+        self.assertIn("store_pics/logo.png", html)
+        self.assertEqual(html.count("store-chip-fallback"), 1)
+        self.assertIn("Plain Store", html)
+
+    def test_search_store_cards_show_the_store_picture(self):
+        from django.template.loader import render_to_string
+
+        results = [
+            {"type": "store", "object": self.with_picture},
+            {"type": "store", "object": self.without_picture},
+        ]
+        html = render_to_string("shopper_interface/_search_results_cards.html", {"results": results})
+        self.assertIn("store_pics/logo.png", html)
+        self.assertEqual(html.count("store-card-fallback"), 1)

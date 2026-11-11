@@ -264,7 +264,7 @@
     {% if membership.role == "owner" or membership.role == "manager" %}
       <a href="{% url 'fulfillment:store_overview' store.id %}">Store Overview</a>
     {% endif %}
-    <a href="{% url 'fulfillment:my_wallet' store.id %}">My Wallet</a>
+    <a href="{% url 'payments:wallet' %}">My Wallet</a>
     <a href="{% url 'all_my_stores' %}">My Stores</a>
   </div>
 </nav>
@@ -319,17 +319,15 @@
         <div class="stat-label">Your active claims</div>
       </div>
     </div>
-    {% if membership.wage_type == "percentage" %}
     <div class="stat-card">
       <div class="stat-icon green">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
       <div>
-        <div class="stat-num">${{ membership.wallet_balance|default:"0.00"|floatformat:2 }}</div>
+        <div class="stat-num">${{ wallet_balance|floatformat:2 }}</div>
         <div class="stat-label">Wallet balance</div>
       </div>
     </div>
-    {% endif %}
   </div>
 
   <div class="pool-grid">
@@ -434,14 +432,12 @@
         {% endif %}
       </div>
 
-      {% if membership.wage_type == "percentage" %}
       <div class="card wallet-card">
         <h3>Your wallet</h3>
-        <p class="subtext">Earned per item processed on finished claims.</p>
-        <div class="wallet-amount">${{ membership.wallet_balance|default:"0.00"|floatformat:2 }}</div>
-        <a href="{% url 'fulfillment:my_wallet' store.id %}" class="btn-ghost">View wallet &amp; history</a>
+        <p class="subtext">{% if membership.wage_type == "percentage" %}{{ membership.wage|default:"0"|floatformat:0 }}% commission on every order you finish, paid once it is delivered.{% else %}Your salary is paid into your wallet at the end of each month.{% endif %}</p>
+        <div class="wallet-amount">${{ wallet_balance|floatformat:2 }}</div>
+        <a href="{% url 'payments:wallet' %}" class="btn-ghost">View wallet &amp; history</a>
       </div>
-      {% endif %}
 
       <div class="card tips-card">
         <h4>

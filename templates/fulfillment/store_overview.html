@@ -241,7 +241,7 @@
   <div class="nav-links">
     <a href="{% url 'fulfillment:work_pool' store.id %}">Work Pool</a>
     <a href="{% url 'fulfillment:store_overview' store.id %}" class="active">Store Overview</a>
-    <a href="{% url 'fulfillment:my_wallet' store.id %}">My Wallet</a>
+    <a href="{% url 'payments:wallet' %}">My Wallet</a>
     <a href="{% url 'all_my_stores' %}">My Stores</a>
   </div>
 </nav>
@@ -273,7 +273,7 @@
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
     </div>
     <h1>Store Overview</h1>
-    <p>Live view of who's working what for <span class="store-name">{{ store.name|default:"your store" }}</span>, plus recent activity and staff wallet balances.</p>
+    <p>Live view of who's working what for <span class="store-name">{{ store.name|default:"your store" }}</span>, plus recent activity, what your staff have earned and the store's treasury.</p>
   </div>
 
   <div class="stats-row">
@@ -292,7 +292,7 @@
       </div>
       <div>
         <div class="stat-num">{{ staff_wallets|length }}</div>
-        <div class="stat-label">Staff earning wages</div>
+        <div class="stat-label">Staff members</div>
       </div>
     </div>
     <div class="stat-card">
@@ -392,8 +392,21 @@
 
     <div class="sidebar">
       <div class="card">
-        <h3>Staff wallets</h3>
-        <p class="subtext">Ranked by balance &middot; percentage-wage earnings only.</p>
+        <h3>Store treasury</h3>
+        <p class="subtext">Sales after the 1% platform fee and staff commissions. Paid out monthly: salaries first, then owner profit shares.</p>
+        <div class="wallet-amount" style="font-size:28px;font-weight:800;font-family:'Poppins',sans-serif;margin-bottom:10px">${{ treasury_balance|floatformat:2 }}</div>
+        {% for run in payroll_runs %}
+          <div class="rank-sub" style="margin-top:6px">
+            {{ run.period|date:"F Y" }}: salaries ${{ run.salaries_paid|floatformat:2 }}{% if run.salary_shortfall > 0 %} (of ${{ run.salaries_due|floatformat:2 }} due){% endif %}, profit shared ${{ run.profit_distributed|floatformat:2 }}
+          </div>
+        {% empty %}
+          <div class="empty-row" style="padding:6px 0">No payroll has run yet.</div>
+        {% endfor %}
+      </div>
+
+      <div class="card">
+        <h3>Staff earnings</h3>
+        <p class="subtext">Ranked by total earned at this store &middot; commission and salary.</p>
 
         {% if staff_wallets %}
           <div class="wallet-rank-list">
@@ -406,13 +419,13 @@
                     <div class="rank-name">{{ staff.user }}</div>
                     <div class="rank-sub">
                       <span class="role-badge {{ staff.role }}">{{ staff.get_role_display }}</span>
-                      {% if staff.wage_type == "percentage" %}&middot; {{ staff.wage|default:"0" }}%{% else %}&middot; salaried{% endif %}
+                      {% if staff.wage_type == "percentage" %}&middot; {{ staff.wage|default:"0" }}% commission{% else %}&middot; ${{ staff.wage|default:"0" }}/month{% endif %}
                     </div>
                   </div>
-                  <span class="rank-amount">${{ staff.wallet_balance|default:"0.00"|floatformat:2 }}</span>
+                  <span class="rank-amount">${{ staff.earned_here|floatformat:2 }}</span>
                 </div>
                 <div class="rank-bar-track">
-                  <div class="rank-bar-fill" data-width="{% widthratio staff.wallet_balance staff_wallets.0.wallet_balance 100 %}"></div>
+                  <div class="rank-bar-fill" data-width="{% widthratio staff.earned_here staff_wallets.0.earned_here 100 %}"></div>
                 </div>
               </div>
             {% endfor %}
@@ -438,7 +451,7 @@
           </li>
           <li>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
-            Wallet balances only grow for percentage-wage staff — salaried staff aren't credited here.
+            Commissions are paid when an order is delivered. Salaries and owner profit shares are paid from the store treasury at the end of each month.
           </li>
         </ul>
       </div>

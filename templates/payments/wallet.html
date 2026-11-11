@@ -1,0 +1,81 @@
+{% extends "payments/_base.html" %}
+{% block title %}My Wallet{% endblock %}
+
+{% block nav %}
+  {% if is_courier %}<a href="{% url 'delivery:work_pool' %}">Delivery Pool</a>{% endif %}
+  {% if is_warehouse %}<a href="{% url 'warehouse:pack_pool' %}">Packing Pool</a>{% endif %}
+  <a href="{% url 'all_my_stores' %}">My Stores</a>
+  <a href="{% url 'payments:wallet' %}" class="active">My Wallet</a>
+  {% if request.user.is_superuser %}<a href="{% url 'payments:platform' %}">Platform</a>{% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <h1>My Wallet</h1>
+    <p class="head-sub">Everything you earn on StoreHub lands here: trips, packages, commissions, salary and profit share.</p>
+  </div>
+
+  <div class="hero-card">
+    <div class="label">Available balance</div>
+    <div class="amount">${{ account.balance|floatformat:2 }}</div>
+    <div class="note">This is the money you can withdraw right now.</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="s-label">Total earned</div><div class="s-num good">${{ totals.earned|floatformat:2 }}</div><div class="s-sub">All time</div></div>
+    <div class="stat"><div class="s-label">Earned this month</div><div class="s-num">${{ totals.earned_month|floatformat:2 }}</div></div>
+    <div class="stat"><div class="s-label">Withdrawn</div><div class="s-num">${{ totals.withdrawn|floatformat:2 }}</div><div class="s-sub">All time</div></div>
+  </div>
+
+  <div class="card">
+    <h3>Withdraw money</h3>
+    <p class="sub">Pick an amount up to your available balance. It is taken out of your wallet straight away.</p>
+    <form method="post" action="{% url 'payments:withdraw' %}" class="withdraw-row">
+      {% csrf_token %}
+      <input type="number" name="amount" id="withdraw-amount" step="0.01" min="0.01" max="{{ account.balance|floatformat:2 }}" placeholder="Amount in $" required {% if account.balance <= 0 %}disabled{% endif %}>
+      <button type="button" class="btn btn-ghost" id="withdraw-all" {% if account.balance <= 0 %}disabled{% endif %}>Withdraw all</button>
+      <button type="submit" class="btn" {% if account.balance <= 0 %}disabled{% endif %}>Withdraw</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Money history</h3>
+    <p class="sub">Newest first. Green is money in, red is money out.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Details</th><th class="r">Amount</th><th class="r">Balance</th></tr></thead>
+        <tbody>
+          {% for entry in page_obj %}
+            <tr>
+              <td class="muted">{{ entry.created_at|date:"M j, Y H:i" }}</td>
+              <td><span class="pill">{{ entry.get_kind_display }}</span></td>
+              <td>{{ entry.description|default:"—" }}</td>
+              {% if entry.amount < 0 %}
+                <td class="minus">&minus;${{ entry.amount|cut:"-"|floatformat:2 }}</td>
+              {% else %}
+                <td class="plus">+${{ entry.amount|floatformat:2 }}</td>
+              {% endif %}
+              <td class="r muted">${{ entry.balance_after|floatformat:2 }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="empty-row">No money movements yet. Finish a trip, pack an order or process a sale and it will show up here.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+      <div class="pager">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&larr; Newer</a>{% endif %}
+        <span class="muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Older &rarr;</a>{% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    (function(){
+      var all=document.getElementById('withdraw-all'),input=document.getElementById('withdraw-amount');
+      if(all&&input){all.addEventListener('click',function(){input.value=input.max;input.focus();});}
+    })();
+  </script>
+{% endblock %}

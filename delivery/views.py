@@ -8,7 +8,7 @@ from django.utils import timezone
 from orders.models import Order
 
 from . import services
-from .models import CourierWallet, DeliveryClaim, DeliveryMission
+from .models import DeliveryClaim, DeliveryMission
 
 
 def courier_required(view):
@@ -132,22 +132,6 @@ def release_claim(request, claim_id):
         return redirect("delivery:claim_detail", claim_id=claim_id)
     messages.success(request, "Mission released back to the pool.")
     return redirect("delivery:work_pool")
-
-
-@courier_required
-def my_wallet(request):
-    wallet, _ = CourierWallet.objects.get_or_create(user=request.user)
-    context = {
-        "wallet": wallet,
-        "transactions": wallet.transactions.select_related("claim__mission"),
-        "history": DeliveryClaim.objects.filter(courier=request.user)
-        .exclude(status__in=DeliveryClaim.ACTIVE_STATUSES)
-        .select_related("mission")[:25],
-    }
-    return render(request, "delivery/wallet.html", context)
-
-
- 
 
 
 @login_required

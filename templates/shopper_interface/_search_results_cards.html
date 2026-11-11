@@ -43,8 +43,8 @@
     {% with store=item.object %}
     <a href="{% url 'show_store' store.id %}" class="store-card" data-type="store">
       <span class="store-card-badge">Store</span>
-      {% if store.logo %}
-        <img src="{{ store.logo.url }}" alt="{{ store.name }}">
+      {% if store.main_picture %}
+        <img src="{{ store.main_picture.url }}" alt="{{ store.name }}" loading="lazy">
       {% else %}
         <div class="store-card-fallback">{{ store.name|slice:":1" }}</div>
       {% endif %}

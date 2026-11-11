@@ -221,9 +221,9 @@
 
       <div class="summary-divider"></div>
       <div class="summary-row"><span>Subtotal</span><span>${{ subtotal|floatformat:2 }}</span></div>
-      <div class="summary-row"><span>Shipping</span><span>Free</span></div>
+      <div class="summary-row"><span>Delivery &amp; handling</span><span>${{ shipping_fee|floatformat:2 }}</span></div>
       <div class="summary-divider"></div>
-      <div class="summary-total"><span>Total</span><span>${{ subtotal|floatformat:2 }}</span></div>
+      <div class="summary-total"><span>Total</span><span>${{ total|floatformat:2 }}</span></div>
 
       <button type="submit" form="checkout-form" class="btn-primary" id="place-order-btn">
         Place Order

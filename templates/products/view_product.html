@@ -393,7 +393,7 @@
         <span class="category-badge">{{ product.category.name }}</span>
       {% endif %}
       <h1>{{ product.name }}</h1>
-       <div class="store-line">Sold by <strong>{{ product.store.name }}</strong></div>
+       <div class="store-line">Sold by <a href="{% url 'show_store' product.store.id %}"><strong>{{ product.store.name }}</strong></a></div>
 
       <div class="price-row">
         {% if product.offer %}

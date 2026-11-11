@@ -8,6 +8,8 @@ from django.utils import timezone
 
 from notifications.models import Notification
 from orders.models import Order, StoreOrder
+from payments import services as payments_services
+from payments.rates import shipping_fee
 
 from .models import (
     CLAIM_DURATION,
@@ -15,8 +17,6 @@ from .models import (
     MAX_ACTIVE_CLAIMS,
     MAX_CODE_ATTEMPTS,
     PICKUP_FEE,
-    CourierWallet,
-    CourierWalletTransaction,
     DeliveryClaim,
     DeliveryMission,
     Warehouse,
@@ -208,9 +208,12 @@ def _warehouse_contact(warehouse):
 
 
 def _cod_total(order, store_orders):
+    """Cash the courier collects: the products plus the delivery & handling
+    fee for the stores that are still part of the order."""
     if order.payment_type != "cash":
         return Decimal("0.00")
-    return sum((so.subtotal or Decimal("0.00") for so in store_orders), Decimal("0.00"))
+    products = sum((so.subtotal or Decimal("0.00") for so in store_orders), Decimal("0.00"))
+    return products + shipping_fee(len(store_orders))
 
 
 def create_pickup_mission(store_order):
@@ -556,29 +559,13 @@ def complete_claim(*, claim_id, user, code="", cash_collected=False):
     mission.status = "completed"
     mission.completed_at = now
     mission.save(update_fields=["status", "completed_at"])
-    _credit_wallet(claim)
+    payments_services.pay_courier(claim)
 
     if mission.kind == "pickup":
         _finish_pickup(mission, user)
     else:
         _finish_dropoff(mission, user)
     return claim, None
-
-
-def _credit_wallet(claim):
-    CourierWallet.objects.get_or_create(user=claim.courier)
-    wallet = CourierWallet.objects.select_for_update().get(user=claim.courier)
-    wallet.balance += claim.fee_earned
-    wallet.save(update_fields=["balance"])
-    CourierWalletTransaction.objects.create(
-        wallet=wallet,
-        claim=claim,
-        amount=claim.fee_earned,
-        description=(
-            f"{claim.mission.get_kind_display()} — order #{claim.mission.order_id} "
-            f"(mission #{claim.mission_id})"
-        ),
-    )
 
 
 def _finish_pickup(mission, user):
@@ -606,6 +593,9 @@ def _finish_dropoff(mission, user):
         store_order.save(update_fields=["status"])
         delivered += 1
     if delivered:
+        # The shopper's cash is in the courier's hands: split it between the
+        # platform (1%), the stores and any commissioned staff.
+        payments_services.settle_order(mission.order_id)
         _notify(
             mission.order.user,
             f"Order #{mission.order_id} was delivered. Enjoy!",

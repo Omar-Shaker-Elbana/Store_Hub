@@ -2,8 +2,6 @@ from django.contrib import admin, messages
 
 from . import services
 from .models import (
-    CourierWallet,
-    CourierWalletTransaction,
     DeliveryClaim,
     DeliveryMission,
     StorePickupLocation,
@@ -50,14 +48,3 @@ class DeliveryClaimAdmin(admin.ModelAdmin):
     list_filter = ("status", "mission__kind")
     search_fields = ("courier__email", "courier__username", "mission__order__id")
     actions = [return_to_pool]
-
-
-@admin.register(CourierWallet)
-class CourierWalletAdmin(admin.ModelAdmin):
-    list_display = ("user", "balance")
-    search_fields = ("user__email", "user__username")
-
-
-@admin.register(CourierWalletTransaction)
-class CourierWalletTransactionAdmin(admin.ModelAdmin):
-    list_display = ("id", "wallet", "amount", "created_at")

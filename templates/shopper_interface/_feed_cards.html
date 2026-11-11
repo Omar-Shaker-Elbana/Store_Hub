@@ -49,8 +49,8 @@
     <div class="store-row-strip">
       {% for store in recommended_stores %}
         <a href="{% url 'show_store' store.id %}" class="store-chip">
-          {% if store.logo %}
-            <img src="{{ store.logo.url }}" alt="{{ store.name }}">
+          {% if store.main_picture %}
+            <img src="{{ store.main_picture.url }}" alt="{{ store.name }}" loading="lazy">
           {% else %}
             <div class="store-chip-fallback">{{ store.name|slice:":1" }}</div>
           {% endif %}

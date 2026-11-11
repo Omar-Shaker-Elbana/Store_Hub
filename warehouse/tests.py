@@ -17,6 +17,7 @@ from delivery.tests import (
     notes_for,
 )
 from orders.models import StoreOrder
+from payments.rates import shipping_fee
 from warehouse import services
 from warehouse.models import (
     MAX_ACTIVE_PACK_CLAIMS,
@@ -360,7 +361,7 @@ class FinishClaimTests(PackingTestCase):
         dropoff = DeliveryMission.objects.get(order=order, kind="dropoff")
         self.assertEqual(dropoff.status, "open")
         self.assertEqual(dropoff.item_count, 4)
-        self.assertEqual(dropoff.cod_amount, sum(so.subtotal for so in sos))
+        self.assertEqual(dropoff.cod_amount, sum(so.subtotal for so in sos) + shipping_fee(len(sos)))
 
     def test_couriers_cannot_see_or_claim_the_dropoff_before_packing(self):
         order, _, task = self.ready_order(1)
@@ -491,7 +492,7 @@ class CancellationTests(PackingTestCase):
         services.finish_claim(claim_id=claim.pk, user=self.staff)
         dropoff = DeliveryMission.objects.get(order=order, kind="dropoff")
         self.assertEqual([i["product"] for i in dropoff.items_snapshot], ["Item 1"])
-        self.assertEqual(dropoff.cod_amount, so1.subtotal)
+        self.assertEqual(dropoff.cod_amount, so1.subtotal + shipping_fee(1))
 
 
 class PackingModelTests(PackingTestCase):
